@@ -1,170 +1,188 @@
 <!DOCTYPE html>
 {% load static %}
-<html lang="en">
+<html lang="uz">
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Title -->
-    <title> Digital Market Place HTML Template</title>
-    <!-- Favicon -->
+    <title>Kirish | DpMarket</title>
     <link rel="shortcut icon" href="{% static 'assets/images/logo/favicon.png' %}">
-
-    <!-- Bootstrap -->
     <link rel="stylesheet" href="{% static 'assets/css/bootstrap.min.css' %}">
-    <!-- Fontawesome -->
     <link rel="stylesheet" href="{% static 'assets/css/fontawesome-all.min.css' %}">
-    <!-- Slick -->
-    <link rel="stylesheet" href="{% static 'assets/css/slick.css' %}">
-    <!-- magnific popup -->
-    <link rel="stylesheet" href="{% static 'assets/css/magnific-popup.css' %}">
-    <!-- line awesome -->
     <link rel="stylesheet" href="{% static 'assets/css/line-awesome.min.css' %}">
-    <!-- Main css -->
     <link rel="stylesheet" href="{% static 'assets/css/main.css' %}">
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fafbfc;
+            padding: 32px 16px;
+            font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+        }
 
+        .auth-card {
+            width: 100%;
+            max-width: 440px;
+            background: #fff;
+            border: 1px solid #e8eaed;
+            border-radius: 16px;
+            padding: 40px 36px;
+            box-shadow: 0 20px 48px rgba(16, 24, 40, 0.06);
+        }
+
+        .auth-card__logo {
+            display: block;
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .auth-card__logo img {
+            max-height: 40px;
+        }
+
+        .auth-card__title {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #1b2233;
+            text-align: center;
+            margin-bottom: 6px;
+        }
+
+        .auth-card__subtitle {
+            font-size: 14px;
+            color: #5b6470;
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .form-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1b2233;
+            margin-bottom: 8px;
+        }
+
+        .form-control {
+            height: 48px;
+            border-radius: 10px;
+            border-color: #e4e6eb;
+            font-size: 15px;
+            padding: 0 16px;
+        }
+
+        .form-control:focus {
+            border-color: hsl(var(--main));
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: 0;
+            background: transparent;
+            color: #8a919c;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .btn-submit {
+            width: 100%;
+            height: 48px;
+            border: 0;
+            border-radius: 10px;
+            background: hsl(var(--main));
+            color: #fff;
+            font-size: 15px;
+            font-weight: 600;
+            transition: background 0.15s ease;
+        }
+
+        .btn-submit:hover {
+            background: hsl(var(--main2));
+            color: #fff;
+        }
+
+        .auth-card__footer {
+            margin-top: 24px;
+            text-align: center;
+            font-size: 14px;
+            color: #5b6470;
+        }
+
+        .auth-card__footer a {
+            color: hsl(var(--main));
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .auth-card__footer a:hover {
+            text-decoration: underline;
+        }
+
+        .error-msg {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #b91c1c;
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
 <body>
 
-<!--==================== Preloader Start ====================-->
- <div class="loader-mask">
-  <div class="loader">
-      <div></div>
-      <div></div>
-  </div>
-</div>
-<!--==================== Preloader End ====================-->
-
-<!--==================== Overlay Start ====================-->
-<div class="overlay"></div>
-<!--==================== Overlay End ====================-->
-
-<!--==================== Sidebar Overlay End ====================-->
-<div class="side-overlay"></div>
-<!--==================== Sidebar Overlay End ====================-->
-
-<!-- ==================== Scroll to Top End Here ==================== -->
-<div class="progress-wrap">
-  <svg class="progress-circle svg-content" width="100%" height="100%" viewBox="-1 -1 102 102">
-      <path d="M50,1 a49,49 0 0,1 0,98 a49,49 0 0,1 0,-98" />
-  </svg>
-</div>
-<!-- ==================== Scroll to Top End Here ==================== -->
-
-<!-- ==================== Mobile Menu Start Here ==================== -->
-<div class="mobile-menu d-lg-none d-block">
-    <button type="button" class="close-button"> <i class="las la-times"></i> </button>
-    <div class="mobile-menu__inner">
-        <a href="{% url 'index' %}" class="mobile-menu__logo">
-            <img src="{% static 'assets/images/logo/logo.png' %}" alt="Logo">
+    <div class="auth-card">
+        <a href="{% url 'index' %}" class="auth-card__logo">
+            <img src="{% static 'assets/images/logo/logo.png' %}" alt="DpMarket">
         </a>
-        <div class="mobile-menu__menu">
+        <h1 class="auth-card__title">Kirish</h1>
+        <p class="auth-card__subtitle">Hisobingizga kiring va xaridni davom eting</p>
 
-<ul class="nav-menu flx-align nav-menu--mobile">
-    <li class="nav-menu__item"><a href="{% url 'index' %}" class="nav-menu__link">Bosh sahifa</a></li>
-    <li class="nav-menu__item"><a href="{% url 'all_products' %}" class="nav-menu__link">Mahsulotlar</a></li>
-    <li class="nav-menu__item"><a href="{% url 'cart' %}" class="nav-menu__link">Savat</a></li>
-    <li class="nav-menu__item"><a href="{% url 'wishlist' %}" class="nav-menu__link">Saralanganlar</a></li>
-    <li class="nav-menu__item"><a href="{% url 'd_login' %}" class="nav-menu__link">Panel</a></li>
-</ul>
-            <div class="header-right__inner d-lg-none my-3 gap-1 d-flex flx-align">
+        {% if form.errors %}
+        <div class="error-msg">Foydalanuvchi nomi yoki parol noto'g'ri. Qayta urinib ko'ring.</div>
+        {% endif %}
 
-    <a href="{% url 'register' %}" class="btn btn-main pill">
-        <span class="icon-left icon">
-            <img src="{% static 'assets/images/icons/user.svg' %}" alt="">
-        </span>Akkaunt yaratish
-    </a>
-    <div class="language-select flx-align select-has-icon">
-        <img src="{% static 'assets/images/icons/globe.svg' %}" alt="" class="globe-icon">
-        <select class="select py-0 ps-2 border-0 fw-500">
-            <option value="1">Eng</option>
-            <option value="2">Bn</option>
-            <option value="3">Eur</option>
-            <option value="4">Urd</option>
-        </select>
-    </div>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}">
+
+            <div class="mb-4">
+                <label for="name" class="form-label">Foydalanuvchi nomi</label>
+                <input type="text" class="form-control" id="name" name="username" placeholder="Foydalanuvchi nomi" required>
             </div>
-        </div>
-    </div>
-</div>
-<!-- ==================== Mobile Menu End Here ==================== -->
 
-<!-- ================================== Account Page Start =========================== -->
-<section class="account d-flex">
-    <div class="account__left d-md-flex d-none flx-align section-bg position-relative z-index-1 overflow-hidden">
-        <img src="{% static 'assets/images/shapes/pattern-curve-seven.png' %}" alt="" class="position-absolute end-0 top-0 z-index--1 h-100">
-        <div class="account-thumb">
-            <img src="{% static 'assets/images/shapes/login.jpg' %}" alt="">
-            <div class="statistics animation bg-main text-center">
-                <h5 class="statistics__amount text-white">50k</h5>
-                <span class="statistics__text text-white font-14">Mijozlar</span>
+            <div class="mb-4 position-relative">
+                <label for="your-password" class="form-label">Parol</label>
+                <input type="password" class="form-control" name="password" id="your-password" placeholder="Parolingiz" required>
+                <button type="button" class="password-toggle toggle-password" data-target="#your-password"><i class="las la-eye"></i></button>
             </div>
-        </div>
+
+            <button type="submit" class="btn-submit">Kirish</button>
+        </form>
+
+        <p class="auth-card__footer">Akkaunt yo'qmi? <a href="{% url 'register' %}">Ro'yxatdan o'tish</a></p>
     </div>
-    <div class="account__right padding-t-120 flx-align">
-        <div class="account-content">
-            <a href="{% url 'index' %}" class="logo mb-64">
-                <img src="{% static 'assets/images/logo/logo.png' %}" alt="">
-            </a>
-            <h4 class="account-content__title mb-48 text-capitalize">Kirish</h4>
 
-            <form method="POST">{% csrf_token %}
-                <input type="hidden" name="next" value="{{ next }}">
-                <div class="row gy-4">
-                    <div class="col-12">
-                        <label for="name" class="form-label mb-2 font-18 font-heading fw-600">Foydalanuvchi nomi</label>
-                        <div class="position-relative">
-                            <input type="text" class="common-input common-input--bg common-input--withIcon" id="name" name="username" placeholder="Foydalanuvchi nomi">
-                            <span class="input-icon"><img src="{% static 'assets/images/icons/user-icon.svg' %}" alt=""></span>
-                        </div>
-                    </div>
-
-                    <div class="col-12">
-                        <label for="your-password" class="form-label mb-2 font-18 font-heading fw-600">Parol</label>
-                        <div class="position-relative">
-                            <input type="password" class="common-input common-input--bg common-input--withIcon" name="password" id="your-password" placeholder="Kamida 6 ta belgi, 1 ta bosh harf">
-                            <span class="input-icon toggle-password cursor-pointer" id="#your-password"><img src="{% static 'assets/images/icons/lock-icon.svg' %}" alt=""></span>
-                        </div>
-                    </div>
-
-                    <div class="col-12">
-                        <button type="submit" class="btn btn-main btn-lg w-100 pill"> Kirish</button>
-                    </div>
-<!--                    <div class="col-12">-->
-<!--                        <button type="submit" class="btn btn-outline-light btn-lg-icon btn-lg w-100 pill">-->
-<!--                            <span class="icon icon-left"><img src="{% static 'assets/images/icons/google.svg' %}" alt=""></span>-->
-<!--                            Sign up with google-->
-<!--                        </button>-->
-<!--                    </div>-->
-                    <div class="col-sm-12 mb-0">
-                        <div class="have-account">
-                            <p class="text font-14">Akkaunt yo'qmi? <a class="link text-main text-decoration-underline  fw-500" href="{% url 'register' %}">Ro'yxatdan o'tish</a></p>
-                        </div>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-</section>
-<!-- ================================== Account Page End =========================== -->
-
-    <!-- Jquery js -->
     <script src="{% static 'assets/js/jquery-3.7.1.min.js' %}"></script>
-    <!-- Bootstrap Bundle Js -->
-    <script src="{% static 'assets/js/boostrap.bundle.min.js' %}"></script>
-    <!-- CountDown -->
-    <script src="{% static 'assets/js/countdown.js' %}"></script>
-    <!-- counter up -->
-    <script src="{% static 'assets/js/counterup.min.js' %}"></script>
-    <!-- Slick js -->
-    <script src="{% static 'assets/js/slick.min.js' %}"></script>
-    <!-- magnific popup -->
-    <script src="{% static 'assets/js/jquery.magnific-popup.js' %}"></script>
-    <!-- apex chart -->
-    <script src="{% static 'assets/js/apexchart.js' %}"></script>
+    <script src="{% static 'assets/js/bootstrap.bundle.min.js' %}"></script>
+    <script>
+        document.querySelectorAll('.toggle-password').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var input = document.querySelector(btn.dataset.target);
+                if (!input) return;
+                var type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+                input.setAttribute('type', type);
+                btn.querySelector('i').classList.toggle('la-eye');
+                btn.querySelector('i').classList.toggle('la-eye-slash');
+            });
+        });
+    </script>
 
-    <!-- main js -->
-    <script src="{% static 'assets/js/main.js' %}"></script>
-
-    </body>
+</body>
 </html>

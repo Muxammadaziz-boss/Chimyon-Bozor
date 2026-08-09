@@ -24,30 +24,35 @@
     <!-- Main css -->
     <link rel="stylesheet" href="{% static 'assets/css/main.css' %}">
     <style>
+        /* ============ Minimal Clean SaaS Theme ============ */
+        body {
+            background: #fafbfc;
+            color: hsl(var(--heading-color));
+            font-family: "Inter", "Plus Jakarta Sans", system-ui, sans-serif;
+        }
+
+        /* Header: clean white, thin border, no heavy effects */
         .site-header {
             position: sticky;
             top: 0;
             z-index: 999;
-            backdrop-filter: blur(16px);
-            background: rgba(255, 255, 255, 0.92);
-            border-bottom: 1px solid rgba(17, 24, 39, 0.08);
-            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+            background: #ffffff;
+            border-bottom: 1px solid #e8eaed;
         }
 
         .site-header__inner {
-            min-height: 88px;
-            gap: 24px;
+            min-height: 72px;
+            gap: 32px;
         }
 
         .site-header__brand {
             display: flex;
             align-items: center;
-            gap: 12px;
             flex-shrink: 0;
         }
 
         .site-header__brand img {
-            max-height: 44px;
+            max-height: 36px;
             width: auto;
         }
 
@@ -58,10 +63,7 @@
         }
 
         .site-header__menu {
-            gap: 10px;
-            padding: 8px;
-            border-radius: 999px;
-            background: rgba(99, 102, 241, 0.06);
+            gap: 4px;
         }
 
         .site-header__menu > .nav-menu__item {
@@ -69,113 +71,114 @@
         }
 
         .site-header__menu > .nav-menu__item > .nav-menu__link {
-            padding: 12px 18px;
-            border-radius: 999px;
-            font-weight: 600;
-            color: hsl(var(--heading-color));
-            transition: 0.2s ease;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 500;
+            color: #3b4252;
+            transition: color 0.15s ease, background 0.15s ease;
         }
 
         .site-header__menu > .nav-menu__item > .nav-menu__link:hover,
         .site-header__menu > .nav-menu__item:hover > .nav-menu__link {
-            background: #fff;
+            background: #f1f3f5;
             color: hsl(var(--main));
-            box-shadow: 0 8px 18px rgba(99, 102, 241, 0.12);
         }
 
         .site-header__menu .nav-submenu {
-            min-width: 220px;
-            margin-top: 14px;
-            padding: 12px;
-            border: 1px solid rgba(17, 24, 39, 0.08);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12);
+            min-width: 200px;
+            margin-top: 10px;
+            padding: 8px;
+            border: 1px solid #e8eaed;
+            border-radius: 10px;
+            box-shadow: 0 12px 32px rgba(16, 24, 40, 0.08);
         }
 
         .site-header__menu .nav-submenu__link {
-            border-radius: 12px;
+            border-radius: 8px;
+            font-size: 14px;
             font-weight: 500;
         }
 
         .site-header__menu .nav-submenu__link:hover {
-            background: rgba(99, 102, 241, 0.08);
+            background: #f1f3f5;
             color: hsl(var(--main));
         }
 
         .site-header__actions {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             flex-shrink: 0;
         }
 
         .site-header__icon {
             position: relative;
-            width: 48px;
-            height: 48px;
+            width: 40px;
+            height: 40px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            border-radius: 16px;
-            background: #fff;
-            border: 1px solid rgba(17, 24, 39, 0.08);
-            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
-            transition: 0.2s ease;
+            border-radius: 10px;
+            background: transparent;
+            border: 1px solid #e4e6eb;
+            transition: border-color 0.15s ease, background 0.15s ease;
         }
 
         .site-header__icon:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 12px 24px rgba(99, 102, 241, 0.14);
+            background: #f6f7f9;
+            border-color: #d3d6db;
         }
 
         .site-header__icon img,
         .site-header__icon i {
-            max-width: 22px;
-            font-size: 20px;
+            max-width: 18px;
+            font-size: 17px;
         }
 
         .site-header__icon .qty-badge {
             position: absolute;
-            top: -6px;
-            right: -4px;
-            min-width: 22px;
-            height: 22px;
+            top: -5px;
+            right: -5px;
+            min-width: 20px;
+            height: 20px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             border: 2px solid #fff;
             border-radius: 999px;
-            background: linear-gradient(135deg, #ff4ecd, #7c3aed);
+            background: hsl(var(--main));
             color: #fff;
             font-size: 11px;
-            font-weight: 700;
+            font-weight: 600;
         }
 
         .site-header__profile {
             display: inline-flex;
             align-items: center;
-            gap: 10px;
-            padding: 6px 8px 6px 14px;
+            gap: 8px;
+            padding: 5px 12px 5px 5px;
             border-radius: 999px;
-            background: linear-gradient(135deg, #7c3aed, #ec4899);
-            color: #fff;
-            box-shadow: 0 14px 28px rgba(124, 58, 237, 0.24);
+            border: 1px solid #e4e6eb;
+            background: #fff;
+            color: hsl(var(--heading-color));
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
         }
 
         .site-header__profile:hover {
-            color: #fff;
-            transform: translateY(-1px);
+            color: hsl(var(--heading-color));
+            border-color: #c9ccd2;
+            box-shadow: 0 4px 14px rgba(16, 24, 40, 0.06);
         }
 
         .site-header__avatar {
-            width: 38px;
-            height: 38px;
+            width: 30px;
+            height: 30px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.18);
-            border: 1px solid rgba(255, 255, 255, 0.24);
+            background: #eef0f3;
             overflow: hidden;
         }
 
@@ -191,25 +194,137 @@
 
         .site-header__profile-text small {
             display: block;
-            opacity: 0.85;
-            font-size: 11px;
+            color: #8a919c;
+            font-size: 10px;
         }
 
         .site-header__profile-text strong {
             display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: hsl(var(--heading-color));
+        }
+
+        /* Section headings: clean SaaS typography */
+        .section-heading__title {
+            font-weight: 700 !important;
+            letter-spacing: -0.02em;
+        }
+
+        /* Buttons: flat, no heavy gradients */
+        .btn-main {
+            background: hsl(var(--main));
+            border-color: hsl(var(--main));
+            background-image: none !important;
+        }
+
+        /* Product cards: clean SaaS look */
+        .product-card {
+            background: #ffffff !important;
+            border: 1px solid #e8eaed !important;
+            border-radius: 14px !important;
+            box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+            transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .product-card:hover {
+            border-color: #d8dbe0 !important;
+            box-shadow: 0 12px 28px rgba(16, 24, 40, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .product-card__thumb img {
+            border-radius: 14px 14px 0 0;
+        }
+
+        .product-card__title {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        /* Sections: clean separated blocks */
+        .section-bg {
+            background: #fafbfc !important;
+        }
+
+        .padding-y-120 {
+            padding-top: 72px !important;
+            padding-bottom: 72px !important;
+        }
+
+        /* Inputs: clean SaaS style */
+        .common-input {
+            border-radius: 10px;
+            border-color: #e4e6eb;
+        }
+
+        .common-input:focus {
+            border-color: hsl(var(--main));
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        /* Footer: light, clean */
+        .footer {
+            background: #ffffff;
+            border-top: 1px solid #eef0f3;
+            padding-top: 48px !important;
+            padding-bottom: 32px !important;
+        }
+
+        .footer-widget__title {
+            font-size: 16px;
+            font-weight: 700;
+            color: hsl(var(--heading-color));
+            letter-spacing: -0.01em;
+        }
+
+        .footer-widget__list li + li {
+            margin-top: 10px;
+        }
+
+        .footer-widget__list a {
+            color: var(--body-text);
             font-size: 14px;
+            transition: color 0.15s ease;
+        }
+
+        .footer-widget__list a:hover {
+            color: hsl(var(--main));
+        }
+
+        .social-icons__item {
+            width: 36px;
+            height: 36px;
+            border: 1px solid #e4e6eb;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--body-text);
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+
+        .social-icons__item:hover {
+            background: hsl(var(--main));
             color: #fff;
+            border-color: hsl(var(--main));
+        }
+
+        /* Breadcrumb sections: subtle background */
+        .breadcrumb {
+            background: #f7f8fb !important;
         }
 
         @media (max-width: 1199.98px) {
             .site-header__menu > .nav-menu__item > .nav-menu__link {
-                padding: 10px 14px;
+                padding: 8px 10px;
+                font-size: 14px;
             }
         }
 
         @media (max-width: 991.98px) {
             .site-header__inner {
-                min-height: 76px;
+                min-height: 64px;
             }
 
             .site-header__nav {
@@ -221,7 +336,7 @@
             }
 
             .site-header__profile {
-                padding-left: 8px;
+                padding-left: 5px;
             }
         }
     </style>
@@ -419,74 +534,56 @@
 
 
         <!-- ==================== Footer Start Here ==================== -->
-        <footer class="footer ">
-            <img src="{% static 'assets/images/shapes/pattern.png' %}" alt="" class="bg-pattern">
-            <img src="{% static 'assets/images/shapes/element1.png' %}" alt="" class="element one">
-            <img src="{% static 'assets/images/shapes/element2.png' %}" alt="" class="element two">
-            <img src="{% static 'assets/images/gradients/footer-gradient.png' %}" alt="" class="bg--gradient">
-
+        <footer class="footer">
             <div class="container container-two">
-                <div class="row gy-5">
-                    <div class="col-xl-3 col-sm-6">
-                        <div class="footer-item">
-                            <div class="footer-item__logo">
-                                <a href="{% url 'index' %}"> <img src="{% static 'assets/images/logo/white-logo.png' %}" alt=""></a>
+                <div class="row gy-4">
+                    <div class="col-xl-4 col-lg-6 col-sm-12">
+                        <div class="footer-widget__about">
+                            <div class="footer-widget__logo">
+                                <a href="{% url 'index' %}" class="link">
+                                    <img src="{% static 'assets/images/logo/logo.png' %}" alt="Logo">
+                                </a>
                             </div>
-                            <p class="footer-item__desc">Lorem consultancy elitsed do eiusmod tempor inci didunt ut
-                                labore dolore magna aliqua sed do eiusmod.</p>
-                            <div class="footer-item__social">
-                                <ul class="social-list">
-                                    <li class="social-list__item">
-                                        <a href="https://www.facebook.com" class="social-list__link flx-center"><i
-                                                class="fab fa-facebook-f"></i></a>
-                                    </li>
-                                    <li class="social-list__item">
-                                        <a href="https://www.twitter.com" class="social-list__link flx-center"> <i
-                                                class="fab fa-twitter"></i></a>
-                                    </li>
-                                    <li class="social-list__item">
-                                        <a href="https://www.linkedin.com" class="social-list__link flx-center"> <i
-                                                class="fab fa-linkedin-in"></i></a>
-                                    </li>
-                                    <li class="social-list__item">
-                                        <a href="https://www.pinterest.com" class="social-list__link flx-center"> <i
-                                                class="fab fa-pinterest-p"></i></a>
-                                    </li>
-                                    <li class="social-list__item">
-                                        <a href="https://www.pinterest.com" class="social-list__link flx-center"> <i
-                                                class="fab fa-youtube"></i></a>
-                                    </li>
-                                </ul>
+                            <div class="footer-widget__desc font-14 text-body mt-3">Buyurtmangiz bo'yicha yordam
+                                kerakmi? Qo'llab-quvvatlash jamoamizga murojaat qiling.</div>
+                            <div class="social-icons pt-3 flx-align">
+                                <a href="#" class="social-icons__item" aria-label="Facebook"><i
+                                        class="fab fa-facebook-f"></i></a>
+                                <a href="#" class="social-icons__item" aria-label="Twitter"><i
+                                        class="fab fa-twitter"></i></a>
+                                <a href="#" class="social-icons__item" aria-label="Instagram"><i
+                                        class="fab fa-instagram"></i></a>
+                                <a href="#" class="social-icons__item" aria-label="Linkedin"><i
+                                        class="fab fa-linkedin-in"></i></a>
                             </div>
                         </div>
                     </div>
-                    <div class="col-xl-2 col-sm-6 col-xs-6">
-                        <div class="footer-item">
-                            <h5 class="footer-item__title">Foydali havolalar</h5>
-                            <ul class="footer-menu">
-                                <li class="footer-menu__item"><a href="{% url 'index' %}"
-                                        class="footer-menu__link">Mahsulotlar </a></li>
-                                <li class="footer-menu__item"><a href="{% url 'all_products' %}"
-                                        class="footer-menu__link">Mahsulotlar ro'yxati</a></li>
-                                <li class="footer-menu__item"><a href="{% url 'profile' %}" class="footer-menu__link">Profil
-                                    </a></li>
-                                <li class="footer-menu__item"><a href="{% url 'cart' %}" class="footer-menu__link">Savat</a></li>
-                            </ul>
-                        </div>
+                    <div class="col-xl-2 col-lg-6 col-sm-12 col-6">
+                        <h6 class="footer-widget__title">Bo'limlar</h6>
+                        <ul class="footer-widget__list mt-3">
+                            <li><a href="{% url 'index' %}" class="footer-link">Bosh sahifa</a></li>
+                            <li><a href="{% url 'all_products' %}" class="footer-link">Mahsulotlar</a></li>
+                            <li><a href="{% url 'cart' %}" class="footer-link">Savat</a></li>
+                        </ul>
                     </div>
-                    <div class="col-xl-1 d-xl-block d-none"></div>
-                    <div class="col-xl-2 col-sm-6 col-xs-6">
-                        <div class="footer-item">
-                            <h5 class="footer-item__title">Tezkor havolalar</h5>
-                            <ul class="footer-menu">
-                                <li class="footer-menu__item"><a href="{% url 'login' %}" class="footer-menu__link">Kirish </a>
-                                </li>
-                                <li class="footer-menu__item"><a href="{% url 'register' %}"
-                                        class="footer-menu__link">Ro'yxatdan o'tish</a>
-                                </li>
-                        </div>
+                    <div class="col-xl-3 col-lg-6 col-sm-12 col-6">
+                        <h6 class="footer-widget__title">Hisob</h6>
+                        <ul class="footer-widget__list mt-3">
+                            <li><a href="{% url 'profile' %}" class="footer-link">Profil</a></li>
+                            <li><a href="{% url 'wishlist' %}" class="footer-link">Saralanganlar</a></li>
+                            {% if user.is_authenticated %}
+                            <li><a href="{% url 'logout' %}" class="footer-link">Chiqish</a></li>
+                            {% else %}
+                            <li><a href="{% url 'login' %}" class="footer-link">Kirish</a></li>
+                            {% endif %}
+                        </ul>
                     </div>
-
+                    <div class="col-xl-3 col-lg-6 col-sm-12 col-6">
+                        <h6 class="footer-widget__title">Aloqa</h6>
+                        <p class="footer-widget__desc font-14 text-body mt-3">Savol yoki takliflar bo'lsa, biz bilan
+                            bog'laning.</p>
+                        <a href="{% url 'profile' %}" class="btn btn-main btn-sm mt-3">Biz bilan bog'lanish</a>
+                    </div>
                 </div>
             </div>
         </footer>
@@ -495,7 +592,7 @@
         <div class="bottom-footer">
             <div class="container container-two">
                 <div class="bottom-footer__inner flx-between gap-3">
-                    <p class="bottom-footer__text font-14"> Copyright &copy; 2024 DPmarket, All rights reserved.</p>
+                    <p class="bottom-footer__text font-14">Copyright &copy; 2024 DpMarket, All rights reserved.</p>
                     <div class="footer-links">
                         <a href="{% url 'all_products' %}" class="footer-link font-14">Mahsulotlar</a>
                         <a href="{% url 'profile' %}" class="footer-link font-14">Profil</a>

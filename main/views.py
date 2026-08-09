@@ -81,7 +81,7 @@ def product_detail(request, code):
 
 
 def category_filter(request, category_id):
-    search_query = request.GET.get('q', '').strip()
+    search_query = (request.GET.get('q') or request.GET.get('query') or '').strip()
     categories = models.Category.objects.all()
     top_categories = models.Category.objects.filter(is_active=True)[:7]
     active_category = get_object_or_404(models.Category, id=category_id)
@@ -116,7 +116,7 @@ def category_filter(request, category_id):
 
 
 def all_products(request):
-    search_query = request.GET.get('q', '').strip()
+    search_query = (request.GET.get('q') or request.GET.get('query') or '').strip()
     categories = models.Category.objects.all()
     top_categories = models.Category.objects.filter(is_active=True)[:7]
     products = models.Product.objects.all()
@@ -163,7 +163,7 @@ def register(request):
             return redirect('index')
 
         else:
-            return render(request, 'front/register.html')
+            return render(request, 'front/register.html', {'error': 'Parollar mos kelmadi'})
 
     return  render(request, 'front/register.html')
 

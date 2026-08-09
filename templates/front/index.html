@@ -4,52 +4,118 @@
 {% block content %}
 
 
+<style>
+    /* SaaS hero */
+    .saas-hero {
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(180deg, #f7f8fb 0%, #ffffff 100%);
+        padding: 80px 0 96px;
+        border-bottom: 1px solid #eef0f3;
+    }
+    .saas-hero::before {
+        content: "";
+        position: absolute;
+        top: -120px;
+        right: -120px;
+        width: 420px;
+        height: 420px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(79, 70, 229, 0.10) 0%, rgba(79, 70, 229, 0) 70%);
+        pointer-events: none;
+    }
+    .saas-hero__title {
+        font-size: 44px;
+        line-height: 1.15;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        color: hsl(var(--heading-color));
+        margin-bottom: 16px;
+    }
+    .saas-hero__desc {
+        font-size: 17px;
+        line-height: 1.6;
+        color: var(--body-text);
+        margin-bottom: 32px;
+        max-width: 480px;
+    }
+    .saas-hero__search {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        max-width: 480px;
+        padding: 6px;
+        background: #fff;
+        border: 1px solid #e4e6eb;
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(16, 24, 40, 0.05);
+    }
+    .saas-hero__search input {
+        flex: 1;
+        border: 0;
+        outline: 0;
+        padding: 10px 14px;
+        font-size: 15px;
+        background: transparent;
+        color: hsl(var(--heading-color));
+    }
+    .saas-hero__search button {
+        flex-shrink: 0;
+        border: 0;
+        border-radius: 9px;
+        background: hsl(var(--main));
+        color: #fff;
+        padding: 11px 22px;
+        font-weight: 600;
+        font-size: 15px;
+        transition: background 0.15s ease;
+    }
+    .saas-hero__search button:hover {
+        background: hsl(var(--main2));
+    }
+    .saas-hero__thumb {
+        position: relative;
+        z-index: 1;
+        text-align: center;
+    }
+    .saas-hero__thumb img {
+        max-width: 100%;
+        border-radius: 20px;
+        box-shadow: 0 30px 60px rgba(16, 24, 40, 0.08);
+    }
+    @media (max-width: 991.98px) {
+        .saas-hero {
+            padding: 48px 0 56px;
+        }
+        .saas-hero__title {
+            font-size: 32px;
+        }
+    }
+</style>
+
+
 <!--========================== Banner Section Start ==========================-->
-<section class="banner section-bg z-index-1">
-    <img src="{% static 'assets/images/gradients/banner-gradient.png' %}" alt="" class="bg--gradient">
-
-    <img src="{% static 'assets/images/shapes/element-moon1.png' %}" alt="" class="element one">
-    <img src="{% static 'assets/images/shapes/element-moon2.png' %}" alt="" class="element two">
-
+<section class="saas-hero z-index-1">
     <div class="container container-two">
         <div class="row align-items-center gy-sm-5 gy-4">
             <div class="col-lg-6">
-                <div class="banner-inner position-relative pe-lg-5">
-                    <div class="banner-content">
-                        <h1 class="banner-content__title">{{ featured_banner.title|default:'Eng yaxshi mahsulotlar to\'plami' }}</h1>
-                        <p class="banner-content__desc font-18">{{ featured_banner.description|default:'Sotuvdagi mahsulotlarni ko\'rib chiqing va o\'zingizga mos variantni tanlang.' }}</p>
+                <div class="saas-hero__content">
+                    <h1 class="saas-hero__title">{{ featured_banner.title|default:'Eng yaxshi mahsulotlar to\'plami' }}</h1>
+                    <p class="saas-hero__desc">{{ featured_banner.description|default:'Sotuvdagi mahsulotlarni ko\'rib chiqing va o\'zingizga mos variantni tanlang.' }}</p>
 
-                        <form action="{% url 'all_products' %}" method="get" class="search-box">
-                            <input type="text" class="common-input common-input--lg pill shadow-sm"
-                                name="q" value="{{ search_query }}" placeholder="Maxsulotlarni qidirish">
-                            <button type="submit" class="btn btn-main btn-icon icon border-0"><img
-                                    src="{% static 'assets/images/icons/search.svg' %}" alt=""></button>
-                        </form>
-
-
-                    </div>
+                    <form action="{% url 'all_products' %}" method="get" class="saas-hero__search">
+                        <input type="text" name="q" value="{{ search_query }}" placeholder="Mahsulot qidirish...">
+                        <button type="submit">Qidirish</button>
+                    </form>
                 </div>
             </div>
             <div class="col-lg-6">
-                <div class="banner-thumb">
+                <div class="saas-hero__thumb">
                     {% if featured_banner and featured_banner.image %}
                     <img src="{{ featured_banner.image.url }}" alt="{{ featured_banner.title }}">
                     {% else %}
                     <img src="{% static 'assets/images/thumbs/banner-img1.png' %}" alt="">
                     {% endif %}
-                    <img src="{% static 'assets/images/shapes/dots.png' %}" alt="" class="dotted-img">
-                    <img src="{% static 'assets/images/shapes/element2.png' %}" alt="" class="element two end-0">
-
-                    <div class="statistics animation bg-main text-center">
-                        <h5 class="statistics__amount text-white">{{ site_stats.customers }}</h5>
-                        <span class="statistics__text text-white font-14">Mijozlar</span>
-                    </div>
-
-                    <div class="statistics style-two bg-white text-center">
-                        <h5 class="statistics__amount statistics__amount-two text-heading">{{ site_stats.products }}</h5>
-                        <span class="statistics__text text-heading font-14">Maxsulotlar</span>
-                    </div>
-
                 </div>
             </div>
         </div>
