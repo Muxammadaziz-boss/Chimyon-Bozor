@@ -88,6 +88,11 @@
             color: #8a919c;
             font-size: 18px;
             cursor: pointer;
+            line-height: 1;
+        }
+
+        .password-input {
+            padding-right: 44px;
         }
 
         .btn-submit {
@@ -157,10 +162,12 @@
                 <input type="text" class="form-control" id="name" name="username" placeholder="Foydalanuvchi nomi" required>
             </div>
 
-            <div class="mb-4 position-relative">
+            <div class="mb-4">
                 <label for="your-password" class="form-label">Parol</label>
-                <input type="password" class="form-control" name="password" id="your-password" placeholder="Parolingiz" required>
-                <button type="button" class="password-toggle toggle-password" data-target="#your-password"><i class="las la-eye"></i></button>
+                <div class="position-relative">
+                    <input type="password" class="form-control password-input" name="password" id="your-password" placeholder="Parolingiz" required>
+                    <button type="button" class="password-toggle toggle-password" data-target="#your-password"><i class="las la-eye"></i></button>
+                </div>
             </div>
 
             <button type="submit" class="btn-submit">Kirish</button>

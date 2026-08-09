@@ -572,7 +572,12 @@
                             <li><a href="{% url 'profile' %}" class="footer-link">Profil</a></li>
                             <li><a href="{% url 'wishlist' %}" class="footer-link">Saralanganlar</a></li>
                             {% if user.is_authenticated %}
-                            <li><a href="{% url 'logout' %}" class="footer-link">Chiqish</a></li>
+                            <li>
+                                <form method="post" action="{% url 'logout' %}" class="m-0">
+                                    {% csrf_token %}
+                                    <button type="submit" class="footer-link">Chiqish</button>
+                                </form>
+                            </li>
                             {% else %}
                             <li><a href="{% url 'login' %}" class="footer-link">Kirish</a></li>
                             {% endif %}

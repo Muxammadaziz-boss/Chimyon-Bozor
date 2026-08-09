@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import user_passes_test, login_required
 from django.shortcuts import render, redirect
+from django.views.decorators.http import require_POST
 from main import models
 from django.contrib import messages
 from openpyxl import Workbook
@@ -293,6 +294,7 @@ def log_in(request):
     return render(request, 'dashboard/login.html')
 
 
+@require_POST
 def log_out(request):
     logout(request)
     return redirect('d_login')

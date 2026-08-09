@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render, redirect
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 
 
 
@@ -181,6 +182,7 @@ def log_in(request):
             return redirect(next_url)
     return render(request, 'front/login.html', {'next': request.GET.get('next', '')})
 
+@require_POST
 def log_out(request):
     logout(request)
     return redirect('index')
