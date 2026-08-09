@@ -16,14 +16,12 @@
             <div class="col-lg-6">
                 <div class="banner-inner position-relative pe-lg-5">
                     <div class="banner-content">
-                        <h1 class="banner-content__title">2 milliondan ortiq maxsulotlar</h1>
-                        <p class="banner-content__desc font-18">Sotuvda mavjud bo'lgan eng yaxshi premium mavzular va
-                            plaginlarni o'rganing. Bizning noyob kolleksiyamiz mutaxassislar tomonidan qo'lda
-                            yaratilgan. Bugun mukammal premium mavzuni toping va sotib oling.</p>
+                        <h1 class="banner-content__title">{{ featured_banner.title|default:'Eng yaxshi mahsulotlar to\'plami' }}</h1>
+                        <p class="banner-content__desc font-18">{{ featured_banner.description|default:'Sotuvdagi mahsulotlarni ko\'rib chiqing va o\'zingizga mos variantni tanlang.' }}</p>
 
-                        <form action="{% url 'all_products' %}" method="GET" class="search-box">
-                            <input type="text" name="query" class="common-input common-input--lg pill shadow-sm"
-                                placeholder="Maxsulotlarni qidirish" value="{{ query|default:'' }}">
+                        <form action="{% url 'all_products' %}" method="get" class="search-box">
+                            <input type="text" class="common-input common-input--lg pill shadow-sm"
+                                name="q" value="{{ search_query }}" placeholder="Maxsulotlarni qidirish">
                             <button type="submit" class="btn btn-main btn-icon icon border-0"><img
                                     src="{% static 'assets/images/icons/search.svg' %}" alt=""></button>
                         </form>
@@ -34,17 +32,21 @@
             </div>
             <div class="col-lg-6">
                 <div class="banner-thumb">
+                    {% if featured_banner and featured_banner.image %}
+                    <img src="{{ featured_banner.image.url }}" alt="{{ featured_banner.title }}">
+                    {% else %}
                     <img src="{% static 'assets/images/thumbs/banner-img1.png' %}" alt="">
+                    {% endif %}
                     <img src="{% static 'assets/images/shapes/dots.png' %}" alt="" class="dotted-img">
                     <img src="{% static 'assets/images/shapes/element2.png' %}" alt="" class="element two end-0">
 
                     <div class="statistics animation bg-main text-center">
-                        <h5 class="statistics__amount text-white">50k</h5>
+                        <h5 class="statistics__amount text-white">{{ site_stats.customers }}</h5>
                         <span class="statistics__text text-white font-14">Mijozlar</span>
                     </div>
 
                     <div class="statistics style-two bg-white text-center">
-                        <h5 class="statistics__amount statistics__amount-two text-heading">22k</h5>
+                        <h5 class="statistics__amount statistics__amount-two text-heading">{{ site_stats.products }}</h5>
                         <span class="statistics__text text-heading font-14">Maxsulotlar</span>
                     </div>
 
@@ -133,7 +135,7 @@
                                 <div class="product-card__info flx-between gap-2">
                                     <span class="product-card__author">
 
-                                        <a href="profile.html" class="link hover-text-decoration-underline"></a>
+                                        <a href="{% url 'category_filter' i.category.id %}" class="link hover-text-decoration-underline">{{ i.category.name }}</a>
                                     </span>
                                     <div class="flx-align gap-2">
                                         <h6 class="product-card__price mb-0">{{i.discount_price}}</h6>
@@ -143,7 +145,7 @@
                                 </div>
                                 <div class="product-card__bottom flx-between gap-2">
                                     <div>
-                                        <span class="product-card__sales font-14 mb-2">1200 ta sotuv</span>
+                                        <span class="product-card__sales font-14 mb-2">{{ i.count }} ta mavjud</span>
                                         <div class="d-flex align-items-center gap-1">
                                             <ul class="star-rating">
                                                 <li class="star-rating__item font-11"><i class="fas fa-star"></i></li>
@@ -152,7 +154,7 @@
                                                 <li class="star-rating__item font-11"><i class="fas fa-star"></i></li>
                                                 <li class="star-rating__item font-11"><i class="fas fa-star"></i></li>
                                             </ul>
-                                            <span class="star-rating__text text-heading fw-500 font-14"> (16)</span>
+                                            <span class="star-rating__text text-heading fw-500 font-14"> ({{ i.category.product_set.count }})</span>
                                         </div>
                                     </div>
                                     {% if i.id in wishlist_ids %}
@@ -207,7 +209,7 @@
                                 <div class="product-card__info flx-between gap-2">
                                     <span class="product-card__author">
 
-                                        <a href="profile.html" class="link hover-text-decoration-underline"></a>
+                                        <a href="{% url 'category_filter' i.category.id %}" class="link hover-text-decoration-underline">{{ i.category.name }}</a>
                                     </span>
                                     <div class="flx-align gap-2">
                                         <h6 class="product-card__price mb-0">{{i.discount_price}}</h6>
@@ -217,7 +219,7 @@
                                 </div>
                                 <div class="product-card__bottom flx-between gap-2">
                                     <div>
-                                        <span class="product-card__sales font-14 mb-2">1200 ta sotuv</span>
+                                        <span class="product-card__sales font-14 mb-2">{{ i.count }} ta mavjud</span>
                                         <div class="d-flex align-items-center gap-1">
                                             <ul class="star-rating">
                                                 <li class="star-rating__item font-11"><i class="fas fa-star"></i></li>
@@ -226,7 +228,7 @@
                                                 <li class="star-rating__item font-11"><i class="fas fa-star"></i></li>
                                                 <li class="star-rating__item font-11"><i class="fas fa-star"></i></li>
                                             </ul>
-                                            <span class="star-rating__text text-heading fw-500 font-14"> (16)</span>
+                                            <span class="star-rating__text text-heading fw-500 font-14"> ({{ i.category.product_set.count }})</span>
                                         </div>
                                     </div>
                                     {% if i.id in wishlist_ids %}
@@ -263,7 +265,7 @@
 
 
             <div class="text-center mt-64">
-                <a href="all-product.html" class="btn btn-main btn-lg pill fw-300">
+                <a href="{% url 'all_products' %}" class="btn btn-main btn-lg pill fw-300">
                     Barcha mahsulotlarni ko'rish
                 </a>
             </div>
@@ -271,6 +273,41 @@
         </div>
 </section>
 <!-- =========================== Arrival Product Section End ========================== -->
+
+{% if services %}
+<section class="popular padding-y-120 overflow-hidden">
+    <div class="container container-two">
+        <div class="section-heading style-left mb-64">
+            <h5 class="section-heading__title">Xizmatlar</h5>
+        </div>
+        <div class="row gy-4">
+            {% for service in services %}
+            <div class="col-xl-3 col-lg-4 col-sm-6">
+                <div class="product-card section-bg h-100">
+                    <div class="product-card__thumb d-flex">
+                        {% if service.image %}
+                        <img src="{{ service.image.url }}" alt="{{ service.name }}" class="cover-img">
+                        {% else %}
+                        <img src="{% static 'assets/images/thumbs/product-img1.png' %}" alt="{{ service.name }}" class="cover-img">
+                        {% endif %}
+                    </div>
+                    <div class="product-card__content">
+                        <h6 class="product-card__title">{{ service.name }}</h6>
+                        <p class="text-body mb-3">{{ service.description|truncatechars:90 }}</p>
+                        <div class="flx-between gap-2">
+                            <span class="product-card__price mb-0">${{ service.price }}</span>
+                            {% if service.duration %}
+                            <span class="text-body">{{ service.duration }} min</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
 
 
 {% endblock %}

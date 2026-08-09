@@ -82,6 +82,9 @@ class Banner(models.Model):
     description = models.TextField()
     product_1 = models.ForeignKey(Product, on_delete=models.SET_NULL , null=True, blank=True)
 
+    def __str__(self):
+        return self.title
+
 CART_STATUS = (
     (1, 'No Faol'),
     (2, "Yig'ilmoqda"),
@@ -97,6 +100,18 @@ class Cart(Code):
 
     def __str__(self):
         return f'{self.user} - {self.status}'
+
+    @property
+    def cart_products(self):
+        return self.cartproduct_set.select_related('product')
+
+    @property
+    def total_price(self):
+        return sum(item.total_price for item in self.cart_products)
+
+    @property
+    def count_product(self):
+        return sum(item.count for item in self.cart_products)
 
 
 class CartProduct(Code):

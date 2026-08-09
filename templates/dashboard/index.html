@@ -1,4 +1,5 @@
 {% extends 'dashboard/base.html' %}
+{% load static %}
 
 {% block content %}
       <div class="main-content">
@@ -18,7 +19,7 @@
                       </div>
                       <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 pl-0">
                         <div class="banner-img">
-                          <img src="assets/img/banner/1.png" alt="">
+                          <img src="{% static 'assets2/assets/img/banner/1.png' %}" alt="">
                         </div>
                       </div>
                     </div>
@@ -40,7 +41,7 @@
                       </div>
                       <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 pl-0">
                         <div class="banner-img">
-                          <img src="assets/img/banner/2.png" alt="">
+                          <img src="{% static 'assets2/assets/img/banner/2.png' %}" alt="">
                         </div>
                       </div>
                     </div>
@@ -62,7 +63,7 @@
                       </div>
                       <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 pl-0">
                         <div class="banner-img">
-                          <img src="assets/img/banner/3.png" alt="">
+                          <img src="{% static 'assets2/assets/img/banner/3.png' %}" alt="">
                         </div>
                       </div>
                     </div>
@@ -84,7 +85,7 @@
                       </div>
                       <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 pl-0">
                         <div class="banner-img">
-                          <img src="assets/img/banner/4.png" alt="">
+                          <img src="{% static 'assets2/assets/img/banner/4.png' %}" alt="">
                         </div>
                       </div>
                     </div>
@@ -100,29 +101,22 @@
                   <h4>Revenue chart</h4>
                   <div class="card-header-action">
                     <div class="dropdown">
-                      <a href="#" data-toggle="dropdown" class="btn btn-warning dropdown-toggle">Options</a>
-                      <div class="dropdown-menu">
-                        <a href="#" class="dropdown-item has-icon"><i class="fas fa-eye"></i> View</a>
-                        <a href="#" class="dropdown-item has-icon"><i class="far fa-edit"></i> Edit</a>
-                        <div class="dropdown-divider"></div>
-                        <a href="#" class="dropdown-item has-icon text-danger"><i class="far fa-trash-alt"></i>
-                          Delete</a>
-                      </div>
+                      <a href="{% url 'd_orders' %}" class="btn btn-warning">Buyurtmalar</a>
                     </div>
-                    <a href="#" class="btn btn-primary">View All</a>
+                    <a href="{% url 'd_export_orders' %}" class="btn btn-primary">Export</a>
                   </div>
                 </div>
                 <div class="card-body">
                   <div class="row">
                     <div class="col-lg-9">
-                      <div id="chart1"></div>
+                      <canvas id="chart1"></canvas>
                       <div class="row mb-0">
                         <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
                           <div class="list-inline text-center">
                             <div class="list-inline-item p-r-30"><i data-feather="arrow-up-circle"
                                 class="col-green"></i>
-                              <h5 class="m-b-0">$675</h5>
-                              <p class="text-muted font-14 m-b-0">Weekly Earnings</p>
+                              <h5 class="m-b-0">{{ stats.pending_orders }}</h5>
+                              <p class="text-muted font-14 m-b-0">Kutilayotgan buyurtmalar</p>
                             </div>
                           </div>
                         </div>
@@ -130,8 +124,8 @@
                           <div class="list-inline text-center">
                             <div class="list-inline-item p-r-30"><i data-feather="arrow-down-circle"
                                 class="col-orange"></i>
-                              <h5 class="m-b-0">$1,587</h5>
-                              <p class="text-muted font-14 m-b-0">Monthly Earnings</p>
+                              <h5 class="m-b-0">{{ stats.total_orders }}</h5>
+                              <p class="text-muted font-14 m-b-0">Jami buyurtmalar</p>
                             </div>
                           </div>
                         </div>
@@ -139,8 +133,8 @@
                           <div class="list-inline text-center">
                             <div class="list-inline-item p-r-30"><i data-feather="arrow-up-circle"
                                 class="col-green"></i>
-                              <h5 class="mb-0 m-b-0">$45,965</h5>
-                              <p class="text-muted font-14 m-b-0">Yearly Earnings</p>
+                              <h5 class="mb-0 m-b-0">{{ stats.new_customers }}</h5>
+                              <p class="text-muted font-14 m-b-0">Yangi mijozlar</p>
                             </div>
                           </div>
                         </div>
@@ -273,7 +267,7 @@
 
 <script>
   // chart1 o'rniga shu kodni qo'ying
-fetch('/api/revenue-chart/')
+fetch('{% url "revenue-chart" %}')
   .then(r => r.json())
   .then(data => {
     new Chart(document.getElementById('chart1'), {

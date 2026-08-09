@@ -32,6 +32,7 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -120,8 +121,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
-
-# STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 
 # Media files - AWS Lambda va o'xshash serverless muhitda /tmp dan foydalanish
@@ -133,3 +133,25 @@ else:
 MEDIA_URL = '/media/'
 
 AUTH_USER_MODEL = 'main.User'
+
+# Jazzmin settings
+JAZZMIN_SETTINGS = {
+    'site_title': 'DpMarket Admin',
+    'site_header': 'DpMarket Admin',
+    'site_brand': 'DpMarket',
+    'language_selector': True,
+    'navigation': [
+        {'app': 'main', 'label': 'Main', 'icon': 'fa fa-home'},
+        {'app': 'dashboard', 'label': 'Dashboard', 'icon': 'fa fa-chart-line'},
+    ],
+    'hide_models': [],
+    'custom_css': {},
+    'custom_js': 'jazzmin/js/dark-mode.js',
+}
+
+# Jazzmin UI tweaks (theme va dark mode shu yerda)
+JAZZMIN_UI_TWEAKS = {
+    'theme': 'default',
+    'dark_mode_theme': 'darkly',
+    'navbar': 'navbar-dark navbar-gray-dark',
+}

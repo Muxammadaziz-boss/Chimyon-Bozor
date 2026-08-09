@@ -16,16 +16,15 @@
                         {% if active_category %}
                         {{ active_category_name }} mahsulotlari
                         {% else %}
-                        58,000+ dan ortiq sotib olish mumkin bo'lgan mahsulotlar
+                            {{ total_products }} ta mahsulot topildi
                         {% endif %}
                     </h3>
                     <p class="breadcrumb-one-content__desc text-center text-black-three">
                         Sotuvdagi eng yaxshi premium andozalar va plaginlarni o'rganing. Bizning noyob to'plamimiz
                         mutaxassislar tomonidan saralangan. Mukammal premium andozani toping va sotib oling.
                     </p>
-                    <form method="GET" class="search-box">
-                        <input type="text" name="query" class="common-input common-input--lg pill shadow-sm"
-                            placeholder="Mavzular, plaginlar va boshqalarni qidirish..." value="{{ query|default:'' }}">
+                    <form action="" method="get" class="search-box">
+                        <input type="text" name="q" value="{{ search_query }}" class="common-input common-input--lg pill shadow-sm" placeholder="Mahsulot qidirish...">
                         <button type="submit" class="btn btn-main btn-icon icon border-0">
                             <img src="{% static 'assets/images/icons/search.svg' %}" alt="">
                         </button>
@@ -80,42 +79,20 @@
                 </div>
 
                 <!-- ===== Filter Form ===== -->
-                <form action="#" class="filter-form pb-4">
+                <form action="" method="get" class="filter-form pb-4">
                     <div class="row gy-3">
                         <div class="col-sm-4 col-xs-6">
                             <div class="flx-between gap-1">
                                 <label for="tag" class="form-label font-16">Teg</label>
-                                <button type="reset" class="text-body font-14">Tozalash</button>
+                                <a href="{% if active_category %}{% url 'index_by_category' active_category %}{% else %}{% url 'all_products' %}{% endif %}" class="text-body font-14">Tozalash</a>
                             </div>
                             <div class="position-relative">
-                                <input type="text" class="common-input border-gray-five common-input--withLeftIcon"
-                                    id="tag" placeholder="Teg bo'yicha qidirish...">
-                                <span class="input-icon input-icon--left"><img
-                                        src="{% static 'assets/images/icons/search-two.svg' %}" alt=""></span>
+                                <input type="text" name="q" value="{{ search_query }}" class="common-input border-gray-five common-input--withLeftIcon" id="tag" placeholder="Nom bo'yicha qidirish...">
+                                <span class="input-icon input-icon--left"><img src="{% static 'assets/images/icons/search-two.svg' %}" alt=""></span>
                             </div>
                         </div>
-                        <div class="col-sm-4 col-xs-6">
-                            <div class="flx-between gap-1">
-                                <label for="Price" class="form-label font-16">Narx</label>
-                                <button type="reset" class="text-body font-14">Tozalash</button>
-                            </div>
-                            <div class="position-relative">
-                                <input type="text" class="common-input border-gray-five" id="Price"
-                                    placeholder="$7 - $29">
-                            </div>
-                        </div>
-                        <div class="col-sm-4">
-                            <div class="flx-between gap-1">
-                                <label for="time" class="form-label font-16">Vaqt oralig'i</label>
-                                <button type="reset" class="text-body font-14">Tozalash</button>
-                            </div>
-                            <div class="position-relative select-has-icon">
-                                <select id="time" class="common-input border-gray-five">
-                                    <option value="1">Hozir</option>
-                                    <option value="2">Kecha</option>
-                                    <option value="3">1 oy oldin</option>
-                                </select>
-                            </div>
+                        <div class="col-sm-4 col-xs-6 d-flex align-items-end">
+                            <button type="submit" class="btn btn-main pill w-100">Qidirish</button>
                         </div>
                     </div>
                 </form>
@@ -155,131 +132,6 @@
                         </div>
                     </div>
 
-                    <div class="filter-sidebar__item">
-                        <button type="button"
-                            class="filter-sidebar__button font-16 text-capitalize fw-500">Reyting</button>
-                        <div class="filter-sidebar__content">
-                            <ul class="filter-sidebar-list">
-                                <li class="filter-sidebar-list__item">
-                                    <div class="filter-sidebar-list__text">
-                                        <div class="common-check common-radio">
-                                            <input class="form-check-input" type="radio" name="rating" id="veiwAll"
-                                                checked>
-                                            <label class="form-check-label" for="veiwAll"> Barchasini ko'rish</label>
-                                        </div>
-                                        <span class="qty">(1859)</span>
-                                    </div>
-                                </li>
-                                <li class="filter-sidebar-list__item">
-                                    <div class="filter-sidebar-list__text">
-                                        <div class="common-check common-radio">
-                                            <input class="form-check-input" type="radio" name="rating" id="oneStar">
-                                            <label class="form-check-label" for="oneStar"> 1 yulduz va undan
-                                                yuqori</label>
-                                        </div>
-                                        <span class="qty">(785)</span>
-                                    </div>
-                                </li>
-                                <li class="filter-sidebar-list__item">
-                                    <div class="filter-sidebar-list__text">
-                                        <div class="common-check common-radio">
-                                            <input class="form-check-input" type="radio" name="rating" id="twoStar">
-                                            <label class="form-check-label" for="twoStar"> 2 yulduz va undan
-                                                yuqori</label>
-                                        </div>
-                                        <span class="qty">(1250)</span>
-                                    </div>
-                                </li>
-                                <li class="filter-sidebar-list__item">
-                                    <div class="filter-sidebar-list__text">
-                                        <div class="common-check common-radio">
-                                            <input class="form-check-input" type="radio" name="rating" id="threeStar">
-                                            <label class="form-check-label" for="threeStar"> 3 yulduz va undan
-                                                yuqori</label>
-                                        </div>
-                                        <span class="qty">(7580)</span>
-                                    </div>
-                                </li>
-                                <li class="filter-sidebar-list__item">
-                                    <div class="filter-sidebar-list__text">
-                                        <div class="common-check common-radio">
-                                            <input class="form-check-input" type="radio" name="rating" id="fourStar">
-                                            <label class="form-check-label" for="fourStar"> 4 yulduz va undan
-                                                yuqori</label>
-                                        </div>
-                                        <span class="qty">(1450)</span>
-                                    </div>
-                                </li>
-                                <li class="filter-sidebar-list__item">
-                                    <div class="filter-sidebar-list__text">
-                                        <div class="common-check common-radio">
-                                            <input class="form-check-input" type="radio" name="rating" id="fiveStar">
-                                            <label class="form-check-label" for="fiveStar"> 5 yulduzli reyting</label>
-                                        </div>
-                                        <span class="qty">(2530)</span>
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-
-                    <div class="filter-sidebar__item">
-                        <button type="button" class="filter-sidebar__button font-16 text-capitalize fw-500">Yangilangan
-                            sana</button>
-                        <div class="filter-sidebar__content">
-                            <ul class="filter-sidebar-list">
-                                <li class="filter-sidebar-list__item">
-                                    <div class="filter-sidebar-list__text">
-                                        <div class="common-check common-radio">
-                                            <input class="form-check-input" type="radio" name="dateFilter" id="anyDate"
-                                                checked>
-                                            <label class="form-check-label" for="anyDate"> Istalgan sana</label>
-                                        </div>
-                                        <span class="qty">5,203</span>
-                                    </div>
-                                </li>
-                                <li class="filter-sidebar-list__item">
-                                    <div class="filter-sidebar-list__text">
-                                        <div class="common-check common-radio">
-                                            <input class="form-check-input" type="radio" name="dateFilter"
-                                                id="lastYear">
-                                            <label class="form-check-label" for="lastYear"> Oxirgi yilda</label>
-                                        </div>
-                                        <span class="qty">1,258</span>
-                                    </div>
-                                </li>
-                                <li class="filter-sidebar-list__item">
-                                    <div class="filter-sidebar-list__text">
-                                        <div class="common-check common-radio">
-                                            <input class="form-check-input" type="radio" name="dateFilter"
-                                                id="lastMonth">
-                                            <label class="form-check-label" for="lastMonth"> Oxirgi oyda</label>
-                                        </div>
-                                        <span class="qty">2,450</span>
-                                    </div>
-                                </li>
-                                <li class="filter-sidebar-list__item">
-                                    <div class="filter-sidebar-list__text">
-                                        <div class="common-check common-radio">
-                                            <input class="form-check-input" type="radio" name="dateFilter"
-                                                id="lastWeek">
-                                            <label class="form-check-label" for="lastWeek"> Oxirgi haftada</label>
-                                        </div>
-                                        <span class="qty">325</span>
-                                    </div>
-                                </li>
-                                <li class="filter-sidebar-list__item">
-                                    <div class="filter-sidebar-list__text">
-                                        <div class="common-check common-radio">
-                                            <input class="form-check-input" type="radio" name="dateFilter" id="lastDay">
-                                            <label class="form-check-label" for="lastDay"> Oxirgi kunda</label>
-                                        </div>
-                                        <span class="qty">745</span>
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
                 </div>
             </div>
             <!-- ===== Left Sidebar End ===== -->

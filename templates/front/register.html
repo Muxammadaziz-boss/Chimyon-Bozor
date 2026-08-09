@@ -61,68 +61,11 @@
         <div class="mobile-menu__menu">
 
 <ul class="nav-menu flx-align nav-menu--mobile">
-    <li class="nav-menu__item has-submenu">
-        <a href="javascript:void(0)" class="nav-menu__link">Bosh sahifa</a>
-        <ul class="nav-submenu">
-            <li class="nav-submenu__item">
-                <a href="{% url 'index' %}" class="nav-submenu__link"> Bosh sahifa One</a>
-            </li>
-            <li class="nav-submenu__item">
-                <a href="index-two.html" class="nav-submenu__link"> Bosh sahifa Two</a>
-            </li>
-        </ul>
-    </li>
-    <li class="nav-menu__item has-submenu">
-        <a href="javascript:void(0)" class="nav-menu__link">Mahsulotlar</a>
-         <ul class="nav-submenu">
-            <li class="nav-submenu__item">
-                <a href="all-product.html" class="nav-submenu__link"> Barcha mahsulotlar</a>
-            </li>
-            <li class="nav-submenu__item">
-                <a href="product-details.html" class="nav-submenu__link"> Mahsulot tafsilotlari</a>
-            </li>
-        </ul>
-    </li>
-    <li class="nav-menu__item has-submenu">
-        <a href="javascript:void(0)" class="nav-menu__link">Sahifalar</a>
-         <ul class="nav-submenu">
-            <li class="nav-submenu__item">
-                <a href="{% url 'profile' %}" class="nav-submenu__link"> Profil</a>
-            </li>
-            <li class="nav-submenu__item">
-                <a href="{% url 'cart' %}" class="nav-submenu__link"> Savat</a>
-            </li>
-            <li class="nav-submenu__item">
-                <a href="cart-personal.html" class="nav-submenu__link"> Pochta manzili</a>
-            </li>
-            <li class="nav-submenu__item">
-                <a href="cart-payment.html" class="nav-submenu__link"> To'lov usuli</a>
-            </li>
-            <li class="nav-submenu__item">
-                <a href="cart-thank-you.html" class="nav-submenu__link"> Buyurtmani ko'rish</a>
-            </li>
-            <li class="nav-submenu__item">
-                <a href="dashboard.html" class="nav-submenu__link"> Panel</a>
-            </li>
-        </ul>
-    </li>
-    <li class="nav-menu__item has-submenu">
-        <a href="javascript:void(0)" class="nav-menu__link">Blog</a>
-         <ul class="nav-submenu">
-            <li class="nav-submenu__item">
-                <a href="blog.html" class="nav-submenu__link"> Blog</a>
-            </li>
-            <li class="nav-submenu__item">
-                <a href="blog-details.html" class="nav-submenu__link"> Blog Details</a>
-            </li>
-            <li class="nav-submenu__item">
-                <a href="blog-details-sidebar.html" class="nav-submenu__link"> Blog Details Sidebar</a>
-            </li>
-        </ul>
-    </li>
-    <li class="nav-menu__item">
-        <a href="contact.html" class="nav-menu__link">Aloqa</a>
-    </li>
+    <li class="nav-menu__item"><a href="{% url 'index' %}" class="nav-menu__link">Bosh sahifa</a></li>
+    <li class="nav-menu__item"><a href="{% url 'all_products' %}" class="nav-menu__link">Mahsulotlar</a></li>
+    <li class="nav-menu__item"><a href="{% url 'cart' %}" class="nav-menu__link">Savat</a></li>
+    <li class="nav-menu__item"><a href="{% url 'wishlist' %}" class="nav-menu__link">Saralanganlar</a></li>
+    <li class="nav-menu__item"><a href="{% url 'd_login' %}" class="nav-menu__link">Panel</a></li>
 </ul>
             <div class="header-right__inner d-lg-none my-3 gap-1 d-flex flx-align">
 

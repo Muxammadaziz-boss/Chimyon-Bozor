@@ -185,7 +185,7 @@ def delete_product(request, code):
 @user_passes_test(lambda u: u.is_superuser, login_url='d_login')
 def orders(request):
     query = request.GET.get('query')
-    order = models.Cart.objects.all().order_by('-id')
+    order = models.Cart.objects.select_related('user').all().order_by('-id')
     if query:
         order = order.filter(code__icontains=query)
 
@@ -196,6 +196,7 @@ def orders(request):
 from django.utils import timezone  # <-- Vaqt mintaqasi bilan ishlash uchun import qilamiz
 
 
+@user_passes_test(lambda u: u.is_superuser, login_url='d_login')
 def export_orders(request):
     orders = models.Cart.objects.all().order_by('id')
     wb = Workbook()
@@ -304,6 +305,7 @@ from django.db.models.functions import TruncMonth
 from django.http import JsonResponse
 
 
+@user_passes_test(lambda u: u.is_superuser, login_url='d_login')
 def revenue_chart_data(request):
     # Cart_total_price - yetkazilgan buyurtmalar
     sales = (

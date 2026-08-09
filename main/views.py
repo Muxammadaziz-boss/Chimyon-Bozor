@@ -1,8 +1,6 @@
-from multiprocessing import context
 import json
 
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import AbstractUser
 from django.shortcuts import get_object_or_404, render, redirect
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.http import JsonResponse
@@ -12,9 +10,6 @@ from django.http import JsonResponse
 from . import models
 from django.contrib.auth import authenticate, login, logout
 
-from .models import User
-
-
 def redirect_back(request, fallback='index', **fallback_kwargs):
     next_url = request.META.get('HTTP_REFERER')
     if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
@@ -23,14 +18,28 @@ def redirect_back(request, fallback='index', **fallback_kwargs):
 
 
 def index(request):
+    search_query = request.GET.get('q', '').strip()
     categories = models.Category.objects.filter()[:10]
     top_categories = models.Category.objects.filter(is_active=True)[:7]
     products = models.Product.objects.all()
+    banners = list(models.Banner.objects.select_related('product_1').all()[:3])
+    services = models.Service.objects.filter(is_active=True).all()[:4]
+    featured_banner = banners[0] if banners else None
+
+    if search_query:
+        products = products.filter(name__icontains=search_query)
 
     context = {
         'categories': categories,
-        'top_categories':top_categories,
-        'products':products,
+        'top_categories': top_categories,
+        'products': products,
+        'featured_banner': featured_banner,
+        'services': services,
+        'site_stats': {
+            'customers': models.User.objects.count(),
+            'products': models.Product.objects.count(),
+        },
+        'search_query': search_query,
     }
     if request.user.is_authenticated:
         wishlist_ids = models.WishList.objects.filter(user=request.user).values_list('product_id', flat=True)
@@ -72,25 +81,28 @@ def product_detail(request, code):
 
 
 def category_filter(request, category_id):
+    search_query = request.GET.get('q', '').strip()
     categories = models.Category.objects.all()
     top_categories = models.Category.objects.filter(is_active=True)[:7]
     active_category = get_object_or_404(models.Category, id=category_id)
     products = models.Product.objects.filter(category=active_category)
-    
     query = request.GET.get('query')
     if query:
         products = products.filter(name__icontains=query)
-        
+
+    if search_query:
+        products = products.filter(name__icontains=search_query)
+
     free_products = models.Product.objects.filter(discount_status=True)[:8]
 
     context = {
         'categories': categories,
         'top_categories': top_categories,
         'products': products,
-        'free_products': free_products,
         'active_category': active_category.id,
         'active_category_name': active_category.name,
-        'total_products': models.Product.objects.count(),
+        'total_products': products.count(),
+        'search_query': search_query,
         'wishlist_ids': [],
         'cart_ids': [],
         'query': query,
@@ -104,24 +116,27 @@ def category_filter(request, category_id):
 
 
 def all_products(request):
+    search_query = request.GET.get('q', '').strip()
     categories = models.Category.objects.all()
     top_categories = models.Category.objects.filter(is_active=True)[:7]
     products = models.Product.objects.all()
-    
     query = request.GET.get('query')
     if query:
         products = products.filter(name__icontains=query)
-        
+
+    if search_query:
+        products = products.filter(name__icontains=search_query)
+
     free_products = models.Product.objects.filter(discount_status=True)[:8]
 
     context = {
         'categories': categories,
         'top_categories': top_categories,
         'products': products,
-        'free_products': free_products,
         'active_category': None,
         'active_category_name': None,
-        'total_products': models.Product.objects.count(),
+        'total_products': products.count(),
+        'search_query': search_query,
         'wishlist_ids': [],
         'cart_ids': [],
         'query': query,
@@ -171,6 +186,7 @@ def log_out(request):
     return redirect('index')
 
 
+@login_required(login_url='login')
 def profile(request):
     if request.method == "POST":
         user = request.user
@@ -183,7 +199,11 @@ def profile(request):
             user.photo = request.FILES.get('photo')
 
         user.save()
-    return render(request,  'front/profile.html')
+
+    context = {
+        'show_dashboard_link': request.user.is_staff,
+    }
+    return render(request, 'front/profile.html', context)
 
 
 @login_required(login_url='login')

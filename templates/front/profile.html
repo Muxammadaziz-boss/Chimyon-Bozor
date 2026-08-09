@@ -41,9 +41,11 @@
     <li class="nav-item" role="presentation">
         <button class="nav-link active" id="pills-Settingss-tab" data-bs-toggle="pill" data-bs-target="#pills-Settingss" type="button" role="tab">Sozlamalar</button>
     </li>
+    {% if show_dashboard_link %}
     <li class="nav-item" role="presentation">
-        <button class="nav-link" id="pills-statement-tab" data-bs-toggle="pill" data-bs-target="#pills-statement" type="button" role="tab">Hisobot</button>
+        <a class="nav-link" href="{% url 'd_index' %}">Dashboard</a>
     </li>
+    {% endif %}
 </ul>
         </div>
     </div>
@@ -105,163 +107,11 @@
 
 </form>
                 </div>
-                <div class="card common-card border border-gray-five overflow-hidden" id="profile">
-                    <div class="card-header">
-                        <h6 class="title">Profil ma'lumotlari</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="row gy-3">
-                            <div class="col-sm-6 col-xs-6">
-                                <label for="fileUploadTwo" class="form-label">Yangi avatar yuklash</label>
-                                <input type="file" class="common-input common-input--md border--color-dark bg--white" id="fileUploadTwo">
-                            </div>
-                            <div class="col-sm-6 col-xs-6">
-                                <label for="ProfileHeading" class="form-label">Profil sarlavhasi</label>
-                                <input type="text" class="common-input common-input--md border--color-dark bg--white" id="ProfileHeading">
-                            </div>
-                            <div class="col-sm-6 col-xs-6">
-                                <label class="form-label">Mamlakatingizni ko'rsatish</label>
-                                <div class="flx-align gap-3 mt-2">
-                                    <div class="common-check common-radio mb-0">
-                                        <input class="form-check-input" type="radio" name="showCountry" id="yes">
-                                        <label class="form-check-label ps-2" for="yes">Ha</label>
-                                    </div>
-                                    <div class="common-check common-radio mb-0">
-                                        <input class="form-check-input" type="radio" name="showCountry" id="no">
-                                        <label class="form-check-label ps-2" for="no">Yo'q</label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-sm-12">
-                                <label for="aboutProfile" class="form-label">Profil haqida biror narsa yozing</label>
-                                <textarea class="common-input common-input--md border--color-dark bg--white" id="aboutProfile"></textarea>
-                            </div>
-                        </div>
-                        <div class="row gy-4">
-                            <div class="col-sm-12">
-                                <button type="submit" class="btn w-100 btn-main btn-md">Ma'lumotlarni saqlash</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
             </div>
         <!-- </form> -->
     </div>
 </div>
             </div>
-
-      <div class="tab-pane fade  show active" id="pills-statement" role="tabpanel" aria-labelledby="pills-statement-tab" tabindex="0">
-                <!-- ========================= Statement section start =========================== -->
-<div class="row gy-4">
-    <div class="col-lg-6">
-        <div class="statement-item card common-card border border-gray-five">
-            <div class="card-body">
-                <div class="statement-item__header">
-                    <h6 class="statement-item__title">Jami daromad</h6>
-                </div>
-                <ul class="statement-list">
-                    <li class="statement-list__item text-center">
-                        <span class="statement-list__text font-13">Mening mablag'larim</span>
-                        <h6 class="statement-list__amount mb-0 mt-1 fw-600">$0.00</h6>
-                    </li>
-                    <li class="statement-list__item text-center">
-                        <span class="statement-list__text font-13">Daromadlar</span>
-                        <h6 class="statement-list__amount mb-0 mt-1 fw-600">$0.00</h6>
-                    </li>
-                    <li class="statement-list__item text-center">
-                        <span class="statement-list__text font-13">Ushlab qolingan soliq</span>
-                        <h6 class="statement-list__amount mb-0 mt-1 fw-600">$0.00</h6>
-                    </li>
-                    <li class="statement-list__item text-center">
-                        <span class="statement-list__text font-13">Komissiyalar</span>
-                        <h6 class="statement-list__amount mb-0 mt-1 fw-600">$0.00</h6>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-6">
-        <div class="statement-item card common-card border border-gray-five">
-            <div class="card-body">
-                <div class="statement-item__header">
-                    <h6 class="statement-item__title">Oylik daromad</h6>
-                </div>
-                <ul class="statement-list">
-                    <li class="statement-list__item text-center">
-                        <span class="statement-list__text font-13">Mening mablag'larim</span>
-                        <h6 class="statement-list__amount mb-0 mt-1 fw-600">$0.00</h6>
-                    </li>
-                    <li class="statement-list__item text-center">
-                        <span class="statement-list__text font-13">Daromadlar</span>
-                        <h6 class="statement-list__amount mb-0 mt-1 fw-600">$0.00</h6>
-                    </li>
-                    <li class="statement-list__item text-center">
-                        <span class="statement-list__text font-13">Ushlab qolingan soliq</span>
-                        <h6 class="statement-list__amount mb-0 mt-1 fw-600">$0.00</h6>
-                    </li>
-                    <li class="statement-list__item text-center">
-                        <span class="statement-list__text font-13">Komissiyalar</span>
-                        <h6 class="statement-list__amount mb-0 mt-1 fw-600">$0.00</h6>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </div>
-    <div class="col-12">
-        <div class="card common-card border border-gray-five">
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table text-body mt--24">
-                        <thead>
-                            <tr>
-                                <th>Sana</th>
-                                <th>Buyurtma ID</th>
-                                <th>Turi</th>
-                                <th>Narxi</th>
-                                <th>Batafsil</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td data-label="Sana">2022-12-31 03:36 AM</td>
-                                <td data-label="Buyurtma ID">#DR54745425478 </td>
-                                <td data-label="Turi"> WordPress</td>
-                                <td data-label="Narxi"> 59.00 USD</td>
-                                <td data-label="Batafsil">
-                                    <a href="#" class="btn btn-main"><i class="far fa-eye"></i></a>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <div class="flx-between gap-2">
-                        <div class="paginate-content flx-align flex-nowrap gap-3">
-                            <select class="select common-input py-2 px-3 w-auto">
-                                <option value="1">1</option>
-                            </select>
-                            <span class="paginate-content__text fs-14">100 tadan 1 - 10 gacha ko'rsatilyapti</span>
-                        </div>
-                        <nav aria-label="Page navigation example">
-                            <ul class="pagination common-pagination mt-0">
-                              <li class="page-item"><a class="page-link" href="#">1</a></li>
-                              <li class="page-item">
-                                <a class="page-link flx-align gap-2 flex-nowrap" href="#">Keyingi
-                                  <span class="icon line-height-1 font-20"><i class="las la-arrow-right"></i></span>
-                                </a>
-                              </li>
-                            </ul>
-                        </nav>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-<!-- ========================= Statement section End =========================== -->
-
-            </div>
-
 
 </div>
     </div>
