@@ -6,30 +6,18 @@ from main import models
 from django.contrib import messages
 from openpyxl import Workbook
 from django.http import HttpResponse
+from collections import defaultdict
 
 
 @user_passes_test(lambda u: u.is_superuser, login_url='d_login')
 def index(request):
-    from django.db.models import Sum, F
-    from django.db.models.functions import TruncMonth
     from django.utils.timezone import now
 
-    # Get sales data
-    sales = (
-        models.CartProduct.objects
-        .filter(cart__status=4)
-        .annotate(month=TruncMonth('cart__date'))
-        .values('month')
-        .annotate(
-            total=Sum(F('product__price') * F('count')),
-            discount=Sum(
-                (F('product__price') - F('product__discount_price')) * F('count')
-            )
-        )
-        .order_by('month')
-    )
-
-    totals = [float(d['total'] or 0) for d in sales]
+    delivered_products = models.CartProduct.objects.filter(
+        cart__status=4,
+        product__isnull=False,
+    ).select_related('product', 'cart')
+    totals = [float(item.total_price) for item in delivered_products]
 
     stats = {
         'total_customers': models.User.objects.count(),
@@ -38,8 +26,8 @@ def index(request):
         'new_customers': models.User.objects.filter(
             date_joined__month=now().month
         ).count(),
-        'pending_orders': models.Cart.objects.filter(status=1).count(),
-        'total_orders': models.Cart.objects.count(),
+        'pending_orders': models.Cart.objects.filter(status__in=(2, 3)).count(),
+        'total_orders': models.Cart.objects.exclude(status=1).count(),
     }
 
     return render(request, 'dashboard/index.html', {'stats': stats})
@@ -103,8 +91,6 @@ def delete_category(request, id):
 @user_passes_test(lambda u: u.is_superuser, login_url='d_login')
 def create_product(request):
     categories = models.Category.objects.all()
-    print(f"Categories count: {categories.count()}")
-    print(f"Categories: {list(categories.values('id', 'name'))}")
     if request.method == 'POST':
         try:
             name = request.POST.get('name')
@@ -186,7 +172,7 @@ def delete_product(request, code):
 @user_passes_test(lambda u: u.is_superuser, login_url='d_login')
 def orders(request):
     query = request.GET.get('query')
-    order = models.Cart.objects.select_related('user').all().order_by('-id')
+    order = models.Cart.objects.select_related('user').exclude(status=1).order_by('-id')
     if query:
         order = order.filter(code__icontains=query)
 
@@ -199,7 +185,7 @@ from django.utils import timezone  # <-- Vaqt mintaqasi bilan ishlash uchun impo
 
 @user_passes_test(lambda u: u.is_superuser, login_url='d_login')
 def export_orders(request):
-    orders = models.Cart.objects.all().order_by('id')
+    orders = models.Cart.objects.exclude(status=1).order_by('id')
     wb = Workbook()
     ws = wb.active
     ws.title = "Buyurtmalar"
@@ -217,11 +203,11 @@ def export_orders(request):
         if order_date and timezone.is_aware(order_date):
             order_date = timezone.make_naive(order_date)
 
-        # Calculate totals from CartProduct
         cart_products = models.CartProduct.objects.filter(cart=i)
         total_price = sum(cp.total_price for cp in cart_products)
-        discount = sum((cp.product.discount_price or 0) * cp.count for cp in cart_products if cp.product)
-        count_product = cart_products.count()
+        original_total = sum((cp.product.price * cp.count) for cp in cart_products if cp.product)
+        discount = original_total - total_price
+        count_product = sum(cp.count for cp in cart_products)
 
         ws.append([
             n,
@@ -231,7 +217,7 @@ def export_orders(request):
             order_date,
             total_price,
             discount,
-            total_price - discount,
+            total_price,
             count_product
         ])
 
@@ -246,7 +232,7 @@ def export_orders(request):
 @user_passes_test(lambda u: u.is_superuser, login_url='d_login')
 def status_update(request, code):
     order = models.Cart.objects.get(code=code)
-    if order.status <= 4:
+    if order.status in (2, 3):
         order.status = order.status + 1
         order.save()
         messages.success(request, 'Status o`zgartirildi')
@@ -258,8 +244,8 @@ def status_update(request, code):
 @user_passes_test(lambda u: u.is_superuser, login_url='d_login')
 def reject_cart(request, code):
     order = models.Cart.objects.filter(code=code).first()
-    if order.status > 1:
-        order.status = order.status - 1
+    if order and order.status in (2, 3, 4):
+        order.status = 5
         order.save()
         messages.success(request, 'Qaytarildi')
         return redirect('d_orders')
@@ -269,7 +255,7 @@ def reject_cart(request, code):
 
 @user_passes_test(lambda u: u.is_superuser, login_url='d_login')
 def cart_detail(request, code):
-    order = models.Cart.objects.get(code=code)
+    order = models.Cart.objects.exclude(status=1).get(code=code)
     cart_products = models.CartProduct.objects.filter(cart=order)
 
     context = {
@@ -301,32 +287,26 @@ def log_out(request):
 
 
 from django.utils.timezone import now
-# views.py
-from django.db.models import Sum, F
-from django.db.models.functions import TruncMonth
 from django.http import JsonResponse
 
 
 @user_passes_test(lambda u: u.is_superuser, login_url='d_login')
 def revenue_chart_data(request):
-    # Cart_total_price - yetkazilgan buyurtmalar
-    sales = (
-        models.CartProduct.objects
-        .filter(cart__status=4)
-        .annotate(month=TruncMonth('cart__date'))
-        .values('month')
-        .annotate(
-            total=Sum(F('product__price') * F('count')),
-            discount=Sum(
-                (F('product__price') - F('product__discount_price')) * F('count')
-            )
-        )
-        .order_by('month')
-    )
+    monthly = defaultdict(lambda: {'total': 0.0, 'discount': 0.0})
+    sales = models.CartProduct.objects.filter(
+        cart__status=4,
+        product__isnull=False,
+    ).select_related('product', 'cart')
 
-    labels = [d['month'].strftime('%B') for d in sales]
-    totals = [float(d['total'] or 0) for d in sales]
-    discounts = [float(d['discount'] or 0) for d in sales]
+    for item in sales:
+        month = item.cart.date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        monthly[month]['total'] += float(item.total_price)
+        monthly[month]['discount'] += float((item.product.price - item.product.active_price) * item.count)
+
+    ordered_months = sorted(monthly.keys())
+    labels = [month.strftime('%B') for month in ordered_months]
+    totals = [monthly[month]['total'] for month in ordered_months]
+    discounts = [monthly[month]['discount'] for month in ordered_months]
 
     stats = {
         'total_customers': models.User.objects.count(),

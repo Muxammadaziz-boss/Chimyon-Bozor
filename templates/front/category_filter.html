@@ -186,22 +186,30 @@
                                         </div>
                                     </div>
                                     {% if product.id in wishlist_ids %}
-                                    <a href="{% url 'delete_wishlist' product.code %}"
-                                        class="btn btn-outline-light btn-sm pill"><i class="fa fa-heart"
-                                            style="color: red"></i></a>
+                                    <form method="post" action="{% url 'delete_wishlist' product.code %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-outline-light btn-sm pill"><i class="fa fa-heart"
+                                            style="color: red"></i></button>
+                                    </form>
                                     {% else %}
-                                    <a href="{% url 'add_wishlist' product.code %}"
-                                        class="btn btn-outline-light btn-sm pill"><i class="fa fa-heart"
-                                            style="color: #c7bfbf"></i></a>
+                                    <form method="post" action="{% url 'add_wishlist' product.code %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-outline-light btn-sm pill"><i class="fa fa-heart"
+                                            style="color: #c7bfbf"></i></button>
+                                    </form>
                                     {% endif %}
                                     {% if product.id in cart_ids %}
-                                    <a href="{% url 'remove_from_cart' product.code %}"
-                                        class="btn btn-outline-light btn-sm pill"><i class="fas fa-shopping-cart"
-                                            style="color: hsl(var(--main));"></i></a>
+                                    <form method="post" action="{% url 'remove_from_cart' product.code %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-outline-light btn-sm pill"><i class="fas fa-shopping-cart"
+                                            style="color: hsl(var(--main));"></i></button>
+                                    </form>
                                     {% else %}
-                                    <a href="{% url 'add_to_cart' product.code %}"
-                                        class="btn btn-outline-light btn-sm pill"><i class="fas fa-cart-plus"
-                                            style="color: #c7bfbf;"></i></a>
+                                    <form method="post" action="{% url 'add_to_cart' product.code %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-outline-light btn-sm pill"><i class="fas fa-cart-plus"
+                                            style="color: #c7bfbf;"></i></button>
+                                    </form>
                                     {% endif %}
                                     <a href="{% url 'product_detail' product.code %}"
                                         class="btn btn-outline-light btn-sm pill">Ko'rish</a>

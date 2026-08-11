@@ -1,5 +1,6 @@
 import json
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render, redirect
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -16,6 +17,13 @@ def redirect_back(request, fallback='index', **fallback_kwargs):
     if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
         return redirect(next_url)
     return redirect(fallback, **fallback_kwargs)
+
+
+def get_active_cart(user):
+    cart = models.Cart.objects.filter(user=user, status=1).order_by('id').first()
+    if cart:
+        return cart
+    return models.Cart.objects.create(user=user, status=1)
 
 
 def index(request):
@@ -57,7 +65,7 @@ def index(request):
 
 
 def product_detail(request, code):
-    product = models.Product.objects.get(code=code)
+    product = get_object_or_404(models.Product, code=code)
     related_products = models.Product.objects.filter(category=product.category).exclude(code=code)
 
     context = {
@@ -153,12 +161,14 @@ def all_products(request):
 # --------------------AUTH------------------------------
 def register(request):
     if request.method =="POST":
-        username = request.POST['username']
-        phone = request.POST['phone']
+        username = request.POST['username'].strip()
+        phone = request.POST['phone'].strip()
         password = request.POST['password']
         confirm_password = request.POST['confirm_password']
         if password == confirm_password:
-            models.User.objects.create_user(username, phone, password)
+            if models.User.objects.filter(username=username).exists():
+                return render(request, 'front/register.html', {'error': 'Bu foydalanuvchi nomi band'})
+            models.User.objects.create_user(username=username, password=password, phone=phone)
             user = authenticate(username=username, password=password)
             login(request, user)
             return redirect('index')
@@ -180,6 +190,10 @@ def log_in(request):
         if user:
             login(request, user)
             return redirect(next_url)
+        return render(request, 'front/login.html', {
+            'next': request.POST.get('next', ''),
+            'error': "Foydalanuvchi nomi yoki parol noto'g'ri.",
+        })
     return render(request, 'front/login.html', {'next': request.GET.get('next', '')})
 
 @require_POST
@@ -209,9 +223,10 @@ def profile(request):
 
 
 @login_required(login_url='login')
+@require_POST
 def add_to_cart(request, product_code):
     product = get_object_or_404(models.Product, code=product_code)
-    cart, created = models.Cart.objects.get_or_create(user=request.user, status=1)
+    cart = get_active_cart(request.user)
     cart_product = models.CartProduct.objects.filter(cart=cart, product=product).first()
 
     quantity = 1
@@ -220,9 +235,16 @@ def add_to_cart(request, product_code):
             quantity = int(request.POST.get('quantity', 1))
         except (ValueError, TypeError):
             quantity = 1
+    quantity = max(1, quantity)
+    if quantity > product.count:
+        quantity = product.count
+
+    if quantity <= 0:
+        messages.error(request, 'Mahsulot omborda mavjud emas')
+        return redirect_back(request, 'product_detail', code=product.code)
 
     if cart_product:
-        cart_product.count += quantity
+        cart_product.count = min(cart_product.count + quantity, product.count)
         cart_product.save()
     else:
         models.CartProduct.objects.create(cart=cart, product=product, count=quantity)
@@ -231,9 +253,10 @@ def add_to_cart(request, product_code):
 
 
 @login_required(login_url='login')
+@require_POST
 def remove_from_cart(request, product_code):
     product = get_object_or_404(models.Product, code=product_code)
-    models.CartProduct.objects.filter(cart__user=request.user, product=product).delete()
+    models.CartProduct.objects.filter(cart__user=request.user, cart__status=1, product=product).delete()
     return redirect_back(request, 'product_detail', code=product.code)
 
 
@@ -250,7 +273,8 @@ def update_cart_quantity(request, product_code):
                 quantity = int(data.get('quantity', 0))
             else:
                 quantity = int(request.POST.get('quantity', 0))
-            
+            quantity = min(quantity, product.count)
+
             if quantity <= 0:
                 cart_product.delete()
                 if request.content_type == 'application/json':
@@ -273,16 +297,18 @@ def update_cart_quantity(request, product_code):
 
 
 @login_required(login_url='login')
+@require_POST
 def add_wishlist(request, product_code):
-    product = models.Product.objects.get(code=product_code)
+    product = get_object_or_404(models.Product, code=product_code)
     element = models.WishList.objects.filter(product=product, user=request.user)
     if not element:
         models.WishList.objects.create(product=product, user=request.user)
     return redirect_back(request)
 
 @login_required(login_url='login')
+@require_POST
 def delete_wishlist(request, product_code):
-    product = models.Product.objects.get(code=product_code)
+    product = get_object_or_404(models.Product, code=product_code)
     element = models.WishList.objects.filter(product=product, user=request.user)
     if element:
         element.delete()
@@ -306,6 +332,47 @@ def cart(request):
         cart__status=1
     ).select_related('product', 'cart').filter(product__isnull=False)
     context = {
-        "cart_products": cart_products
+        "cart_products": cart_products,
+        "cart_total": sum(item.total_price for item in cart_products),
+        "cart_count": sum(item.count for item in cart_products),
     }
     return render(request, 'front/cart.html', context=context)
+
+
+@login_required(login_url='login')
+@require_POST
+def checkout(request):
+    cart = models.Cart.objects.filter(user=request.user, status=1).first()
+    if not cart:
+        messages.error(request, "Faol savat topilmadi")
+        return redirect('cart')
+
+    cart_products = cart.cart_products.filter(product__isnull=False)
+    if not cart_products.exists():
+        messages.error(request, "Checkout uchun savat bo'sh")
+        return redirect('cart')
+
+    cart.status = 2
+    cart.save(update_fields=['status'])
+    messages.success(request, f"Buyurtma qabul qilindi. Buyurtma kodi: {cart.code}")
+    return redirect('order_detail', code=cart.code)
+
+
+@login_required(login_url='login')
+def order_history(request):
+    orders = models.Cart.objects.filter(
+        user=request.user,
+        status__gt=1,
+    ).order_by('-date')
+    return render(request, 'front/orders.html', {'orders': orders})
+
+
+@login_required(login_url='login')
+def order_detail(request, code):
+    order = get_object_or_404(models.Cart, user=request.user, code=code, status__gt=1)
+    cart_products = order.cart_products.filter(product__isnull=False)
+    context = {
+        'order': order,
+        'cart_products': cart_products,
+    }
+    return render(request, 'front/order_detail.html', context=context)

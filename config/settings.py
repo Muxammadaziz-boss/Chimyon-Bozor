@@ -13,6 +13,9 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 import os
 
+import dj_database_url
+from decouple import Csv, config
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -21,12 +24,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-abqaql=y8w8w77vv9&aq(tnqj5j-c1a1030nfnl$bdwe#wbc(y'
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-abqaql=y8w8w77vv9&aq(tnqj5j-c1a1030nfnl$bdwe#wbc(y')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*', cast=Csv())
 
 
 # Application definition
@@ -65,6 +68,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'main.context_processors.site_settings',
             ],
         },
     },
@@ -76,12 +80,22 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+DATABASE_URL = config(
+    'DIRECT_URL',
+    default=config('DATABASE_URL', default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
+)
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.parse(
+        DATABASE_URL,
+        conn_max_age=config('DB_CONN_MAX_AGE', default=600, cast=int),
+    )
 }
+
+if (
+    DATABASES['default'].get('ENGINE') != 'django.db.backends.sqlite3'
+    and config('DB_SSL_REQUIRE', default=False, cast=bool)
+):
+    DATABASES['default'].setdefault('OPTIONS', {})['sslmode'] = 'require'
 
 
 # Password validation
@@ -139,7 +153,6 @@ JAZZMIN_SETTINGS = {
     'site_title': 'DpMarket Admin',
     'site_header': 'DpMarket Admin',
     'site_brand': 'DpMarket',
-    'language_selector': True,
     'navigation': [
         {'app': 'main', 'label': 'Main', 'icon': 'fa fa-home'},
         {'app': 'dashboard', 'label': 'Dashboard', 'icon': 'fa fa-chart-line'},
@@ -151,7 +164,7 @@ JAZZMIN_SETTINGS = {
 
 # Jazzmin UI tweaks (theme va dark mode shu yerda)
 JAZZMIN_UI_TWEAKS = {
-    'theme': 'default',
-    'dark_mode_theme': 'darkly',
+    'theme': 'darkly',
+    'default_theme_mode': 'dark',
     'navbar': 'navbar-dark navbar-gray-dark',
 }

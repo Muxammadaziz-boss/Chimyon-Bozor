@@ -3,15 +3,92 @@
 
 {% block content %}
 <style>
+    .cart-shell {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 320px;
+        gap: 24px;
+        align-items: start;
+    }
+
+    .cart-panel,
+    .cart-summary {
+        background: #fff;
+        border: 1px solid #e8eaed;
+        border-radius: 20px;
+    }
+
+    .cart-panel {
+        overflow: hidden;
+    }
+
+    .cart-panel__head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        padding: 18px 24px;
+        border-bottom: 1px solid #eef0f3;
+    }
+
+    .cart-panel__title {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .cart-panel__meta {
+        margin: 0;
+        color: #6b7280;
+        font-size: 14px;
+    }
+
+    .cart-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1.7fr) 130px 170px 130px 120px;
+        gap: 16px;
+        align-items: center;
+        padding: 24px;
+    }
+
+    .cart-row + .cart-row {
+        border-top: 1px solid #eef0f3;
+    }
+
+    .cart-col__label {
+        display: none;
+        margin-bottom: 6px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .cart-item__thumb img {
+        width: 96px;
+        height: 112px;
+        object-fit: cover;
+        border-radius: 14px;
+    }
+
+    .cart-item__title a {
+        color: #101828;
+    }
+
+    .cart-item__title a:hover {
+        color: hsl(var(--main));
+    }
+
     .cart-quantity {
         display: inline-flex;
         align-items: center;
         gap: 8px;
         padding: 6px;
-        border: 1px solid hsl(var(--border-color));
+        border: 1px solid #d8ccff;
         border-radius: 999px;
-        background-color: hsl(var(--white));
-        box-shadow: 0 8px 24px hsl(var(--black) / 0.04);
+        background: #fff;
+        box-shadow: 0 8px 24px rgba(16, 24, 40, 0.04);
         white-space: nowrap;
     }
 
@@ -25,8 +102,8 @@
         flex: 0 0 38px;
         border: 0;
         border-radius: 50%;
-        background: hsl(var(--main) / 0.1);
-        color: hsl(var(--main));
+        background: #f3edff;
+        color: #7c3aed;
         font-size: 22px;
         font-weight: 700;
         line-height: 1;
@@ -55,12 +132,20 @@
         width: 54px;
         height: 38px;
         padding: 0 6px;
-        border: 1px solid hsl(var(--border-color));
+        border: 0;
         border-radius: 12px;
-        color: hsl(var(--heading-color));
+        background: #fff !important;
+        color: #111827 !important;
         font-weight: 600;
         text-align: center;
         appearance: textfield;
+        box-shadow: none;
+    }
+
+    .cart-quantity__input:focus {
+        outline: none;
+        background: #fff !important;
+        color: #111827 !important;
     }
 
     .cart-quantity__input::-webkit-outer-spin-button,
@@ -85,69 +170,215 @@
     #deleteConfirmModal .modal-body p:not(.cart-delete-message) {
         display: none;
     }
+
+    .cart-remove-btn {
+        background: linear-gradient(135deg, #ff5f6d, #ef3340);
+    }
+
+    .cart-summary {
+        padding: 20px;
+        position: sticky;
+        top: 96px;
+    }
+
+    .cart-summary__delivery {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 18px;
+        padding: 14px 16px;
+        border: 1px solid #eef0f3;
+        border-radius: 14px;
+        color: #374151;
+        font-size: 14px;
+    }
+
+    .cart-summary__card {
+        padding: 20px;
+        border: 1px solid #eef0f3;
+        border-radius: 16px;
+    }
+
+    .cart-summary__card h5 {
+        margin-bottom: 18px;
+        font-size: 28px;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .cart-summary__line {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        color: #4b5563;
+        margin-bottom: 12px;
+    }
+
+    .cart-summary__line strong {
+        color: #111827;
+    }
+
+    .cart-summary__total {
+        padding-top: 14px;
+        margin-top: 14px;
+        border-top: 1px solid #eef0f3;
+        font-size: 15px;
+    }
+
+    .cart-summary__submit {
+        width: 100%;
+        margin-top: 18px;
+        min-height: 52px;
+        font-size: 16px;
+        font-weight: 700;
+    }
+
+    .cart-suggest {
+        margin-top: 16px;
+        padding: 14px 16px;
+        border-radius: 16px;
+        background: #f3f6fb;
+        color: #374151;
+    }
+
+    .cart-suggest__title {
+        margin: 0 0 4px;
+        font-size: 15px;
+        font-weight: 600;
+        color: #111827;
+    }
+
+    .cart-suggest__text {
+        margin: 0;
+        font-size: 13px;
+    }
+
+    @media (max-width: 1199.98px) {
+        .cart-row {
+            grid-template-columns: minmax(0, 1.5fr) 110px 160px 110px 110px;
+            padding: 20px;
+        }
+    }
+
+    @media (max-width: 991.98px) {
+        .cart-shell {
+            grid-template-columns: 1fr;
+        }
+
+        .cart-summary {
+            position: static;
+        }
+
+        .cart-row {
+            grid-template-columns: 1fr;
+            gap: 14px;
+        }
+
+        .cart-col__label {
+            display: block;
+        }
+    }
 </style>
 
 <section class="cart padding-y-120">
-    <div class="container">
+    <div class="container container-two">
         <div class="cart-content">
             {% if cart_products %}
-                <div class="table-responsive">
-                    <table class="table style-two">
-                        <thead>
-                            <tr>
-                                <th>Mahsulot tafsilotlari</th>
-                                <th>Narx</th>
-                                <th>Soni</th>
-                                <th>Jami</th>
-                                <th>Amallar</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in cart_products %}
-                                <tr data-product-code="{{ item.product.code }}" data-price="{{ item.product.price }}">
-                                    <td>
-                                        <div class="cart-item">
-                                            <div class="d-flex align-items-center gap-3">
-                                                <div class="cart-item__thumb">
-                                                    <a href="{% url 'product_detail' item.product.code %}" class="link">
-                                                        {% if item.product.image %}
-                                                        <img src="{{ item.product.image.url }}" alt="" class="cover-img">
-                                                        {% else %}
-                                                        <img src="{% static 'assets/images/thumbs/product-img1.png' %}" alt="" class="cover-img">
-                                                        {% endif %}
-                                                    </a>
-                                                </div>
-                                                <div class="cart-item__content">
-                                                    <h6 class="cart-item__title font-heading fw-700 text-capitalize font-18 mb-2">
-                                                        <a href="{% url 'product_detail' item.product.code %}" class="link">{{ item.product.name }}</a>
-                                                    </h6>
-                                                    <span class="cart-item__price font-14 text-body">
-                                                        Kategoriya: {{ item.product.category.name }}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span class="cart-item__totalPrice text-body font-18 fw-400 mb-0">${{ item.product.price }}</span>
-                                    </td>
-                                    <td>
-                                        <div class="cart-quantity" aria-label="Mahsulot soni">
-                                            <button class="btn btn-sm btn-outline-secondary qty-btn qty-minus">−</button>
-                                            <input type="number" class="cart-quantity__input qty-input" value="{{ item.count }}" min="1" aria-label="Soni">
-                                            <button type="button" class="cart-quantity__btn qty-plus" aria-label="Ko'paytirish">+</button>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span class="cart-item__totalPrice item-total text-heading font-18 fw-500 mb-0">${{ item.total_price }}</span>
-                                    </td>
-                                    <td>
-                                        <button type="button" class="btn btn-main pill cart-checkout-btn checkout-btn">To'lash</button>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                <div class="mb-4">
+                    <h2 class="mb-1">Savatingiz, {{ cart_count }} mahsulot</h2>
+                    <p class="text-body mb-0">Mahsulot sonini shu yerda boshqarib, keyin buyurtmani yuborishingiz mumkin.</p>
+                </div>
+
+                <div class="cart-shell">
+                    <div class="cart-panel">
+                        <div class="cart-panel__head">
+                            <div>
+                                <h5 class="cart-panel__title">Tanlangan mahsulotlar</h5>
+                                <p class="cart-panel__meta">Savatdagi mahsulotlarni yangilang yoki olib tashlang</p>
+                            </div>
+                        </div>
+
+                        {% for item in cart_products %}
+                        <div class="cart-row" data-product-code="{{ item.product.code }}" data-price="{{ item.product.active_price }}">
+                            <div>
+                                <div class="cart-col__label">Mahsulot</div>
+                                <div class="cart-item d-flex align-items-center gap-3">
+                                    <div class="cart-item__thumb">
+                                        <a href="{% url 'product_detail' item.product.code %}" class="link">
+                                            {% if item.product.image %}
+                                            <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+                                            {% else %}
+                                            <img src="{% static 'assets/images/thumbs/product-img1.png' %}" alt="{{ item.product.name }}">
+                                            {% endif %}
+                                        </a>
+                                    </div>
+                                    <div class="cart-item__content">
+                                        <h6 class="cart-item__title font-heading fw-700 text-capitalize font-18 mb-2">
+                                            <a href="{% url 'product_detail' item.product.code %}" class="link">{{ item.product.name }}</a>
+                                        </h6>
+                                        <div class="font-14 text-body mb-1">Kategoriya: {{ item.product.category.name }}</div>
+                                        <div class="font-14 text-body">Omborda: {{ item.product.count }} ta</div>
+                                    </div>
+                                </div>
+                                <div class="cart-suggest">
+                                    <p class="cart-suggest__title">Kerak bo'lib qolishi mumkin</p>
+                                    <p class="cart-suggest__text">Yana mahsulot qo'shish uchun katalogga qayting yoki buyurtmani davom ettiring.</p>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="cart-col__label">Narx</div>
+                                <span class="cart-item__totalPrice text-body font-18 fw-400 mb-0">${{ item.product.active_price }}</span>
+                            </div>
+
+                            <div>
+                                <div class="cart-col__label">Soni</div>
+                                <div class="cart-quantity" aria-label="Mahsulot soni">
+                                    <button class="btn btn-sm btn-outline-secondary qty-btn qty-minus">−</button>
+                                    <input type="number" class="cart-quantity__input qty-input" value="{{ item.count }}" min="1" aria-label="Soni">
+                                    <button type="button" class="cart-quantity__btn qty-plus" aria-label="Ko'paytirish">+</button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="cart-col__label">Jami</div>
+                                <span class="cart-item__totalPrice item-total text-heading font-18 fw-500 mb-0">${{ item.total_price }}</span>
+                            </div>
+
+                            <div>
+                                <div class="cart-col__label">Amallar</div>
+                                <form method="post" action="{% url 'remove_from_cart' item.product.code %}" class="m-0">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger pill cart-checkout-btn cart-remove-btn">O'chirish</button>
+                                </form>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <aside class="cart-summary">
+                        <div class="cart-summary__delivery">
+                            <span>Topshirish punktiga bepul yetkazamiz</span>
+                            <i class="las la-angle-right"></i>
+                        </div>
+
+                        <div class="cart-summary__card">
+                            <h5>Buyurtmangiz</h5>
+                            <div class="cart-summary__line">
+                                <span>{{ cart_count }} mahsulot</span>
+                                <span>${{ cart_total|floatformat:2 }}</span>
+                            </div>
+                            <div class="cart-summary__line cart-summary__total">
+                                <strong>Jami</strong>
+                                <strong>${{ cart_total|floatformat:2 }}</strong>
+                            </div>
+                            <form method="post" action="{% url 'checkout' %}" class="m-0">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-main pill cart-checkout-btn cart-summary__submit">Buyurtma berish</button>
+                            </form>
+                        </div>
+                    </aside>
                 </div>
             {% else %}
                 <div class="text-center py-5">
@@ -186,11 +417,10 @@ document.addEventListener('DOMContentLoaded', function() {
     let pendingRow = null;
     let pendingInput = null;
 
-    document.querySelectorAll('tr[data-product-code]').forEach(row => {
+    document.querySelectorAll('[data-product-code]').forEach(row => {
         const qtyInput = row.querySelector('.qty-input');
         const qtyMinus = row.querySelector('.qty-minus');
         const qtyPlus = row.querySelector('.qty-plus');
-        const checkoutBtn = row.querySelector('.checkout-btn');
         const itemTotal = row.querySelector('.item-total');
         const productCode = row.dataset.productCode;
         const price = parseFloat(row.dataset.price);
@@ -215,14 +445,6 @@ document.addEventListener('DOMContentLoaded', function() {
             updateQuantity(productCode, newQty, row, itemTotal, price, qtyInput);
         });
 
-        checkoutBtn.addEventListener('click', () => {
-            checkoutBtn.classList.add('disabled');
-            checkoutBtn.textContent = "To'lov tayyor";
-            setTimeout(() => {
-                checkoutBtn.classList.remove('disabled');
-                checkoutBtn.textContent = "To'lash";
-            }, 1400);
-        });
     });
 
     function updateQuantity(productCode, newQty, row, itemTotal, price, qtyInput) {
@@ -265,7 +487,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (row) {
                     row.remove();
                 }
-                if (document.querySelectorAll('tr[data-product-code]').length === 0) {
+                if (document.querySelectorAll('[data-product-code]').length === 0) {
                     location.reload();
                 }
             } else if (data.status === 'updated' && itemTotal && price) {

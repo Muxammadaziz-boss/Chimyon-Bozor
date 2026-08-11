@@ -41,6 +41,9 @@
     <li class="nav-item" role="presentation">
         <button class="nav-link active" id="pills-Settingss-tab" data-bs-toggle="pill" data-bs-target="#pills-Settingss" type="button" role="tab">Sozlamalar</button>
     </li>
+    <li class="nav-item" role="presentation">
+        <a class="nav-link" href="{% url 'order_history' %}">Buyurtmalar</a>
+    </li>
     {% if show_dashboard_link %}
     <li class="nav-item" role="presentation">
         <a class="nav-link" href="{% url 'd_index' %}">Dashboard</a>

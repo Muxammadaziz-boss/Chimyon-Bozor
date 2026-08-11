@@ -7,9 +7,9 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Title -->
-    <title> Digital Market Place HTML Template</title>
+    <title>{{ site_settings.site_name|default:'DpMarket' }} | Digital Market Place</title>
     <!-- Favicon -->
-    <link rel="shortcut icon" href="{% static 'assets/images/logo/favicon-two.png' %}">
+    <link rel="shortcut icon" href="{% if site_settings.favicon %}{{ site_settings.favicon.url }}{% else %}{% static 'assets/images/logo/favicon-two.png' %}{% endif %}">
 
     <!-- Bootstrap -->
     <link rel="stylesheet" href="{% static 'assets/css/bootstrap.min.css' %}">
@@ -375,7 +375,7 @@
                         <a href="javascript:void(0)" class="nav-menu__link">Sahifalar</a>
                         <a href="{% url 'profile' %}" class="nav-submenu__link"> Profil</a>
                         <a href="{% url 'cart' %}" class="nav-submenu__link"> Savat</a>
-                        <a href="cart-thank-you.html" class="nav-submenu__link"> Buyurtmani ko'rish</a>
+                        <a href="{% url 'order_history' %}" class="nav-submenu__link"> Buyurtmalar</a>
                 </ul>
                 <div class="header-right__inner d-lg-none my-3 gap-1 d-flex flx-align">
 
@@ -418,7 +418,11 @@
                     <!-- Logo Start -->
                     <div class="logo site-header__brand">
                         <a href="{% url 'index' %}" class="link">
+                            {% if site_settings.logo %}
+                            <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}">
+                            {% else %}
                             <img src="{% static 'assets/images/logo/logo-two.png' %}" alt="Logo">
+                            {% endif %}
                         </a>
                     </div>
                     <!-- Logo End  -->
@@ -450,10 +454,13 @@
                                     <li class="nav-submenu__item">
                                         <a href="{% url 'cart' %}" class="nav-submenu__link"> Savat</a>
                                     </li>
-                                    <li class="nav-submenu__item">
-                                        <a href="{% url 'wishlist' %}" class="nav-submenu__link"> Saralanganlar</a>
-                                    </li>
-                                    {% if user.is_staff %}
+                                     <li class="nav-submenu__item">
+                                         <a href="{% url 'wishlist' %}" class="nav-submenu__link"> Saralanganlar</a>
+                                     </li>
+                                     <li class="nav-submenu__item">
+                                         <a href="{% url 'order_history' %}" class="nav-submenu__link"> Buyurtmalar</a>
+                                     </li>
+                                     {% if user.is_staff %}
                                     <li class="nav-submenu__item">
                                         <a href="{% url 'd_index' %}" class="nav-submenu__link"> Dashboard</a>
                                     </li>
@@ -525,6 +532,16 @@
         </header>
         <!-- ==================== Header End Here ==================== -->
 
+        {% if messages %}
+        <div class="container container-two mt-4">
+            {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} mb-3" role="alert">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
 
         {% block content %}
         {% endblock %}
@@ -541,37 +558,42 @@
                         <div class="footer-widget__about">
                             <div class="footer-widget__logo">
                                 <a href="{% url 'index' %}" class="link">
+                                    {% if site_settings.logo %}
+                                    <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}">
+                                    {% else %}
                                     <img src="{% static 'assets/images/logo/logo.png' %}" alt="Logo">
+                                    {% endif %}
                                 </a>
                             </div>
-                            <div class="footer-widget__desc font-14 text-body mt-3">Buyurtmangiz bo'yicha yordam
-                                kerakmi? Qo'llab-quvvatlash jamoamizga murojaat qiling.</div>
+                            <div class="footer-widget__desc font-14 text-body mt-3">{{ site_settings.footer_description|default:'Buyurtmangiz bo\'yicha yordam kerakmi? Qo\'llab-quvvatlash jamoamizga murojaat qiling.' }}</div>
                             <div class="social-icons pt-3 flx-align">
-                                <a href="#" class="social-icons__item" aria-label="Facebook"><i
+                                <a href="{{ site_settings.facebook|default:'#' }}" class="social-icons__item" aria-label="Facebook"><i
                                         class="fab fa-facebook-f"></i></a>
-                                <a href="#" class="social-icons__item" aria-label="Twitter"><i
+                                <a href="{{ site_settings.twitter|default:'#' }}" class="social-icons__item" aria-label="Twitter"><i
                                         class="fab fa-twitter"></i></a>
-                                <a href="#" class="social-icons__item" aria-label="Instagram"><i
+                                <a href="{{ site_settings.instagram|default:'#' }}" class="social-icons__item" aria-label="Instagram"><i
                                         class="fab fa-instagram"></i></a>
-                                <a href="#" class="social-icons__item" aria-label="Linkedin"><i
+                                <a href="{{ site_settings.linkedin|default:'#' }}" class="social-icons__item" aria-label="Linkedin"><i
                                         class="fab fa-linkedin-in"></i></a>
                             </div>
                         </div>
                     </div>
-                    <div class="col-xl-2 col-lg-6 col-sm-12 col-6">
-                        <h6 class="footer-widget__title">Bo'limlar</h6>
+                     <div class="col-xl-2 col-lg-6 col-sm-12 col-6">
+                         <h6 class="footer-widget__title">Bo'limlar</h6>
                         <ul class="footer-widget__list mt-3">
                             <li><a href="{% url 'index' %}" class="footer-link">Bosh sahifa</a></li>
                             <li><a href="{% url 'all_products' %}" class="footer-link">Mahsulotlar</a></li>
-                            <li><a href="{% url 'cart' %}" class="footer-link">Savat</a></li>
-                        </ul>
-                    </div>
+                             <li><a href="{% url 'cart' %}" class="footer-link">Savat</a></li>
+                             <li><a href="{% url 'order_history' %}" class="footer-link">Buyurtmalar</a></li>
+                         </ul>
+                     </div>
                     <div class="col-xl-3 col-lg-6 col-sm-12 col-6">
                         <h6 class="footer-widget__title">Hisob</h6>
                         <ul class="footer-widget__list mt-3">
                             <li><a href="{% url 'profile' %}" class="footer-link">Profil</a></li>
-                            <li><a href="{% url 'wishlist' %}" class="footer-link">Saralanganlar</a></li>
-                            {% if user.is_authenticated %}
+                             <li><a href="{% url 'wishlist' %}" class="footer-link">Saralanganlar</a></li>
+                             <li><a href="{% url 'order_history' %}" class="footer-link">Buyurtmalar</a></li>
+                             {% if user.is_authenticated %}
                             <li>
                                 <form method="post" action="{% url 'logout' %}" class="m-0">
                                     {% csrf_token %}
@@ -584,9 +606,17 @@
                         </ul>
                     </div>
                     <div class="col-xl-3 col-lg-6 col-sm-12 col-6">
-                        <h6 class="footer-widget__title">Aloqa</h6>
-                        <p class="footer-widget__desc font-14 text-body mt-3">Savol yoki takliflar bo'lsa, biz bilan
-                            bog'laning.</p>
+                        <h6 class="footer-widget__title">{{ site_settings.contact_title|default:'Aloqa' }}</h6>
+                        <p class="footer-widget__desc font-14 text-body mt-3">{{ site_settings.contact_description|default:'Savol yoki takliflar bo\'lsa, biz bilan bog\'laning.' }}</p>
+                        {% if site_settings.phone %}
+                        <p class="font-14 text-body mt-2 mb-0"><i class="las la-phone me-1"></i>{{ site_settings.phone }}</p>
+                        {% endif %}
+                        {% if site_settings.email %}
+                        <p class="font-14 text-body mt-2 mb-0"><i class="las la-envelope me-1"></i>{{ site_settings.email }}</p>
+                        {% endif %}
+                        {% if site_settings.address %}
+                        <p class="font-14 text-body mt-2 mb-0"><i class="las la-map-marker me-1"></i>{{ site_settings.address }}</p>
+                        {% endif %}
                         <a href="{% url 'profile' %}" class="btn btn-main btn-sm mt-3">Biz bilan bog'lanish</a>
                     </div>
                 </div>
@@ -597,13 +627,14 @@
         <div class="bottom-footer">
             <div class="container container-two">
                 <div class="bottom-footer__inner flx-between gap-3">
-                    <p class="bottom-footer__text font-14">Copyright &copy; 2024 DpMarket, All rights reserved.</p>
+                    <p class="bottom-footer__text font-14">{{ site_settings.copyright_text|default:'Copyright &copy; 2024 DpMarket, All rights reserved.' }}</p>
                     <div class="footer-links">
-                        <a href="{% url 'all_products' %}" class="footer-link font-14">Mahsulotlar</a>
-                        <a href="{% url 'profile' %}" class="footer-link font-14">Profil</a>
-                        <a href="{% url 'wishlist' %}" class="footer-link font-14">Saralanganlar</a>
-                    </div>
-                </div>
+                         <a href="{% url 'all_products' %}" class="footer-link font-14">Mahsulotlar</a>
+                         <a href="{% url 'profile' %}" class="footer-link font-14">Profil</a>
+                         <a href="{% url 'wishlist' %}" class="footer-link font-14">Saralanganlar</a>
+                         <a href="{% url 'order_history' %}" class="footer-link font-14">Buyurtmalar</a>
+                     </div>
+                 </div>
             </div>
         </div>
         <!-- ==================== Footer End Here ==================== -->

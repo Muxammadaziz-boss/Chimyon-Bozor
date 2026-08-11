@@ -315,11 +315,13 @@
                     </div>
 
                     {% if product.id not in cart_ids %}
-                    <a href="{% url 'add_to_cart' product.code %}"
-                        class="btn btn-main d-flex w-100 justify-content-center align-items-center gap-2 pill px-sm-5 mt-32">
-                        <img src="{% static 'assets/images/icons/add-to-cart.svg' %}" alt="">
-                        Savatga qo'shish
-                    </a>
+                    <form method="post" action="{% url 'add_to_cart' product.code %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-main d-flex w-100 justify-content-center align-items-center gap-2 pill px-sm-5 mt-32">
+                            <img src="{% static 'assets/images/icons/add-to-cart.svg' %}" alt="">
+                            Savatga qo'shish
+                        </button>
+                    </form>
                     {% else %}
                     <div class="cart-quantity mt-32" aria-label="Mahsulot soni">
                         <button type="button" class="cart-quantity__btn qty-btn" data-action="decrease">−</button>
@@ -346,15 +348,19 @@
                     </div>
                     {% endif %}
                     {% if product.id in wishlist_ids %}
-                    <a href="{% url 'delete_wishlist' product.code %}"
-                        class="btn btn-main d-flex w-100 justify-content-center align-items-center gap-2 pill px-sm-5 mt-32">
-                        <i class="fa fa-heart" style="font-size:24px; color:white;"></i> Saralanganlardan o'chirish
-                    </a>
+                    <form method="post" action="{% url 'delete_wishlist' product.code %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-main d-flex w-100 justify-content-center align-items-center gap-2 pill px-sm-5 mt-32">
+                            <i class="fa fa-heart" style="font-size:24px; color:white;"></i> Saralanganlardan o'chirish
+                        </button>
+                    </form>
                     {% else %}
-                    <a href="{% url 'add_wishlist' product.code %}"
-                        class="btn btn-main d-flex w-100 justify-content-center align-items-center gap-2 pill px-sm-5 mt-32">
-                        <i class="far fa-heart" style="font-size:24px; color:white;"></i> Saralanganlarga qo'shish
-                    </a>
+                    <form method="post" action="{% url 'add_wishlist' product.code %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-main d-flex w-100 justify-content-center align-items-center gap-2 pill px-sm-5 mt-32">
+                            <i class="far fa-heart" style="font-size:24px; color:white;"></i> Saralanganlarga qo'shish
+                        </button>
+                    </form>
                     {% endif %}
 
 
@@ -398,7 +404,10 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Bekor qilish</button>
-                <a href="#" class="btn btn-danger" id="confirmRemoveCartBtn">Ha, o'chirish</a>
+                <form method="post" id="removeCartForm" class="m-0">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger" id="confirmRemoveCartBtn">Ha, o'chirish</button>
+                </form>
             </div>
         </div>
     </div>
@@ -475,12 +484,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Remove from cart with confirmation
     var deleteModal = new bootstrap.Modal(document.getElementById('deleteCartModal'));
     var removeBtn = document.querySelector('.remove-cart-btn');
-    var confirmBtn = document.getElementById('confirmRemoveCartBtn');
+    var removeForm = document.getElementById('removeCartForm');
 
-    if (removeBtn && confirmBtn) {
+    if (removeBtn && removeForm) {
         removeBtn.addEventListener('click', function() {
             var productCode = this.dataset.productCode;
-            confirmBtn.href = "{% url 'remove_from_cart' 'PRODUCT_CODE' %}".replace('PRODUCT_CODE', productCode);
+            removeForm.action = "{% url 'remove_from_cart' 'PRODUCT_CODE' %}".replace('PRODUCT_CODE', productCode);
             deleteModal.show();
         });
     }

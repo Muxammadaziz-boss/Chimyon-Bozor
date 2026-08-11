@@ -5,4 +5,4 @@ python-decouple==3.8
 django-storages==1.14.2
 boto3==1.26.137
 Pillow==10.0.0
-django-jazzmin==2.6.0
+django-jazzmin==3.0.5

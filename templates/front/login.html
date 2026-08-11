@@ -149,8 +149,8 @@
         <h1 class="auth-card__title">Kirish</h1>
         <p class="auth-card__subtitle">Hisobingizga kiring va xaridni davom eting</p>
 
-        {% if form.errors %}
-        <div class="error-msg">Foydalanuvchi nomi yoki parol noto'g'ri. Qayta urinib ko'ring.</div>
+        {% if error %}
+        <div class="error-msg">{{ error }}</div>
         {% endif %}
 
         <form method="POST">

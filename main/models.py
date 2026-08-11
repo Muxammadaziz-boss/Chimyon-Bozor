@@ -55,6 +55,12 @@ class Product(Code):
     updated_at = models.DateTimeField(auto_now=True)
     count = models.IntegerField(default=0)
 
+    @property
+    def active_price(self):
+        if self.discount_status and self.discount_price is not None:
+            return self.discount_price
+        return self.price
+
     def __str__(self):
         return self.name
 
@@ -120,10 +126,16 @@ class CartProduct(Code):
     count = models.IntegerField()
 
     @property
+    def unit_price(self):
+        if not self.product:
+            return 0
+        return self.product.active_price
+
+    @property
     def total_price(self):
         if not self.product:
             return 0
-        return self.product.price * self.count
+        return self.unit_price * self.count
 
 
 class WishList(models.Model):
@@ -133,5 +145,32 @@ class WishList(models.Model):
 
     def __str__(self):
         return f'{self.user} - {self.product}'
+
+
+class SiteSettings(models.Model):
+    site_name = models.CharField(max_length=150, default='DpMarket')
+    tagline = models.CharField(max_length=255, blank=True)
+    logo = models.ImageField(upload_to='settings', null=True, blank=True)
+    favicon = models.ImageField(upload_to='settings', null=True, blank=True)
+    hero_title = models.CharField(max_length=255, blank=True)
+    hero_description = models.TextField(blank=True)
+    footer_description = models.TextField(blank=True)
+    contact_title = models.CharField(max_length=150, blank=True)
+    contact_description = models.TextField(blank=True)
+    copyright_text = models.CharField(max_length=255, blank=True)
+    phone = models.CharField(max_length=50, blank=True)
+    email = models.EmailField(blank=True)
+    address = models.CharField(max_length=255, blank=True)
+    facebook = models.URLField(blank=True)
+    twitter = models.URLField(blank=True)
+    instagram = models.URLField(blank=True)
+    linkedin = models.URLField(blank=True)
+
+    def __str__(self):
+        return self.site_name
+
+    class Meta:
+        verbose_name = "Sayt sozlamalari"
+        verbose_name_plural = "Sayt sozlamalari"
 
 

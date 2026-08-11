@@ -1,6 +1,6 @@
 from django.test import TestCase
 from django.urls import reverse
-from .models import Category, Product
+from .models import Cart, CartProduct, Category, Product, User
 
 class ProductDetailTestCase(TestCase):
     def setUp(self):
@@ -74,4 +74,86 @@ class ProductDetailTestCase(TestCase):
         
         # Assert product from other category is not in the related products list
         self.assertNotIn(self.other_product, related_products)
+
+
+class AuthAndCartFlowTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='buyer', password='secret123', phone='+998900001122')
+        self.category = Category.objects.create(name='Electronics', logo='test_logo.png', is_active=True)
+        self.product = Product.objects.create(
+            category=self.category,
+            image='test_image.png',
+            name='Phone',
+            description='Phone desc',
+            price=100,
+            discount_price=80,
+            discount_status=True,
+            count=5,
+        )
+
+    def test_register_duplicate_username_shows_error(self):
+        response = self.client.post(reverse('register'), {
+            'username': self.user.username,
+            'phone': '+998901234567',
+            'password': 'secret123',
+            'confirm_password': 'secret123',
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Bu foydalanuvchi nomi band')
+
+    def test_login_invalid_credentials_shows_error(self):
+        response = self.client.post(reverse('login'), {
+            'username': self.user.username,
+            'password': 'wrong-pass',
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Foydalanuvchi nomi yoki parol noto')
+
+    def test_remove_from_cart_only_affects_active_cart(self):
+        active_cart = Cart.objects.create(user=self.user, status=1)
+        delivered_cart = Cart.objects.create(user=self.user, status=4)
+        active_item = CartProduct.objects.create(cart=active_cart, product=self.product, count=1)
+        delivered_item = CartProduct.objects.create(cart=delivered_cart, product=self.product, count=2)
+
+        self.client.force_login(self.user)
+        response = self.client.post(reverse('remove_from_cart', args=[self.product.code]))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(CartProduct.objects.filter(pk=active_item.pk).exists())
+        self.assertTrue(CartProduct.objects.filter(pk=delivered_item.pk).exists())
+
+    def test_checkout_moves_active_cart_to_order(self):
+        active_cart = Cart.objects.create(user=self.user, status=1)
+        CartProduct.objects.create(cart=active_cart, product=self.product, count=2)
+
+        self.client.force_login(self.user)
+        response = self.client.post(reverse('checkout'))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse('order_detail', args=[active_cart.code]))
+        active_cart.refresh_from_db()
+        self.assertEqual(active_cart.status, 2)
+
+    def test_order_history_shows_only_real_orders(self):
+        Cart.objects.create(user=self.user, status=1)
+        order = Cart.objects.create(user=self.user, status=2)
+        CartProduct.objects.create(cart=order, product=self.product, count=1)
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('order_history'))
+
+        self.assertEqual(response.status_code, 200)
+        orders = list(response.context['orders'])
+        self.assertEqual(orders, [order])
+
+    def test_order_detail_is_limited_to_owner(self):
+        other_user = User.objects.create_user(username='other', password='secret123')
+        order = Cart.objects.create(user=other_user, status=2)
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('order_detail', args=[order.code]))
+
+        self.assertEqual(response.status_code, 404)
 
