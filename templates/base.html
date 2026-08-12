@@ -551,45 +551,47 @@
             font-size: 14px;
             margin: 0;
         }
-        .newsletter-input-wrap {
-            display: flex;
-            gap: 10px;
-        }
-        .newsletter-input-wrap input {
-            flex: 1;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            background: rgba(255, 255, 255, 0.12);
-            color: #fff;
-            border-radius: 14px;
-            padding: 14px 22px;
-            font-size: 15px;
-            backdrop-filter: blur(6px);
-            transition: all 0.3s ease;
-        }
-        .newsletter-input-wrap input::placeholder {
-            color: rgba(255, 255, 255, 0.55);
-        }
-        .newsletter-input-wrap input:focus {
-            outline: none;
-            border-color: rgba(255, 255, 255, 0.6);
-            background: rgba(255, 255, 255, 0.18);
-        }
-        .newsletter-submit-btn {
+        .tg-subscribe-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
             background: #ffffff;
             color: #7C3AED;
             border: none;
-            border-radius: 14px;
-            padding: 14px 32px;
+            border-radius: 18px;
+            padding: 16px 32px;
             font-weight: 700;
-            font-size: 15px;
+            font-size: 16px;
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
             white-space: nowrap;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
         }
-        .newsletter-submit-btn:hover {
+        .tg-subscribe-btn i:first-child {
+            font-size: 22px;
+            color: #229ED9;
+        }
+        .tg-subscribe-arrow {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(124, 58, 237, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+        .tg-subscribe-btn:hover {
             background: #f0e6ff;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+            color: #6D28D9;
+        }
+        .tg-subscribe-btn:hover .tg-subscribe-arrow {
+            background: #7C3AED;
+            color: #ffffff;
+            transform: translateX(4px);
         }
         .footer-main-content {
             padding: 56px 0 48px;
@@ -788,8 +790,10 @@
             .footer-newsletter-section {
                 padding: 28px 24px;
             }
-            .newsletter-input-wrap {
-                flex-direction: column;
+            .tg-subscribe-btn {
+                width: 100%;
+                justify-content: center;
+                margin-top: 4px;
             }
             .footer-main-content {
                 padding: 40px 0 28px;
@@ -1092,18 +1096,21 @@
         <footer class="modern-footer">
             <div class="container container-two">
 
-                <!-- Newsletter Section -->
+                <!-- Telegram Subscribe Section -->
                 <div class="footer-newsletter-section">
                     <div class="row align-items-center">
-                        <div class="col-lg-6 mb-3 mb-lg-0">
-                            <h4><i class="fas fa-envelope" style="margin-right: 10px; opacity: 0.8;"></i>Yangiliklar va Chegirmalarga Obuna Bo'ling</h4>
-                            <p>Maxsus takliflar va yangi mahsulotlar haqida birinchilardan bo'lib xabardor bo'ling.</p>
+                        <div class="col-lg-7 mb-3 mb-lg-0">
+                            <h4><i class="fab fa-telegram-plane" style="margin-right: 10px; opacity: 0.9;"></i>Telegram Kanalimizga Obuna Bo'ling</h4>
+                            <p>Yangi mahsulotlar, aksiyalar va maxsus takliflarni birinchi bo'lib bilib oling — Telegram orqali!</p>
                         </div>
-                        <div class="col-lg-6">
-                            <form onsubmit="event.preventDefault(); window.showToast && window.showToast('Obuna muvaffaqiyatli amalga oshirildi!'); this.reset();" class="newsletter-input-wrap">
-                                <input type="email" required placeholder="Email manzilingizni kiriting...">
-                                <button type="submit" class="newsletter-submit-btn"><i class="fas fa-paper-plane" style="margin-right: 6px;"></i>Obuna</button>
-                            </form>
+                        <div class="col-lg-5 d-flex justify-content-lg-end">
+                            <a href="{{ site_settings.telegram|default:'https://t.me/dpmarket_uz' }}"
+                               target="_blank" rel="noopener"
+                               class="tg-subscribe-btn">
+                                <i class="fab fa-telegram-plane"></i>
+                                Kanalga Qo'shilish
+                                <span class="tg-subscribe-arrow"><i class="fas fa-arrow-right"></i></span>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -1198,11 +1205,14 @@
 
                             <h5 class="footer-col-title" style="margin-top: 8px;">Ijtimoiy tarmoqlar</h5>
                             <ul class="footer-social-list">
-                                {% if site_settings.facebook %}
-                                <li><a href="{{ site_settings.facebook }}" class="footer-social-link" target="_blank" rel="noopener" title="Facebook"><i class="fab fa-facebook-f"></i></a></li>
+                                {% if site_settings.telegram %}
+                                <li><a href="{{ site_settings.telegram }}" class="footer-social-link" target="_blank" rel="noopener" title="Telegram" style="background:rgba(34,158,217,0.12);border-color:rgba(34,158,217,0.2);color:#229ED9;"><i class="fab fa-telegram-plane"></i></a></li>
                                 {% endif %}
                                 {% if site_settings.instagram %}
                                 <li><a href="{{ site_settings.instagram }}" class="footer-social-link" target="_blank" rel="noopener" title="Instagram"><i class="fab fa-instagram"></i></a></li>
+                                {% endif %}
+                                {% if site_settings.facebook %}
+                                <li><a href="{{ site_settings.facebook }}" class="footer-social-link" target="_blank" rel="noopener" title="Facebook"><i class="fab fa-facebook-f"></i></a></li>
                                 {% endif %}
                                 {% if site_settings.twitter %}
                                 <li><a href="{{ site_settings.twitter }}" class="footer-social-link" target="_blank" rel="noopener" title="Twitter"><i class="fab fa-twitter"></i></a></li>

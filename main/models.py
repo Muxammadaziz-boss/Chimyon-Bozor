@@ -171,6 +171,7 @@ class SiteSettings(models.Model):
     twitter = models.URLField(blank=True)
     instagram = models.URLField(blank=True)
     linkedin = models.URLField(blank=True)
+    telegram = models.URLField(blank=True, help_text="Telegram kanal yoki guruh havolasi (masalan: https://t.me/sizning_kanal)")
 
     def __str__(self):
         return self.site_name
