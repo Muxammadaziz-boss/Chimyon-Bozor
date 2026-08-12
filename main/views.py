@@ -83,6 +83,16 @@ def index(request):
             models.Product.objects.filter(category=cat_section_2).order_by('created_at')[:5]
         )
 
+    # Chegirmalı mahsulotlar
+    discounted_products = list(
+        models.Product.objects.filter(discount_status=True, discount_price__isnull=False)
+        .order_by('-created_at')[:10]
+    )
+    # Yangi mahsulotlar
+    new_products = list(
+        models.Product.objects.order_by('-created_at')[:10]
+    )
+
     context = {
         'categories': categories,
         'top_categories': top_categories,
@@ -94,6 +104,8 @@ def index(request):
         'banners': banners,
         'featured_banner': featured_banner,
         'services': services,
+        'discounted_products': discounted_products,
+        'new_products': new_products,
         'site_stats': {
             'customers': models.User.objects.count(),
             'products': models.Product.objects.count(),

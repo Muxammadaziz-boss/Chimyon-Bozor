@@ -3,7 +3,12 @@
 
 {% block title %}Bosh sahifa | {{ site_settings.site_name|default:"To'garak shop" }}{% endblock %}
 
+{% block extra_css %}
+<meta name="description" content="{{ site_settings.tagline|default:'Sifatli mahsulotlarni qulay narxlarda xarid qiling. Tez yetkazib berish, kafolat va ishonchli xizmat.' }}">
+{% endblock %}
+
 {% block content %}
+
 
 <!-- Custom Hero Auto-Slide Banner Section (With Progress Line Indicator) -->
 <section class="hero-banner-section py-4">
@@ -56,6 +61,50 @@
             <!-- Bottom Progress Line Indicator -->
             <div class="banner-progress-wrap">
                 <div class="banner-progress-bar" id="bannerProgressBar"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ✅ Trust Badges (Ishonch belgilari) -->
+<section class="trust-badges-section py-3 mb-2">
+    <div class="container container-two">
+        <div class="row gy-3 row-cols-lg-4 row-cols-sm-2 row-cols-1">
+            <div class="col">
+                <div class="trust-badge-card">
+                    <div class="trust-badge-icon"><i class="fas fa-shipping-fast"></i></div>
+                    <div>
+                        <div class="trust-badge-title">Tez yetkazib berish</div>
+                        <div class="trust-badge-desc">Buyurtma kuni yetkaziladi</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="trust-badge-card">
+                    <div class="trust-badge-icon" style="background: linear-gradient(135deg,#10b981,#059669);"><i class="fas fa-shield-alt"></i></div>
+                    <div>
+                        <div class="trust-badge-title">Kafolat</div>
+                        <div class="trust-badge-desc">14 kunlik qaytarish</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="trust-badge-card">
+                    <div class="trust-badge-icon" style="background: linear-gradient(135deg,#f59e0b,#d97706);"><i class="fas fa-lock"></i></div>
+                    <div>
+                        <div class="trust-badge-title">Xavfsiz to'lov</div>
+                        <div class="trust-badge-desc">Payme, Click, karta</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="trust-badge-card">
+                    <div class="trust-badge-icon" style="background: linear-gradient(135deg,#ec4899,#db2777);"><i class="fas fa-headset"></i></div>
+                    <div>
+                        <div class="trust-badge-title">24/7 Qo'llab-quvvatlash</div>
+                        <div class="trust-badge-desc">Doim aloqadamiz</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -167,7 +216,96 @@
 </section>
 {% endif %}
 
-<!-- Custom Styles for Full Image Banner, Progress Line, and Top 4 Categories -->
+<!-- 🔥 Chegirmalı Mahsulotlar (Aksiyalar) -->
+{% if discounted_products %}
+<section class="py-4 mb-3" style="background: linear-gradient(135deg, #fff7ed 0%, #fef3c7 100%); border-radius: 24px; margin: 0 12px;">
+    <div class="container container-two">
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <div class="d-flex align-items-center gap-3">
+                <div style="width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#ef4444,#f97316);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;">
+                    <i class="fas fa-tags"></i>
+                </div>
+                <div>
+                    <h4 class="fw-800 text-heading mb-0 font-22">Aksiyalar</h4>
+                    <p class="text-body font-13 mb-0">Chegirmali mahsulotlar — vaqtni qo'ldan bermang!</p>
+                </div>
+            </div>
+            <a href="{% url 'all_products' %}" class="btn btn-outline-main pill font-14 fw-600 px-4">Barchasi <i class="fas fa-arrow-right ms-1"></i></a>
+        </div>
+        <div class="row gy-4 row-cols-lg-5 row-cols-md-3 row-cols-sm-2 row-cols-1">
+            {% for product in discounted_products %}
+            <div class="col">
+                {% include 'front/partials/product_card.html' %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- 🆕 Yangi Mahsulotlar -->
+{% if new_products %}
+<section class="py-4 mb-3">
+    <div class="container container-two">
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <div class="d-flex align-items-center gap-3">
+                <div style="width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#7C3AED,#6366F1);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;">
+                    <i class="fas fa-star"></i>
+                </div>
+                <div>
+                    <h4 class="fw-800 text-heading mb-0 font-22">Yangi Mahsulotlar</h4>
+                    <p class="text-body font-13 mb-0">Eng so'nggi qo'shilgan mahsulotlar</p>
+                </div>
+            </div>
+            <a href="{% url 'all_products' %}" class="btn btn-outline-main pill font-14 fw-600 px-4">Barchasi <i class="fas fa-arrow-right ms-1"></i></a>
+        </div>
+        <div class="row gy-4 row-cols-lg-5 row-cols-md-3 row-cols-sm-2 row-cols-1">
+            {% for product in new_products %}
+            <div class="col">
+                {% include 'front/partials/product_card.html' %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- 🛠️ Xizmatlar / Services paneli -->
+{% if services %}
+<section class="py-4 mb-4">
+    <div class="container container-two">
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <div>
+                <h4 class="fw-800 text-heading mb-1 font-22">Bizning Xizmatlar</h4>
+                <p class="text-body font-14 mb-0">Sizga kerakli har qanday xizmat</p>
+            </div>
+        </div>
+        <div class="row gy-4 row-cols-lg-4 row-cols-md-2 row-cols-1">
+            {% for service in services %}
+            <div class="col">
+                <div class="service-card">
+                    {% if service.image %}
+                    <div class="service-card-img-wrap">
+                        <img src="{{ service.image.url }}" alt="{{ service.name }}" class="service-card-img">
+                    </div>
+                    {% else %}
+                    <div class="service-card-icon-wrap">
+                        <i class="fas fa-concierge-bell"></i>
+                    </div>
+                    {% endif %}
+                    <div class="service-card-body">
+                        <h6 class="service-card-title">{{ service.name }}</h6>
+                        <p class="service-card-desc">{{ service.description|truncatewords:12 }}</p>
+                        <div class="service-card-price">{{ service.price|floatformat:0 }} so'm</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
 <style>
     .fade-in-card {
         animation: fadeInCard 0.4s ease forwards;
@@ -300,6 +438,106 @@
         transform: translateX(3px);
     }
 
+    /* Trust Badges */
+    .trust-badge-card {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        background: #ffffff;
+        border: 1.5px solid #f0f0f0;
+        border-radius: 18px;
+        padding: 18px 20px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+        transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+    }
+    .trust-badge-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 28px rgba(124,58,237,0.12);
+        border-color: rgba(124,58,237,0.25);
+    }
+    .trust-badge-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #7C3AED, #6366F1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 22px;
+        flex-shrink: 0;
+    }
+    .trust-badge-title {
+        font-weight: 700;
+        font-size: 15px;
+        color: #1e293b;
+        margin-bottom: 3px;
+    }
+    .trust-badge-desc {
+        font-size: 13px;
+        color: #94a3b8;
+        font-weight: 400;
+    }
+
+    /* Service Cards */
+    .service-card {
+        background: #ffffff;
+        border-radius: 20px;
+        border: 1.5px solid #f0f0f0;
+        overflow: hidden;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+        transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+        height: 100%;
+    }
+    .service-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 16px 36px rgba(124,58,237,0.14);
+        border-color: rgba(124,58,237,0.3);
+    }
+    .service-card-img-wrap {
+        height: 160px;
+        overflow: hidden;
+        background: #f8fafc;
+    }
+    .service-card-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.4s ease;
+    }
+    .service-card:hover .service-card-img {
+        transform: scale(1.06);
+    }
+    .service-card-icon-wrap {
+        height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, rgba(124,58,237,0.08), rgba(99,102,241,0.06));
+        font-size: 48px;
+        color: #7C3AED;
+    }
+    .service-card-body {
+        padding: 18px 20px;
+    }
+    .service-card-title {
+        font-weight: 700;
+        font-size: 16px;
+        color: #1e293b;
+        margin-bottom: 6px;
+    }
+    .service-card-desc {
+        font-size: 13.5px;
+        color: #64748b;
+        line-height: 1.5;
+        margin-bottom: 12px;
+    }
+    .service-card-price {
+        font-weight: 800;
+        font-size: 17px;
+        color: #7C3AED;
+    }
+
     @media (max-width: 991.98px) {
         .hero-slide-card {
             height: 300px;
@@ -307,12 +545,15 @@
     }
     @media (max-width: 575.98px) {
         .hero-slide-card {
-            height: 200px;
+            height: 280px;
         }
         .carousel-nav-btn {
             width: 36px;
             height: 36px;
             font-size: 14px;
+        }
+        .trust-badge-card {
+            padding: 14px 16px;
         }
     }
 </style>
