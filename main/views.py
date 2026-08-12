@@ -118,13 +118,20 @@ def index(request):
 
 def product_detail(request, code):
     product = get_object_or_404(models.Product, code=code)
-    related_products = models.Product.objects.filter(
-        category=product.category
-    ).exclude(code=code)[:4]
+    
+    related_base_qs = models.Product.objects.filter(category=product.category).exclude(code=code)
+    related_products_count = related_base_qs.count()
+    related_products = related_base_qs[:10]
+    
+    similar_category = models.Category.objects.exclude(id=product.category.id).order_by('?').first()
+    similar_category_products = models.Product.objects.filter(category=similar_category)[:10] if similar_category else []
 
     context = {
         "product": product,
         "related_products": related_products,
+        "related_products_count": related_products_count,
+        "similar_category": similar_category,
+        "similar_category_products": similar_category_products,
         "cart_ids": [],
         "wishlist_ids": [],
         "cart_qty": 1,
@@ -147,6 +154,21 @@ def product_detail(request, code):
             context['cart_qty'] = cart_product.count
 
     return render(request, 'front/detail.html', context=context)
+
+
+def load_more_related_products(request, code):
+    from django.template.loader import render_to_string
+    offset = int(request.GET.get('offset', 10))
+    limit = 10
+    product = get_object_or_404(models.Product, code=code)
+    
+    related_products = models.Product.objects.filter(category=product.category).exclude(code=code)[offset:offset+limit]
+    
+    html = ''
+    for p in related_products:
+        html += '<div class="col">' + render_to_string('front/partials/product_card.html', {'product': p, 'request': request}) + '</div>'
+        
+    return JsonResponse({'html': html, 'count': related_products.count()})
 
 
 @login_required(login_url='login')

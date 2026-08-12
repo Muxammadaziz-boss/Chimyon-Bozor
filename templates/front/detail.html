@@ -194,25 +194,15 @@
                     {% endif %}
                 </div>
 
-                <!-- Description & Reviews Tabs -->
-                <ul class="nav nav-tabs mb-4 border-bottom-0 gap-2" id="detailTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active rounded-pill px-4 py-2 border-0 fw-600" style="background:#7C3AED;color:#fff;" id="desc-tab" data-bs-toggle="tab" data-bs-target="#desc-pane" type="button" role="tab">Mahsulot haqida</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link rounded-pill px-4 py-2 border-0 fw-600 bg-light text-body" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews-pane" type="button" role="tab">
-                            <i class="far fa-comments me-1"></i> Fikrlar
-                        </button>
-                    </li>
-                </ul>
-                <div class="tab-content" id="detailTabsContent">
-                    <div class="tab-pane fade show active text-body font-16" style="line-height:1.7;" id="desc-pane" role="tabpanel" tabindex="0">
-                        {{ product.description|linebreaks }}
-                    </div>
-                    
-                    <div class="tab-pane fade" id="reviews-pane" role="tabpanel" tabindex="0">
-                        <div class="reviews-section">
-                            <h4 class="fw-700 mb-4">Xaridorlar fikrlari</h4>
+                <!-- Description Section -->
+                <h4 class="fw-700 mb-3">Mahsulot haqida</h4>
+                <div class="text-body font-16 mb-5" style="line-height:1.7;">
+                    {{ product.description|linebreaks }}
+                </div>
+                
+                <!-- Reviews Section -->
+                <div class="reviews-section pt-5 border-top mt-5" id="reviews-section">
+                    <h4 class="fw-700 mb-4">Xaridorlar fikrlari</h4>
                             
                             <div class="mb-5">
                                 {% for review in product.reviews.all %}
@@ -274,7 +264,6 @@
                             </div>
                             {% endif %}
                         </div>
-                    </div>
                 </div>
 
             </div>
@@ -387,8 +376,34 @@
             <h3 class="fw-800 text-heading m-0">O'xshash mahsulotlar</h3>
             <a href="{% url 'index_by_category' product.category.id %}" class="btn btn-outline-main pill font-14 fw-600 px-4">Barchasi <i class="fas fa-arrow-right ms-1"></i></a>
         </div>
+        <div class="row gy-4 row-cols-xl-5 row-cols-lg-4 row-cols-md-3 row-cols-sm-2 row-cols-1" id="relatedProductsGrid">
+            {% for item in related_products %}
+            <div class="col">
+                {% include 'front/partials/product_card.html' with product=item %}
+            </div>
+            {% endfor %}
+        </div>
+        {% if related_products_count > 10 %}
+        <div class="text-center mt-5" id="loadMoreRelatedWrap">
+            <button class="btn btn-outline-main pill font-16 fw-600 px-5 py-3" id="loadMoreRelatedBtn" data-offset="10">
+                Yana 10 ta ko'rish <i class="fas fa-sync-alt ms-2"></i>
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endif %}
+
+<!-- ── SIMILAR CATEGORY PRODUCTS ── -->
+{% if similar_category and similar_category_products %}
+<section class="py-5 mb-5">
+    <div class="container container-two">
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <h3 class="fw-800 text-heading m-0">Shuningdek e'tibor bering: {{ similar_category.name }}</h3>
+            <a href="{% url 'index_by_category' similar_category.id %}" class="btn btn-outline-main pill font-14 fw-600 px-4">Barchasi <i class="fas fa-arrow-right ms-1"></i></a>
+        </div>
         <div class="row gy-4 row-cols-xl-5 row-cols-lg-4 row-cols-md-3 row-cols-sm-2 row-cols-1">
-            {% for item in related_products|slice:":5" %}
+            {% for item in similar_category_products %}
             <div class="col">
                 {% include 'front/partials/product_card.html' with product=item %}
             </div>
@@ -399,18 +414,39 @@
 {% endif %}
 
 <script>
-    // Tab active state styling toggle
-    document.querySelectorAll('.nav-tabs .nav-link').forEach(tab => {
-        tab.addEventListener('click', function() {
-            document.querySelectorAll('.nav-tabs .nav-link').forEach(t => {
-                t.style.background = '#f8f9fa';
-                t.style.color = '#212529';
-            });
-            this.style.background = '#7C3AED';
-            this.style.color = '#fff';
+    // Load more related products
+    const loadMoreRelatedBtn = document.getElementById('loadMoreRelatedBtn');
+    if (loadMoreRelatedBtn) {
+        loadMoreRelatedBtn.addEventListener('click', function() {
+            const btn = this;
+            const offset = parseInt(btn.dataset.offset);
+            const grid = document.getElementById('relatedProductsGrid');
+            
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yuklanmoqda...';
+            btn.disabled = true;
+            
+            fetch(`/api/related-products/{{ product.code }}/?offset=${offset}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.html) {
+                        grid.insertAdjacentHTML('beforeend', data.html);
+                        btn.dataset.offset = offset + 10;
+                        if (data.count < 10) {
+                            document.getElementById('loadMoreRelatedWrap').style.display = 'none';
+                        } else {
+                            btn.innerHTML = 'Yana 10 ta ko\'rish <i class="fas fa-sync-alt ms-2"></i>';
+                            btn.disabled = false;
+                        }
+                    } else {
+                        document.getElementById('loadMoreRelatedWrap').style.display = 'none';
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    btn.innerHTML = 'Xatolik yuz berdi';
+                });
         });
-    });
-
+    }
     // Auto update cart quantity
     const autoUpdateForm = document.getElementById('autoUpdateCartForm');
     if (autoUpdateForm) {
