@@ -284,15 +284,16 @@
                     </div>
 
                     <!-- Cart Actions -->
-                    {% if product.id not in cart_ids %}
-                    <form method="post" action="{% url 'add_to_cart' product.code %}" class="no-ajax">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-main w-100 btn-action-lg d-flex align-items-center justify-content-center gap-2">
-                            <i class="fas fa-shopping-bag"></i> Savatga qo'shish
-                        </button>
-                    </form>
-                    {% else %}
-                    <div class="d-flex flex-column gap-3">
+                    <div id="cartActionAddBlock" class="{% if product.id in cart_ids %}d-none{% endif %}">
+                        <form method="post" action="{% url 'add_to_cart' product.code %}" class="custom-ajax-cart">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-main w-100 btn-action-lg d-flex align-items-center justify-content-center gap-2">
+                                <i class="fas fa-shopping-bag"></i> Savatga qo'shish
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <div id="cartActionManageBlock" class="d-flex flex-column gap-3 {% if product.id not in cart_ids %}d-none{% endif %}">
                         <form id="autoUpdateCartForm" method="POST" action="{% url 'update_cart_quantity' product.code %}">
                             {% csrf_token %}
                             <p class="font-14 text-body fw-500 mb-2">Miqdori:</p>
@@ -303,14 +304,13 @@
                             </div>
                         </form>
                         
-                        <form method="post" action="{% url 'remove_from_cart' product.code %}" class="no-ajax">
+                        <form method="post" action="{% url 'remove_from_cart' product.code %}" class="custom-ajax-cart">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-light text-danger border w-100 btn-action-lg" style="height: 48px; border-radius: 14px;">
                                 <i class="fas fa-trash-alt me-1"></i> Savatdan o'chirish
                             </button>
                         </form>
                     </div>
-                    {% endif %}
 
                     <!-- Wishlist Actions -->
                     <div class="mt-3">
@@ -501,5 +501,74 @@
             sendUpdateRequest();
         });
     }
+
+    // Handle AJAX for Add/Remove to Cart without reload
+    document.querySelectorAll('.custom-ajax-cart').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = this.querySelector('button[type="submit"]');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Kuting...';
+            btn.disabled = true;
+
+            const isAdd = this.action.includes('add-to-cart');
+            const url = this.action + '?ajax=1';
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': this.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+                
+                if (data.status === 'login_required') {
+                    window.location.href = data.redirect;
+                    return;
+                }
+
+                if (window.showToast) {
+                    window.showToast(data.message, data.status);
+                }
+
+                if (data.status === 'success') {
+                    const addBlock = document.getElementById('cartActionAddBlock');
+                    const manageBlock = document.getElementById('cartActionManageBlock');
+                    
+                    if (isAdd) {
+                        addBlock.classList.add('d-none');
+                        manageBlock.classList.remove('d-none');
+                        // set qty to 1
+                        const qtyInput = manageBlock.querySelector('.qty-auto-input');
+                        if (qtyInput) qtyInput.value = 1;
+                    } else {
+                        manageBlock.classList.add('d-none');
+                        addBlock.classList.remove('d-none');
+                    }
+                    
+                    // Update global cart badge
+                    document.querySelectorAll('.cart-count-badge').forEach(badge => {
+                        badge.innerText = data.cart_count || '0';
+                        if (parseInt(data.cart_count) > 0) {
+                            badge.classList.remove('d-none');
+                        } else {
+                            badge.classList.add('d-none');
+                        }
+                    });
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+                if (window.showToast) {
+                    window.showToast('Xatolik yuz berdi. Iltimos qayta urining.', 'error');
+                }
+            });
+        });
+    });
 </script>
 {% endblock %}
