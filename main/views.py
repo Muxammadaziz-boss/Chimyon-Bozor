@@ -149,6 +149,23 @@ def product_detail(request, code):
     return render(request, 'front/detail.html', context=context)
 
 
+@login_required(login_url='login')
+def add_review(request, product_code):
+    if request.method == 'POST':
+        product = get_object_or_404(models.Product, code=product_code)
+        rating = int(request.POST.get('rating', 5))
+        text = request.POST.get('text', '').strip()
+        if text:
+            models.Review.objects.create(
+                user=request.user,
+                product=product,
+                rating=rating,
+                text=text
+            )
+        return redirect('product_detail', code=product_code)
+    return redirect('index')
+
+
 def _build_catalog_context(request, products_qs, active_category=None):
     search_query = (request.GET.get('q') or request.GET.get('query') or request.GET.get('search') or '').strip()
     query = request.GET.get('query')
