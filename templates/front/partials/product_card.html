@@ -1,0 +1,88 @@
+{% load static shop_extras %}
+<div class="product-item-card h-100 d-flex flex-column bg-white rounded-4 p-2 border transition-all">
+    <!-- Image Box -->
+    <div class="product-item-img-box position-relative overflow-hidden rounded-3 mb-2">
+        <a href="{% url 'product_detail' product.code %}" class="d-block w-100 h-100">
+            {% if product.image %}
+            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-item-img">
+            {% else %}
+            <img src="{% static 'assets/images/thumbs/product-img1.png' %}" alt="{{ product.name }}" class="product-item-img">
+            {% endif %}
+        </a>
+
+        <!-- Floating Wishlist Button -->
+        {% if product.id in wishlist_ids %}
+        <form method="post" action="{% url 'delete_wishlist' product.code %}" class="product-item-wishlist-form ajax-action-form">
+            {% csrf_token %}
+            <button type="submit" class="product-item-wishlist-btn active" title="Sevimlilardan olib tashlash">
+                <i class="fas fa-heart"></i>
+            </button>
+        </form>
+        {% else %}
+        <form method="post" action="{% url 'add_wishlist' product.code %}" class="product-item-wishlist-form ajax-action-form">
+            {% csrf_token %}
+            <button type="submit" class="product-item-wishlist-btn" title="Sevimlilarga qo'shish">
+                <i class="far fa-heart"></i>
+            </button>
+        </form>
+        {% endif %}
+    </div>
+
+    <!-- Content Box -->
+    <div class="product-item-body d-flex flex-column flex-grow-1 px-1 pb-1">
+        <!-- Price & Old Price -->
+        <div class="product-item-price-wrap mb-1">
+            <div class="d-flex align-items-baseline gap-2 flex-wrap">
+                {% if product.discount_status and product.discount_price %}
+                <span class="product-item-price-main">{{ product.discount_price|uz_price }}</span>
+                <span class="product-item-price-old text-decoration-line-through">{{ product.price|uz_price }}</span>
+                {% else %}
+                <span class="product-item-price-main">{{ product.price|uz_price }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Monthly Installment Badge -->
+        <div class="mb-2">
+            <span class="product-item-installment-badge">
+                {% if product.discount_status and product.discount_price %}
+                {{ product.discount_price|monthly_price:12 }}
+                {% else %}
+                {{ product.price|monthly_price:12 }}
+                {% endif %}
+            </span>
+        </div>
+
+        <!-- Title -->
+        <h6 class="product-item-title mb-2">
+            <a href="{% url 'product_detail' product.code %}" class="product-item-link" title="{{ product.name }}">
+                {{ product.name }}
+            </a>
+        </h6>
+
+        <!-- Rating & Stock Info -->
+        <div class="product-item-meta d-flex align-items-center justify-content-between mb-3 mt-auto font-12">
+            <div class="d-flex align-items-center text-warning fw-700">
+                <i class="fas fa-star me-1"></i> 4.8
+            </div>
+            <span class="text-muted fw-500">{{ product.count }} ta sotilgan</span>
+        </div>
+
+        <!-- Full-width Action Button -->
+        {% if product.id in cart_ids %}
+        <form method="post" action="{% url 'remove_from_cart' product.code %}" class="w-100 ajax-action-form">
+            {% csrf_token %}
+            <button type="submit" class="product-item-cart-btn added w-100">
+                <i class="fas fa-check-circle me-1"></i> Savatda
+            </button>
+        </form>
+        {% else %}
+        <form method="post" action="{% url 'add_to_cart' product.code %}" class="w-100 ajax-action-form">
+            {% csrf_token %}
+            <button type="submit" class="product-item-cart-btn w-100">
+                <i class="fas fa-shopping-bag me-1"></i> Savatga qo'shish
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>

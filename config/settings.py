@@ -46,8 +46,13 @@ INSTALLED_APPS = [
     'dashboard',
 ]
 
+USE_S3_STORAGE = config('USE_S3_STORAGE', default=False, cast=bool)
+if USE_S3_STORAGE:
+    INSTALLED_APPS.append('storages')
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -118,9 +123,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 # Internationalization
-# https://docs.djangoproject.com/en/6.0/topics/i18n/
-
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'uz'
 
 TIME_ZONE = 'Asia/Tashkent'
 
@@ -136,9 +139,13 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STORAGES = {
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
+    },
+}
 
-
-# Media files - AWS Lambda va o'xshash serverless muhitda /tmp dan foydalanish
+# Media files
 if os.environ.get('AWS_LAMBDA_FUNCTION_NAME'):
     MEDIA_ROOT = '/tmp/media'
 else:
@@ -146,13 +153,30 @@ else:
 
 MEDIA_URL = '/media/'
 
+if USE_S3_STORAGE:
+    AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY')
+    AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME', default='togarak-shop-media')
+    AWS_S3_ENDPOINT_URL = config('AWS_S3_ENDPOINT_URL', default='')
+    AWS_S3_REGION_NAME = config('SUPABASE_STORAGE_REGION', default='auto')
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_DEFAULT_ACL = None
+    AWS_QUERYSTRING_AUTH = False
+    STORAGES['default'] = {
+        'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage',
+    }
+else:
+    STORAGES['default'] = {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    }
+
 AUTH_USER_MODEL = 'main.User'
 
 # Jazzmin settings
 JAZZMIN_SETTINGS = {
-    'site_title': 'DpMarket Admin',
-    'site_header': 'DpMarket Admin',
-    'site_brand': 'DpMarket',
+    'site_title': "To'garak shop Admin",
+    'site_header': "To'garak shop Admin",
+    'site_brand': "To'garak shop",
     'navigation': [
         {'app': 'main', 'label': 'Main', 'icon': 'fa fa-home'},
         {'app': 'dashboard', 'label': 'Dashboard', 'icon': 'fa fa-chart-line'},
@@ -168,3 +192,13 @@ JAZZMIN_UI_TWEAKS = {
     'default_theme_mode': 'dark',
     'navbar': 'navbar-dark navbar-gray-dark',
 }
+
+if not DEBUG:
+    SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=True, cast=bool)
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=31536000, cast=int)
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True

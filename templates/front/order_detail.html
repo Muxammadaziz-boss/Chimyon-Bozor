@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static shop_extras %}
 
 {% block content %}
 <section class="breadcrumb breadcrumb-one padding-y-60 section-bg position-relative z-index-1 overflow-hidden">
@@ -25,7 +25,7 @@
                         <p class="mb-2"><strong>Holat:</strong> {{ order.get_status_display }}</p>
                         <p class="mb-2"><strong>Sana:</strong> {{ order.date|date:"d.m.Y H:i" }}</p>
                         <p class="mb-2"><strong>Mahsulotlar soni:</strong> {{ order.count_product }}</p>
-                        <p class="mb-0"><strong>Jami:</strong> ${{ order.total_price|floatformat:2 }}</p>
+                        <p class="mb-0"><strong>Jami:</strong> {{ order.total_price|uz_price }}</p>
                     </div>
                 </div>
             </div>
@@ -54,9 +54,9 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td>${{ item.unit_price|floatformat:2 }}</td>
+                                <td>{{ item.unit_price|uz_price }}</td>
                                 <td>{{ item.count }}</td>
-                                <td>${{ item.total_price|floatformat:2 }}</td>
+                                <td>{{ item.total_price|uz_price }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>

@@ -61,6 +61,12 @@ class Product(Code):
             return self.discount_price
         return self.price
 
+    @property
+    def discount_percent(self):
+        if self.discount_status and self.discount_price and self.price > 0 and self.discount_price < self.price:
+            return int(round(((self.price - self.discount_price) / self.price) * 100))
+        return 0
+
     def __str__(self):
         return self.name
 
@@ -92,8 +98,8 @@ class Banner(models.Model):
         return self.title
 
 CART_STATUS = (
-    (1, 'No Faol'),
-    (2, "Yig'ilmoqda"),
+    (1, 'Faol savat'),
+    (2, "Qabul qilindi"),
     (3, "Yo'lda"),
     (4, "Yetkazilgan"),
     (5, "Qaytarilgan")
@@ -148,7 +154,7 @@ class WishList(models.Model):
 
 
 class SiteSettings(models.Model):
-    site_name = models.CharField(max_length=150, default='DpMarket')
+    site_name = models.CharField(max_length=150, default="To'garak shop")
     tagline = models.CharField(max_length=255, blank=True)
     logo = models.ImageField(upload_to='settings', null=True, blank=True)
     favicon = models.ImageField(upload_to='settings', null=True, blank=True)

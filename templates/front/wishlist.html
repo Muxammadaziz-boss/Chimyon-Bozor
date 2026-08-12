@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static shop_extras %}
 
 {% block content %}
 <style>
@@ -234,9 +234,9 @@
                     </div>
 
                     <div class="wishlist-card__price">
-                        <strong>${{ product.product.active_price }}</strong>
+                        <strong>{{ product.product.active_price|uz_price }}</strong>
                         {% if product.product.active_price != product.product.price %}
-                        <span>${{ product.product.price }}</span>
+                        <span>{{ product.product.price|uz_price }}</span>
                         {% endif %}
                     </div>
 

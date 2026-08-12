@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static shop_extras %}
 
 {% block content %}
 <style>
@@ -254,11 +254,11 @@
                                                         {{ item.category.name }}
                                                     </span>
                                                     <div class="flx-align gap-2">
-                                                        {% if item.discount_price %}
-                                                        <h6 class="product-card__price mb-0">${{ item.discount_price }}</h6>
-                                                        <span class="product-card__prevPrice text-decoration-line-through">${{ item.price }}</span>
+                                                        {% if item.discount_status and item.discount_price %}
+                                                        <h6 class="product-card__price mb-0">{{ item.discount_price|uz_price }}</h6>
+                                                        <span class="product-card__prevPrice text-decoration-line-through">{{ item.price|uz_price }}</span>
                                                         {% else %}
-                                                        <h6 class="product-card__price mb-0">${{ item.price }}</h6>
+                                                        <h6 class="product-card__price mb-0">{{ item.price|uz_price }}</h6>
                                                         {% endif %}
                                                     </div>
                                                 </div>
@@ -309,8 +309,12 @@
                             <label class="form-check-label mb-0 fw-300 text-body">Mahsulot narxi:</label>
                         </div>
                         <div class="flx-align gap-2">
-                            <span class="product-card__prevPrice text-decoration-line-through">${{product.price}}</span>
-                            <h6 class="product-card__price mb-0 font-14 fw-500">${{product.discount_price}}</h6>
+                            {% if product.discount_status and product.discount_price %}
+                            <span class="product-card__prevPrice text-decoration-line-through">{{product.price|uz_price}}</span>
+                            <h6 class="product-card__price mb-0 font-14 fw-500">{{product.discount_price|uz_price}}</h6>
+                            {% else %}
+                            <h6 class="product-card__price mb-0 font-14 fw-500">{{product.price|uz_price}}</h6>
+                            {% endif %}
                         </div>
                     </div>
 

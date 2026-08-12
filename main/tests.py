@@ -78,7 +78,7 @@ class ProductDetailTestCase(TestCase):
 
 class AuthAndCartFlowTestCase(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username='buyer', password='secret123', phone='+998900001122')
+        self.user = User.objects.create_user(username='buyer', password='secret123', phone='+998900001122', address='Toshkent')
         self.category = Category.objects.create(name='Electronics', logo='test_logo.png', is_active=True)
         self.product = Product.objects.create(
             category=self.category,
@@ -142,11 +142,14 @@ class AuthAndCartFlowTestCase(TestCase):
         CartProduct.objects.create(cart=order, product=self.product, count=1)
 
         self.client.force_login(self.user)
-        response = self.client.get(reverse('order_history'))
+        response = self.client.get(reverse('profile'))
 
         self.assertEqual(response.status_code, 200)
         orders = list(response.context['orders'])
         self.assertEqual(orders, [order])
+
+        redirect_response = self.client.get(reverse('order_history'))
+        self.assertEqual(redirect_response.status_code, 302)
 
     def test_order_detail_is_limited_to_owner(self):
         other_user = User.objects.create_user(username='other', password='secret123')

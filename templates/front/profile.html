@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static shop_extras %}
 
 {% block content %}
 <section class="breadcrumb-three section-bg position-relative z-index-1 overflow-hidden">
@@ -42,7 +42,7 @@
         <button class="nav-link active" id="pills-Settingss-tab" data-bs-toggle="pill" data-bs-target="#pills-Settingss" type="button" role="tab">Sozlamalar</button>
     </li>
     <li class="nav-item" role="presentation">
-        <a class="nav-link" href="{% url 'order_history' %}">Buyurtmalar</a>
+        <button class="nav-link" id="pills-Orders-tab" data-bs-toggle="pill" data-bs-target="#pills-Orders" type="button" role="tab">Buyurtmalar</button>
     </li>
     {% if show_dashboard_link %}
     <li class="nav-item" role="presentation">
@@ -116,7 +116,96 @@
 </div>
             </div>
 
+            <!-- Orders Tab -->
+            <div class="tab-pane fade" id="pills-Orders" role="tabpanel" aria-labelledby="pills-Orders-tab" tabindex="0">
+                <div class="row gy-4">
+                    <div class="col-12">
+                        {% if orders %}
+                        <div class="card common-card border border-gray-five overflow-hidden">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="title mb-0">Mening buyurtmalarim</h6>
+                                <span class="badge bg-main text-white pill px-3 py-2">{{ orders|length }} ta buyurtma</span>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table style-two align-middle mb-0 border-0 rounded-0">
+                                        <thead>
+                                            <tr>
+                                                <th class="ps-4">Kod</th>
+                                                <th>Holat</th>
+                                                <th>Sana</th>
+                                                <th>Mahsulotlar</th>
+                                                <th>Jami</th>
+                                                <th class="pe-4 text-end">Amal</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for order in orders %}
+                                            <tr>
+                                                <td class="ps-4 font-14">
+                                                    <span class="fw-bold text-heading" title="{{ order.code }}">
+                                                        #{{ order.code|slice:":8" }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    {% if order.status == 2 %}
+                                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 rounded-pill">Qabul qilindi</span>
+                                                    {% elif order.status == 3 %}
+                                                        <span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-2 rounded-pill">Yo'lda</span>
+                                                    {% elif order.status == 4 %}
+                                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">Yetkazilgan</span>
+                                                    {% elif order.status == 5 %}
+                                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 rounded-pill">Qaytarilgan</span>
+                                                    {% else %}
+                                                        <span class="badge bg-main-100 text-main px-3 py-2 rounded-pill">{{ order.get_status_display }}</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="font-14 text-heading">{{ order.date|date:"d.m.Y H:i" }}</td>
+                                                <td class="font-14 text-heading">{{ order.count_product }} ta</td>
+                                                <td class="fw-bold text-main font-16">{{ order.total_price|uz_price }}</td>
+                                                <td class="pe-4 text-end">
+                                                    <a href="{% url 'order_detail' order.code %}" class="btn btn-main btn-sm pill px-4">Ko'rish</a>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="card common-card border border-gray-five p-5 text-center">
+                            <h5 class="mb-3">Hali buyurtma yo'q</h5>
+                            <p class="text-body mb-4">Mahsulot tanlang va checkout qiling.</p>
+                            <div>
+                                <a href="{% url 'all_products' %}" class="btn btn-main pill px-4 py-2">Mahsulotlarni ko'rish</a>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
 </div>
     </div>
 </section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    if (tabParam === 'orders' || window.location.hash === '#orders' || window.location.hash === '#pills-Orders') {
+        const ordersTab = document.getElementById('pills-Orders-tab');
+        if (ordersTab) {
+            if (typeof bootstrap !== 'undefined' && bootstrap.Tab) {
+                const bsTab = new bootstrap.Tab(ordersTab);
+                bsTab.show();
+            } else {
+                ordersTab.click();
+            }
+        }
+    }
+});
+</script>
 {% endblock %}
+

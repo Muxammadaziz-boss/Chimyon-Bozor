@@ -1,0 +1,9 @@
+{% load shop_extras %}
+<div class="flx-align gap-2">
+    {% if product.discount_status and product.discount_price %}
+    <h6 class="product-card__price mb-0">{{ product.discount_price|uz_price }}</h6>
+    <span class="product-card__prevPrice text-decoration-line-through">{{ product.price|uz_price }}</span>
+    {% else %}
+    <h6 class="product-card__price mb-0">{{ product.price|uz_price }}</h6>
+    {% endif %}
+</div>

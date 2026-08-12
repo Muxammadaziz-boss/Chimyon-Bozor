@@ -20,5 +20,6 @@ urlpatterns = [
     path('checkout/', views.checkout, name='checkout'),
     path('orders/', views.order_history, name='order_history'),
     path('orders/<str:code>/', views.order_detail, name='order_detail'),
-
+    path('api/live-search/', views.live_search, name='live_search'),
+    path('api/category-products/<int:category_id>/', views.category_products_api, name='category_products_api'),
 ]

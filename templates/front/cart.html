@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static shop_extras %}
 
 {% block content %}
 <style>
@@ -329,7 +329,7 @@
 
                             <div>
                                 <div class="cart-col__label">Narx</div>
-                                <span class="cart-item__totalPrice text-body font-18 fw-400 mb-0">${{ item.product.active_price }}</span>
+                                <span class="cart-item__totalPrice text-body font-18 fw-400 mb-0">{{ item.product.active_price|uz_price }}</span>
                             </div>
 
                             <div>
@@ -343,7 +343,7 @@
 
                             <div>
                                 <div class="cart-col__label">Jami</div>
-                                <span class="cart-item__totalPrice item-total text-heading font-18 fw-500 mb-0">${{ item.total_price }}</span>
+                                <span class="cart-item__totalPrice item-total text-heading font-18 fw-500 mb-0">{{ item.total_price|uz_price }}</span>
                             </div>
 
                             <div>
@@ -367,11 +367,11 @@
                             <h5>Buyurtmangiz</h5>
                             <div class="cart-summary__line">
                                 <span>{{ cart_count }} mahsulot</span>
-                                <span>${{ cart_total|floatformat:2 }}</span>
+                                <span>{{ cart_total|uz_price }}</span>
                             </div>
                             <div class="cart-summary__line cart-summary__total">
                                 <strong>Jami</strong>
-                                <strong>${{ cart_total|floatformat:2 }}</strong>
+                                <strong>{{ cart_total|uz_price }}</strong>
                             </div>
                             <form method="post" action="{% url 'checkout' %}" class="m-0">
                                 {% csrf_token %}
@@ -491,7 +491,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     location.reload();
                 }
             } else if (data.status === 'updated' && itemTotal && price) {
-                itemTotal.textContent = '$' + data.total_price.toFixed(2);
+                itemTotal.textContent = data.total_price.toLocaleString('uz-UZ') + " so'm";
                 if (qtyInput) {
                     qtyInput.value = data.count;
                 }

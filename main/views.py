@@ -1,21 +1,26 @@
 import json
+import re
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
+from django.db.models import F, Count
 from django.shortcuts import get_object_or_404, render, redirect
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 
-
-
 from . import models
+from .utils import paginate_queryset
 from django.contrib.auth import authenticate, login, logout
 
+PHONE_RE = re.compile(r'^\+?998[0-9]{9}$')
+
+
 def redirect_back(request, fallback='index', **fallback_kwargs):
-    next_url = request.META.get('HTTP_REFERER')
-    if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
-        return redirect(next_url)
+    referer = request.META.get('HTTP_REFERER')
+    if referer and url_has_allowed_host_and_scheme(referer, allowed_hosts={request.get_host()}):
+        return redirect(referer)
     return redirect(fallback, **fallback_kwargs)
 
 
@@ -26,22 +31,67 @@ def get_active_cart(user):
     return models.Cart.objects.create(user=user, status=1)
 
 
+def _attach_cart_wishlist_context(request, context):
+    cart_ids = []
+    wishlist_ids = []
+    if request.user.is_authenticated:
+        cart = models.Cart.objects.filter(user=request.user, status=1).first()
+        if cart:
+            cart_ids = list(models.CartProduct.objects.filter(cart=cart).values_list('product_id', flat=True))
+        wishlist_ids = list(models.WishList.objects.filter(user=request.user).values_list('product_id', flat=True))
+    context['cart_ids'] = cart_ids
+    context['wishlist_ids'] = wishlist_ids
+    return context
+
+
 def index(request):
     search_query = request.GET.get('q', '').strip()
-    categories = models.Category.objects.filter()[:10]
+    categories = models.Category.objects.filter(is_active=True)[:10]
     top_categories = models.Category.objects.filter(is_active=True)[:7]
-    products = models.Product.objects.all()
+    top_4_categories = list(models.Category.objects.filter(is_active=True).annotate(prod_count=Count('product')).order_by('-prod_count')[:4])
     banners = list(models.Banner.objects.select_related('product_1').all()[:3])
     services = models.Service.objects.filter(is_active=True).all()[:4]
     featured_banner = banners[0] if banners else None
 
-    if search_query:
-        products = products.filter(name__icontains=search_query)
+    # Fetch active categories that have products for random home page sections
+    active_categories = list(
+        models.Category.objects.filter(is_active=True)
+        .annotate(prod_count=Count('product'))
+        .filter(prod_count__gt=0)
+        .order_by('?')
+    )
+
+    cat_section_1 = None
+    cat_section_1_products = []
+    cat_section_2 = None
+    cat_section_2_products = []
+
+    if len(active_categories) > 0:
+        cat_section_1 = active_categories[0]
+        cat_section_1_products = list(
+            models.Product.objects.filter(category=cat_section_1).order_by('-created_at')[:5]
+        )
+
+    if len(active_categories) > 1:
+        cat_section_2 = active_categories[1]
+        cat_section_2_products = list(
+            models.Product.objects.filter(category=cat_section_2).order_by('-created_at')[:5]
+        )
+    elif cat_section_1:
+        cat_section_2 = cat_section_1
+        cat_section_2_products = list(
+            models.Product.objects.filter(category=cat_section_2).order_by('created_at')[:5]
+        )
 
     context = {
         'categories': categories,
         'top_categories': top_categories,
-        'products': products,
+        'top_4_categories': top_4_categories,
+        'cat_section_1': cat_section_1,
+        'cat_section_1_products': cat_section_1_products,
+        'cat_section_2': cat_section_2,
+        'cat_section_2_products': cat_section_2_products,
+        'banners': banners,
         'featured_banner': featured_banner,
         'services': services,
         'site_stats': {
@@ -50,133 +100,107 @@ def index(request):
         },
         'search_query': search_query,
     }
-    if request.user.is_authenticated:
-        wishlist_ids = models.WishList.objects.filter(user=request.user).values_list('product_id', flat=True)
-        cart_ids = models.CartProduct.objects.filter(cart__user=request.user, cart__status=1).values_list('product_id', flat=True)
-        context['wishlist_ids'] = wishlist_ids
-        context['cart_ids'] = cart_ids
-    else:
-        context['wishlist_ids'] = []
-        context['cart_ids'] = []
-
-
+    _attach_cart_wishlist_context(request, context)
     return render(request, 'front/index.html', context=context)
-
 
 
 def product_detail(request, code):
     product = get_object_or_404(models.Product, code=code)
-    related_products = models.Product.objects.filter(category=product.category).exclude(code=code)
+    related_products = models.Product.objects.filter(
+        category=product.category
+    ).exclude(code=code)[:4]
 
     context = {
-        "product":product,
-        "related_products":related_products,
+        "product": product,
+        "related_products": related_products,
         "cart_ids": [],
         "wishlist_ids": [],
         "cart_qty": 1,
         "is_in_wishlist": False,
     }
     if request.user.is_authenticated:
-        wishlist_ids = models.WishList.objects.filter(user=request.user).values_list('product_id', flat=True)
-        cart_ids = models.CartProduct.objects.filter(cart__user=request.user).values_list('product_id', flat=True)
+        wishlist_ids = list(models.WishList.objects.filter(
+            user=request.user
+        ).values_list('product_id', flat=True))
+        cart_ids = list(models.CartProduct.objects.filter(
+            cart__user=request.user, cart__status=1
+        ).values_list('product_id', flat=True))
         context['wishlist_ids'] = wishlist_ids
         context['cart_ids'] = cart_ids
         context['is_in_wishlist'] = product.id in wishlist_ids
-        cart_product = models.CartProduct.objects.filter(cart__user=request.user, cart__status=1, product=product).first()
+        cart_product = models.CartProduct.objects.filter(
+            cart__user=request.user, cart__status=1, product=product
+        ).first()
         if cart_product:
             context['cart_qty'] = cart_product.count
 
     return render(request, 'front/detail.html', context=context)
 
 
-def category_filter(request, category_id):
+def _build_catalog_context(request, products_qs, active_category=None):
     search_query = (request.GET.get('q') or request.GET.get('query') or '').strip()
-    categories = models.Category.objects.all()
-    top_categories = models.Category.objects.filter(is_active=True)[:7]
-    active_category = get_object_or_404(models.Category, id=category_id)
-    products = models.Product.objects.filter(category=active_category)
     query = request.GET.get('query')
     if query:
-        products = products.filter(name__icontains=query)
-
+        products_qs = products_qs.filter(name__icontains=query)
     if search_query:
-        products = products.filter(name__icontains=search_query)
+        products_qs = products_qs.filter(name__icontains=search_query)
 
-    free_products = models.Product.objects.filter(discount_status=True)[:8]
+    products_qs = products_qs.select_related('category').order_by('-created_at')
+    page_obj = paginate_queryset(request, products_qs, per_page=12)
 
     context = {
-        'categories': categories,
-        'top_categories': top_categories,
-        'products': products,
-        'active_category': active_category.id,
-        'active_category_name': active_category.name,
-        'total_products': products.count(),
+        'categories': models.Category.objects.all(),
+        'top_categories': models.Category.objects.filter(is_active=True)[:7],
+        'products': page_obj.object_list,
+        'page_obj': page_obj,
+        'active_category': active_category.id if active_category else None,
+        'active_category_name': active_category.name if active_category else None,
+        'total_products': products_qs.count(),
         'search_query': search_query,
-        'wishlist_ids': [],
-        'cart_ids': [],
         'query': query,
     }
+    _attach_cart_wishlist_context(request, context)
+    return context
 
-    if request.user.is_authenticated:
-        context['wishlist_ids'] = models.WishList.objects.filter(user=request.user).values_list('product_id', flat=True)
-        context['cart_ids'] = models.CartProduct.objects.filter(cart__user=request.user, cart__status=1).values_list('product_id', flat=True)
 
+def category_filter(request, category_id):
+    active_category = get_object_or_404(models.Category, id=category_id)
+    products_qs = models.Product.objects.filter(category=active_category)
+    context = _build_catalog_context(request, products_qs, active_category=active_category)
     return render(request, 'front/category_filter.html', context)
 
 
 def all_products(request):
-    search_query = (request.GET.get('q') or request.GET.get('query') or '').strip()
-    categories = models.Category.objects.all()
-    top_categories = models.Category.objects.filter(is_active=True)[:7]
-    products = models.Product.objects.all()
-    query = request.GET.get('query')
-    if query:
-        products = products.filter(name__icontains=query)
-
-    if search_query:
-        products = products.filter(name__icontains=search_query)
-
-    free_products = models.Product.objects.filter(discount_status=True)[:8]
-
-    context = {
-        'categories': categories,
-        'top_categories': top_categories,
-        'products': products,
-        'active_category': None,
-        'active_category_name': None,
-        'total_products': products.count(),
-        'search_query': search_query,
-        'wishlist_ids': [],
-        'cart_ids': [],
-        'query': query,
-    }
-
-    if request.user.is_authenticated:
-        context['wishlist_ids'] = models.WishList.objects.filter(user=request.user).values_list('product_id', flat=True)
-        context['cart_ids'] = models.CartProduct.objects.filter(cart__user=request.user, cart__status=1).values_list('product_id', flat=True)
-
+    products_qs = models.Product.objects.all()
+    context = _build_catalog_context(request, products_qs)
     return render(request, 'front/category_filter.html', context)
 
 
-# --------------------AUTH------------------------------
 def register(request):
-    if request.method =="POST":
+    if request.method == "POST":
         username = request.POST['username'].strip()
-        phone = request.POST['phone'].strip()
+        phone = request.POST['phone'].strip().replace(' ', '').replace('-', '')
         password = request.POST['password']
         confirm_password = request.POST['confirm_password']
-        if password == confirm_password:
-            if models.User.objects.filter(username=username).exists():
-                return render(request, 'front/register.html', {'error': 'Bu foydalanuvchi nomi band'})
-            models.User.objects.create_user(username=username, password=password, phone=phone)
-            user = authenticate(username=username, password=password)
-            login(request, user)
-            return redirect('index')
 
-        else:
+        if password != confirm_password:
             return render(request, 'front/register.html', {'error': 'Parollar mos kelmadi'})
 
-    return  render(request, 'front/register.html')
+        if not PHONE_RE.match(phone):
+            return render(request, 'front/register.html', {
+                'error': "Telefon raqam noto'g'ri. Masalan: +998901234567"
+            })
+
+        if models.User.objects.filter(username=username).exists():
+            return render(request, 'front/register.html', {'error': 'Bu foydalanuvchi nomi band'})
+
+        models.User.objects.create_user(username=username, password=password, phone=phone)
+        user = authenticate(username=username, password=password)
+        login(request, user)
+        messages.success(request, "Ro'yxatdan o'tish muvaffaqiyatli yakunlandi")
+        return redirect('index')
+
+    return render(request, 'front/register.html')
 
 
 def log_in(request):
@@ -196,9 +220,11 @@ def log_in(request):
         })
     return render(request, 'front/login.html', {'next': request.GET.get('next', '')})
 
+
 @require_POST
 def log_out(request):
     logout(request)
+    messages.success(request, 'Tizimdan chiqdingiz')
     return redirect('index')
 
 
@@ -206,18 +232,30 @@ def log_out(request):
 def profile(request):
     if request.method == "POST":
         user = request.user
-        user.username = request.POST.get('username')
-        user.last_name = request.POST.get('last_name')
-        user.first_name = request.POST.get('first_name')
-        user.phone = request.POST.get('phone')
-        user.address = request.POST.get('address')
+        new_username = (request.POST.get('username') or '').strip()
+        if new_username and new_username != user.username:
+            if models.User.objects.filter(username=new_username).exclude(pk=user.pk).exists():
+                messages.error(request, 'Bu foydalanuvchi nomi band')
+                return redirect('profile')
+            user.username = new_username
+
+        user.last_name = request.POST.get('last_name', '')
+        user.first_name = request.POST.get('first_name', '')
+        user.phone = request.POST.get('phone', '')
+        user.address = request.POST.get('address', '')
         if request.FILES.get('photo'):
             user.photo = request.FILES.get('photo')
-
         user.save()
+        messages.success(request, "Ma'lumotlar muvaffaqiyatli saqlandi")
+
+    orders = models.Cart.objects.filter(
+        user=request.user,
+        status__gt=1,
+    ).order_by('-date')
 
     context = {
         'show_dashboard_link': request.user.is_staff,
+        'orders': orders,
     }
     return render(request, 'front/profile.html', context)
 
@@ -225,23 +263,30 @@ def profile(request):
 @login_required(login_url='login')
 @require_POST
 def add_to_cart(request, product_code):
+    is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('ajax') == '1'
+    if not request.user.is_authenticated:
+        if is_ajax:
+            return JsonResponse({'status': 'login_required', 'message': 'Iltimos, avval tizimga kiring', 'redirect': '/login/'}, status=401)
+        return redirect('login')
+
     product = get_object_or_404(models.Product, code=product_code)
     cart = get_active_cart(request.user)
     cart_product = models.CartProduct.objects.filter(cart=cart, product=product).first()
 
-    quantity = 1
-    if request.method == 'POST':
-        try:
-            quantity = int(request.POST.get('quantity', 1))
-        except (ValueError, TypeError):
-            quantity = 1
+    try:
+        quantity = int(request.POST.get('quantity', 1))
+    except (ValueError, TypeError):
+        quantity = 1
     quantity = max(1, quantity)
-    if quantity > product.count:
-        quantity = product.count
 
-    if quantity <= 0:
+    if product.count <= 0:
+        if is_ajax:
+            return JsonResponse({'status': 'error', 'message': 'Mahsulot omborda mavjud emas'}, status=400)
         messages.error(request, 'Mahsulot omborda mavjud emas')
         return redirect_back(request, 'product_detail', code=product.code)
+
+    if quantity > product.count:
+        quantity = product.count
 
     if cart_product:
         cart_product.count = min(cart_product.count + quantity, product.count)
@@ -249,24 +294,50 @@ def add_to_cart(request, product_code):
     else:
         models.CartProduct.objects.create(cart=cart, product=product, count=quantity)
 
+    if is_ajax:
+        return JsonResponse({
+            'status': 'success',
+            'message': f'"{product.name}" savatga qo\'shildi',
+            'cart_count': request.user.cart_items_count,
+            'in_cart': True
+        })
+    messages.success(request, f'"{product.name}" savatga qo\'shildi')
     return redirect_back(request, 'product_detail', code=product.code)
 
 
-@login_required(login_url='login')
-@require_POST
 def remove_from_cart(request, product_code):
+    is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('ajax') == '1'
+    if not request.user.is_authenticated:
+        if is_ajax:
+            return JsonResponse({'status': 'login_required', 'message': 'Iltimos, avval tizimga kiring', 'redirect': '/login/'}, status=401)
+        return redirect('login')
+
+    if request.method != 'POST':
+        return redirect_back(request, 'index')
+
     product = get_object_or_404(models.Product, code=product_code)
-    models.CartProduct.objects.filter(cart__user=request.user, cart__status=1, product=product).delete()
+    models.CartProduct.objects.filter(
+        cart__user=request.user, cart__status=1, product=product
+    ).delete()
+    if is_ajax:
+        return JsonResponse({
+            'status': 'success',
+            'message': f'"{product.name}" savatdan olib tashlandi',
+            'cart_count': request.user.cart_items_count,
+            'in_cart': False
+        })
+    messages.success(request, f'"{product.name}" savatdan olib tashlandi')
     return redirect_back(request, 'product_detail', code=product.code)
 
 
-@login_required(login_url='login')
 def update_cart_quantity(request, product_code):
     if request.method == 'POST':
+        if not request.user.is_authenticated:
+            return JsonResponse({'status': 'login_required', 'redirect': '/login/'}, status=401)
         product = get_object_or_404(models.Product, code=product_code)
         cart = get_object_or_404(models.Cart, user=request.user, status=1)
         cart_product = get_object_or_404(models.CartProduct, cart=cart, product=product)
-        
+
         try:
             if request.content_type == 'application/json':
                 data = json.loads(request.body)
@@ -279,58 +350,91 @@ def update_cart_quantity(request, product_code):
                 cart_product.delete()
                 if request.content_type == 'application/json':
                     return JsonResponse({'status': 'deleted'})
+                messages.success(request, f'"{product.name}" savatdan olib tashlandi')
                 return redirect('cart')
-            else:
-                cart_product.count = quantity
-                cart_product.save()
-                if request.content_type == 'application/json':
-                    return JsonResponse({
-                        'status': 'updated',
-                        'total_price': float(cart_product.total_price),
-                        'count': cart_product.count
-                    })
-                return redirect_back(request, 'product_detail', code=product.code)
+
+            cart_product.count = quantity
+            cart_product.save()
+            if request.content_type == 'application/json':
+                return JsonResponse({
+                    'status': 'updated',
+                    'total_price': float(cart_product.total_price),
+                    'count': cart_product.count
+                })
+            messages.success(request, 'Savat yangilandi')
+            return redirect_back(request, 'product_detail', code=product.code)
         except (ValueError, TypeError):
             if request.content_type == 'application/json':
                 return JsonResponse({'status': 'error'}, status=400)
             return redirect_back(request, 'product_detail', code=product.code)
 
 
-@login_required(login_url='login')
-@require_POST
 def add_wishlist(request, product_code):
+    is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('ajax') == '1'
+    if not request.user.is_authenticated:
+        if is_ajax:
+            return JsonResponse({'status': 'login_required', 'message': 'Iltimos, avval tizimga kiring', 'redirect': '/login/'}, status=401)
+        return redirect('login')
+
+    if request.method != 'POST':
+        return redirect_back(request, 'index')
+
     product = get_object_or_404(models.Product, code=product_code)
-    element = models.WishList.objects.filter(product=product, user=request.user)
-    if not element:
+    if not models.WishList.objects.filter(product=product, user=request.user).exists():
         models.WishList.objects.create(product=product, user=request.user)
+        if not is_ajax:
+            messages.success(request, f'"{product.name}" sevimlilarga qo\'shildi')
+    if is_ajax:
+        return JsonResponse({
+            'status': 'success',
+            'message': f'"{product.name}" sevimlilarga qo\'shildi',
+            'wishlist_count': request.user.wishlist_count,
+            'in_wishlist': True
+        })
     return redirect_back(request)
 
-@login_required(login_url='login')
-@require_POST
+
 def delete_wishlist(request, product_code):
+    is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('ajax') == '1'
+    if not request.user.is_authenticated:
+        if is_ajax:
+            return JsonResponse({'status': 'login_required', 'message': 'Iltimos, avval tizimga kiring', 'redirect': '/login/'}, status=401)
+        return redirect('login')
+
+    if request.method != 'POST':
+        return redirect_back(request, 'index')
+
     product = get_object_or_404(models.Product, code=product_code)
-    element = models.WishList.objects.filter(product=product, user=request.user)
-    if element:
-        element.delete()
-        return redirect_back(request)
+    models.WishList.objects.filter(product=product, user=request.user).delete()
+    if not is_ajax:
+        messages.success(request, f'"{product.name}" sevimlilardan olib tashlandi')
+    if is_ajax:
+        return JsonResponse({
+            'status': 'success',
+            'message': f'"{product.name}" sevimlilardan olib tashlandi',
+            'wishlist_count': request.user.wishlist_count,
+            'in_wishlist': False
+        })
     return redirect_back(request)
 
 
 @login_required(login_url='login')
 def wishlist(request):
-    wishlist_products = models.WishList.objects.filter(user=request.user).filter(product__isnull=False)
-    context = {
+    wishlist_products = models.WishList.objects.filter(
+        user=request.user, product__isnull=False
+    ).select_related('product', 'product__category')
+    return render(request, 'front/wishlist.html', {
         "wishlist_products": wishlist_products
-    }
-    return render(request, 'front/wishlist.html', context=context)
+    })
 
 
 @login_required(login_url='login')
 def cart(request):
     cart_products = models.CartProduct.objects.filter(
         cart__user=request.user,
-        cart__status=1
-    ).select_related('product', 'cart').filter(product__isnull=False)
+        cart__status=1,
+        product__isnull=False,
+    ).select_related('product', 'product__category', 'cart')
     context = {
         "cart_products": cart_products,
         "cart_total": sum(item.total_price for item in cart_products),
@@ -342,37 +446,124 @@ def cart(request):
 @login_required(login_url='login')
 @require_POST
 def checkout(request):
-    cart = models.Cart.objects.filter(user=request.user, status=1).first()
+    user = request.user
+    if not (user.phone and user.address):
+        messages.warning(
+            request,
+            "Buyurtma berish uchun profilga telefon va manzil kiriting"
+        )
+        return redirect('profile')
+
+    cart = models.Cart.objects.filter(user=user, status=1).first()
     if not cart:
         messages.error(request, "Faol savat topilmadi")
         return redirect('cart')
 
-    cart_products = cart.cart_products.filter(product__isnull=False)
-    if not cart_products.exists():
+    cart_products = list(cart.cart_products.filter(product__isnull=False))
+    if not cart_products:
         messages.error(request, "Checkout uchun savat bo'sh")
         return redirect('cart')
 
-    cart.status = 2
-    cart.save(update_fields=['status'])
+    for item in cart_products:
+        if item.count > item.product.count:
+            messages.error(
+                request,
+                f'"{item.product.name}" uchun omborda yetarli mahsulot yo\'q'
+            )
+            return redirect('cart')
+
+    with transaction.atomic():
+        for item in cart_products:
+            updated = models.Product.objects.filter(
+                pk=item.product.pk,
+                count__gte=item.count,
+            ).update(count=F('count') - item.count)
+            if not updated:
+                messages.error(request, 'Buyurtma vaqtida ombor yangilanmadi, qayta urinib ko\'ring')
+                return redirect('cart')
+
+        cart.status = 2
+        cart.save(update_fields=['status'])
+
     messages.success(request, f"Buyurtma qabul qilindi. Buyurtma kodi: {cart.code}")
     return redirect('order_detail', code=cart.code)
 
 
 @login_required(login_url='login')
 def order_history(request):
-    orders = models.Cart.objects.filter(
-        user=request.user,
-        status__gt=1,
-    ).order_by('-date')
-    return render(request, 'front/orders.html', {'orders': orders})
+    return redirect('/profile/?tab=orders')
 
 
 @login_required(login_url='login')
 def order_detail(request, code):
     order = get_object_or_404(models.Cart, user=request.user, code=code, status__gt=1)
     cart_products = order.cart_products.filter(product__isnull=False)
-    context = {
+    return render(request, 'front/order_detail.html', {
         'order': order,
         'cart_products': cart_products,
-    }
-    return render(request, 'front/order_detail.html', context=context)
+    })
+
+
+def live_search(request):
+    q = request.GET.get('q', '').strip()
+    if not q or len(q) < 2:
+        return JsonResponse({'results': []})
+
+    products = models.Product.objects.filter(
+        name__icontains=q
+    ).select_related('category')[:6]
+
+    results = []
+    for p in products:
+        results.append({
+            'code': p.code,
+            'name': p.name,
+            'category': p.category.name if p.category else '',
+            'price': f"{int(p.active_price):,} so'm".replace(',', ' '),
+            'image': p.image.url if p.image else '/static/assets/images/thumbs/product-img1.png',
+            'url': f"/product-detail/{p.code}/",
+            'discount_percent': p.discount_percent,
+        })
+    return JsonResponse({'results': results})
+
+
+def category_products_api(request, category_id):
+    from django.template.loader import render_to_string
+    category = get_object_or_404(models.Category, id=category_id)
+    try:
+        offset = int(request.GET.get('offset', 0))
+        limit = int(request.GET.get('limit', 10))
+    except (ValueError, TypeError):
+        offset = 0
+        limit = 10
+
+    products_qs = models.Product.objects.filter(category=category).order_by('-created_at')
+    total_count = products_qs.count()
+    products = list(products_qs[offset:offset + limit])
+    has_more = (offset + len(products)) < total_count
+
+    cart_ids = []
+    wishlist_ids = []
+    if request.user.is_authenticated:
+        cart = models.Cart.objects.filter(user=request.user, status=1).first()
+        if cart:
+            cart_ids = list(models.CartProduct.objects.filter(cart=cart).values_list('product_id', flat=True))
+        wishlist_ids = list(models.WishList.objects.filter(user=request.user).values_list('product_id', flat=True))
+
+    html_items = []
+    for p in products:
+        item_html = render_to_string('front/partials/product_card.html', {
+            'product': p,
+            'cart_ids': cart_ids,
+            'wishlist_ids': wishlist_ids,
+            'request': request
+        })
+        html_items.append(item_html)
+
+    return JsonResponse({
+        'status': 'success',
+        'has_more': has_more,
+        'next_offset': offset + len(products),
+        'items': html_items,
+        'total': total_count
+    })

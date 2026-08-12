@@ -6,3 +6,6 @@ django-storages==1.14.2
 boto3==1.26.137
 Pillow==10.0.0
 django-jazzmin==3.0.5
+whitenoise==6.9.0
+gunicorn==23.0.0
+openpyxl==3.1.5

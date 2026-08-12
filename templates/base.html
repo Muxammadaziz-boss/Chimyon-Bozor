@@ -1,666 +1,1132 @@
 <!DOCTYPE html>
+
 {% load static %}
-<html lang="en">
+
+<html lang="uz">
+
+
 
 <head>
+
     <meta charset="UTF-8">
+
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Title -->
-    <title>{{ site_settings.site_name|default:'DpMarket' }} | Digital Market Place</title>
-    <!-- Favicon -->
-    <link rel="shortcut icon" href="{% if site_settings.favicon %}{{ site_settings.favicon.url }}{% else %}{% static 'assets/images/logo/favicon-two.png' %}{% endif %}">
 
-    <!-- Bootstrap -->
+    <title>{% block title %}{{ site_settings.site_name|default:"To'garak shop" }}{% endblock %}</title>
+
+    {% if site_settings.favicon %}
+
+    <link rel="shortcut icon" href="{{ site_settings.favicon.url }}">
+
+    {% else %}
+
+    <link rel="shortcut icon" href="{% static 'assets/images/logo/favicon-two.png' %}">
+
+    {% endif %}
+
+
+
     <link rel="stylesheet" href="{% static 'assets/css/bootstrap.min.css' %}">
-    <!-- Fontawesome -->
+
     <link rel="stylesheet" href="{% static 'assets/css/fontawesome-all.min.css' %}">
-    <!-- Slick -->
+
     <link rel="stylesheet" href="{% static 'assets/css/slick.css' %}">
-    <!-- magnific popup -->
+
     <link rel="stylesheet" href="{% static 'assets/css/magnific-popup.css' %}">
-    <!-- line awesome -->
+
     <link rel="stylesheet" href="{% static 'assets/css/line-awesome.min.css' %}">
-    <!-- Main css -->
+
     <link rel="stylesheet" href="{% static 'assets/css/main.css' %}">
+
+    {% block extra_css %}{% endblock %}
+
     <style>
-        /* ============ Minimal Clean SaaS Theme ============ */
-        body {
-            background: #fafbfc;
-            color: hsl(var(--heading-color));
-            font-family: "Inter", "Plus Jakarta Sans", system-ui, sans-serif;
+        .header {
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 1020 !important;
+            background: rgba(255, 255, 255, 0.97) !important;
+            backdrop-filter: blur(12px) !important;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06) !important;
+            transition: all 0.3s ease;
+            padding: 16px 0 !important;
         }
-
-        /* Header: clean white, thin border, no heavy effects */
-        .site-header {
-            position: sticky;
-            top: 0;
-            z-index: 999;
-            background: #ffffff;
-            border-bottom: 1px solid #e8eaed;
+        .header-inner {
+            min-height: 52px;
         }
-
-        .site-header__inner {
-            min-height: 72px;
-            gap: 32px;
-        }
-
-        .site-header__brand {
-            display: flex;
-            align-items: center;
-            flex-shrink: 0;
-        }
-
-        .site-header__brand img {
-            max-height: 36px;
+        .logo img {
+            max-height: 46px !important;
+            height: 46px !important;
             width: auto;
         }
-
-        .site-header__nav {
-            display: flex;
-            justify-content: center;
-            flex: 1;
-        }
-
-        .site-header__menu {
-            gap: 4px;
-        }
-
-        .site-header__menu > .nav-menu__item {
-            position: relative;
-        }
-
-        .site-header__menu > .nav-menu__item > .nav-menu__link {
-            padding: 10px 14px;
-            border-radius: 8px;
+        .nav-category-btn {
+            background: hsl(var(--main));
+            color: #fff !important;
+            border-radius: 30px;
+            padding: 11px 24px;
+            font-weight: 600;
             font-size: 15px;
-            font-weight: 500;
-            color: #3b4252;
-            transition: color 0.15s ease, background 0.15s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s ease;
+            white-space: nowrap;
         }
-
-        .site-header__menu > .nav-menu__item > .nav-menu__link:hover,
-        .site-header__menu > .nav-menu__item:hover > .nav-menu__link {
-            background: #f1f3f5;
-            color: hsl(var(--main));
+        .nav-category-btn:hover {
+            background: hsl(var(--main2));
+            color: #fff !important;
         }
-
-        .site-header__menu .nav-submenu {
-            min-width: 200px;
-            margin-top: 10px;
+        .header-search-wrap {
+            max-width: 650px;
+            width: 100%;
+        }
+        .search-input-group {
+            background: #ffffff;
+            border: 2px solid rgba(183, 135, 253, 0.45);
+            border-radius: 35px;
+            padding: 4px 4px 4px 22px;
+            box-shadow: 0 4px 18px rgba(183, 135, 253, 0.1);
+            transition: all 0.25s ease;
+        }
+        .search-input-group:focus-within {
+            border-color: hsl(var(--main));
+            box-shadow: 0 6px 24px rgba(183, 135, 253, 0.25);
+        }
+        .header-search-input {
+            border: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            font-size: 16px;
+            color: hsl(var(--heading-color));
+            padding: 8px 0;
+        }
+        .header-search-input::placeholder {
+            color: #94a3b8;
+        }
+        .header-search-btn {
+            border-radius: 30px !important;
+            padding: 10px 28px !important;
+            font-weight: 600;
+            font-size: 15px;
+        }
+        .header-search-results-popup {
+            position: absolute;
+            top: calc(100% + 10px);
+            left: 0;
+            right: 0;
+            z-index: 1050;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.15);
+            border: 1px solid #f0f0f0;
+            max-height: 400px;
+            overflow-y: auto;
             padding: 8px;
-            border: 1px solid #e8eaed;
-            border-radius: 10px;
-            box-shadow: 0 12px 32px rgba(16, 24, 40, 0.08);
         }
-
-        .site-header__menu .nav-submenu__link {
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 500;
+        .category-dropdown-menu {
+            min-width: 240px;
+            border-radius: 16px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+            border: 1px solid #f0f0f0;
+            padding: 8px 0;
+            margin-top: 10px;
         }
-
-        .site-header__menu .nav-submenu__link:hover {
-            background: #f1f3f5;
-            color: hsl(var(--main));
-        }
-
-        .site-header__actions {
+        .category-dropdown-item {
+            padding: 10px 18px;
             display: flex;
             align-items: center;
             gap: 12px;
+            color: hsl(var(--heading-color));
+            font-weight: 500;
+            font-size: 14px;
+            transition: background 0.15s ease;
+            text-decoration: none;
+        }
+        .category-dropdown-item:hover {
+            background: #f8f9fa;
+            color: hsl(var(--main));
+        }
+        .user-profile-pill {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #ffffff;
+            border: 1.5px solid rgba(183, 135, 253, 0.45);
+            padding: 5px 18px 5px 6px;
+            border-radius: 35px;
+            text-decoration: none;
+            color: hsl(var(--heading-color));
+            font-weight: 600;
+            font-size: 15px;
+            box-shadow: 0 2px 12px rgba(183, 135, 253, 0.1);
+            transition: all 0.25s ease;
+        }
+        .user-profile-pill:hover {
+            background: #fcfaff;
+            border-color: hsl(var(--main));
+            box-shadow: 0 4px 14px rgba(183, 135, 253, 0.22);
+            color: hsl(var(--main));
+        }
+        .user-profile-pill::after {
+            display: none !important;
+        }
+        .user-avatar-circle {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: linear-gradient(135deg, hsl(var(--main)), hsl(var(--main2)));
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 15px;
             flex-shrink: 0;
         }
-
-        .site-header__icon {
-            position: relative;
-            width: 40px;
-            height: 40px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 10px;
-            background: transparent;
-            border: 1px solid #e4e6eb;
-            transition: border-color 0.15s ease, background 0.15s ease;
-        }
-
-        .site-header__icon:hover {
-            background: #f6f7f9;
-            border-color: #d3d6db;
-        }
-
-        .site-header__icon img,
-        .site-header__icon i {
-            max-width: 18px;
-            font-size: 17px;
-        }
-
-        .site-header__icon .qty-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            min-width: 20px;
-            height: 20px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid #fff;
-            border-radius: 999px;
-            background: hsl(var(--main));
-            color: #fff;
-            font-size: 11px;
-            font-weight: 600;
-        }
-
-        .site-header__profile {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 5px 12px 5px 5px;
-            border-radius: 999px;
-            border: 1px solid #e4e6eb;
-            background: #fff;
-            color: hsl(var(--heading-color));
-            transition: border-color 0.15s ease, box-shadow 0.15s ease;
-        }
-
-        .site-header__profile:hover {
-            color: hsl(var(--heading-color));
-            border-color: #c9ccd2;
-            box-shadow: 0 4px 14px rgba(16, 24, 40, 0.06);
-        }
-
-        .site-header__avatar {
-            width: 30px;
-            height: 30px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            background: #eef0f3;
-            overflow: hidden;
-        }
-
-        .site-header__avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .site-header__profile-text {
-            line-height: 1.1;
-        }
-
-        .site-header__profile-text small {
-            display: block;
-            color: #8a919c;
-            font-size: 10px;
-        }
-
-        .site-header__profile-text strong {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            color: hsl(var(--heading-color));
-        }
-
-        /* Section headings: clean SaaS typography */
-        .section-heading__title {
-            font-weight: 700 !important;
-            letter-spacing: -0.02em;
-        }
-
-        /* Buttons: flat, no heavy gradients */
-        .btn-main {
-            background: hsl(var(--main));
-            border-color: hsl(var(--main));
-            background-image: none !important;
-        }
-
-        /* Product cards: clean SaaS look */
-        .product-card {
-            background: #ffffff !important;
-            border: 1px solid #e8eaed !important;
-            border-radius: 14px !important;
-            box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
-            transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
-        }
-
-        .product-card:hover {
-            border-color: #d8dbe0 !important;
-            box-shadow: 0 12px 28px rgba(16, 24, 40, 0.08);
-            transform: translateY(-2px);
-        }
-
-        .product-card__thumb img {
-            border-radius: 14px 14px 0 0;
-        }
-
-        .product-card__title {
-            font-weight: 600;
-            font-size: 16px;
-        }
-
-        /* Sections: clean separated blocks */
-        .section-bg {
-            background: #fafbfc !important;
-        }
-
-        .padding-y-120 {
-            padding-top: 72px !important;
-            padding-bottom: 72px !important;
-        }
-
-        /* Inputs: clean SaaS style */
-        .common-input {
-            border-radius: 10px;
-            border-color: #e4e6eb;
-        }
-
-        .common-input:focus {
-            border-color: hsl(var(--main));
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-        }
-
-        /* Footer: light, clean */
-        .footer {
-            background: #ffffff;
-            border-top: 1px solid #eef0f3;
-            padding-top: 48px !important;
-            padding-bottom: 32px !important;
-        }
-
-        .footer-widget__title {
-            font-size: 16px;
-            font-weight: 700;
-            color: hsl(var(--heading-color));
-            letter-spacing: -0.01em;
-        }
-
-        .footer-widget__list li + li {
+        .user-dropdown-menu {
+            min-width: 220px;
+            border-radius: 16px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.14);
+            border: 1px solid #f0f0f0;
+            padding: 8px 0;
             margin-top: 10px;
         }
 
-        .footer-widget__list a {
-            color: var(--body-text);
+        /* Dynamic Micro-Animations */
+        .dropdown-menu {
+            animation: dropdownFadeIn 0.25s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+            transform-origin: top center;
+        }
+        @keyframes dropdownFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px) scale(0.96);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        .product-card {
+            transition: transform 0.3s cubic-bezier(0.165, 0.84, 0.44, 1), box-shadow 0.3s ease !important;
+        }
+        .product-card:hover {
+            transform: translateY(-8px) !important;
+            box-shadow: 0 16px 36px rgba(183, 135, 253, 0.22) !important;
+        }
+        .product-card__thumb img {
+            transition: transform 0.4s ease !important;
+        }
+        .product-card:hover .product-card__thumb img {
+            transform: scale(1.06) !important;
+        }
+        @keyframes badgePopPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.4); }
+            100% { transform: scale(1); }
+        }
+        .badge-pop-animate {
+            animation: badgePopPulse 0.4s ease-out;
+        }
+        .btn-main {
+            transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1) !important;
+        }
+        .btn-main:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(183, 135, 253, 0.4) !important;
+        }
+
+        /* Modern Compact Product Card System */
+        .product-item-card {
+            background: #ffffff;
+            border-radius: 20px !important;
+            padding: 12px !important;
+            border: 1px solid #eef2f6 !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+            transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1) !important;
+            position: relative;
+        }
+        .product-item-card:hover {
+            transform: translateY(-5px) !important;
+            box-shadow: 0 16px 36px rgba(124, 58, 237, 0.14) !important;
+            border-color: rgba(124, 58, 237, 0.35) !important;
+        }
+        .product-item-img-box {
+            aspect-ratio: 4 / 4.8;
+            border-radius: 14px;
+            background: #f8fafc;
+            position: relative;
+            overflow: hidden;
+        }
+        .product-item-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.4s ease !important;
+        }
+        .product-item-card:hover .product-item-img {
+            transform: scale(1.06);
+        }
+        .product-item-wishlist-form {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 5;
+        }
+        .product-item-wishlist-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(6px);
+            color: #94a3b8;
             font-size: 14px;
-            transition: color 0.15s ease;
-        }
-
-        .footer-widget__list a:hover {
-            color: hsl(var(--main));
-        }
-
-        .social-icons__item {
-            width: 36px;
-            height: 36px;
-            border: 1px solid #e4e6eb;
-            border-radius: 10px;
-            display: inline-flex;
+            display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--body-text);
-            transition: background 0.15s ease, color 0.15s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: all 0.25s ease;
+        }
+        .product-item-wishlist-btn:hover,
+        .product-item-wishlist-btn.active {
+            background: #ffffff;
+            color: #ef4444 !important;
+            transform: scale(1.12);
+        }
+        .product-item-price-main {
+            font-size: 17px;
+            font-weight: 800;
+            color: #7C3AED;
+            line-height: 1.2;
+        }
+        .product-item-price-old {
+            font-size: 12.5px;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+        .product-item-installment-badge {
+            display: inline-block;
+            background: #FFE600;
+            color: #0f172a;
+            font-weight: 700;
+            font-size: 11px;
+            padding: 3px 9px;
+            border-radius: 6px;
+            line-height: 1.3;
+        }
+        .product-item-title {
+            font-size: 13.5px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            line-height: 1.35;
+            height: 36px;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+        .product-item-link {
+            color: #1e293b;
+            transition: color 0.2s ease;
+        }
+        .product-item-link:hover {
+            color: #7C3AED;
+        }
+        .product-item-cart-btn {
+            width: 100%;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 13px;
+            padding: 9.5px 12px;
+            border: none;
+            background: linear-gradient(135deg, #7C3AED, #6366F1);
+            color: #ffffff;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 14px rgba(124, 58, 237, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .product-item-cart-btn:hover {
+            background: linear-gradient(135deg, #6D28D9, #4F46E5);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(124, 58, 237, 0.38);
+            color: #ffffff;
+        }
+        .product-item-cart-btn.added {
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
         }
 
-        .social-icons__item:hover {
+        .mobile-bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 1030;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid #eef0f3;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
+            padding: 8px 6px;
+        }
+        .mobile-bottom-nav__item {
+            flex: 1;
+            text-align: center;
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 500;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            position: relative;
+        }
+        .mobile-bottom-nav__item i {
+            font-size: 19px;
+        }
+        .mobile-bottom-nav__item.active {
+            color: hsl(var(--main));
+            font-weight: 700;
+        }
+        .mobile-bottom-nav__badge {
+            position: absolute;
+            top: -2px;
+            right: calc(50% - 14px);
             background: hsl(var(--main));
             color: #fff;
-            border-color: hsl(var(--main));
+            font-size: 10px;
+            font-weight: 700;
+            border-radius: 10px;
+            padding: 2px 5px;
+            line-height: 1;
         }
-
-        /* Breadcrumb sections: subtle background */
-        .breadcrumb {
-            background: #f7f8fb !important;
-        }
-
-        @media (max-width: 1199.98px) {
-            .site-header__menu > .nav-menu__item > .nav-menu__link {
-                padding: 8px 10px;
-                font-size: 14px;
-            }
-        }
-
         @media (max-width: 991.98px) {
-            .site-header__inner {
-                min-height: 64px;
-            }
-
-            .site-header__nav {
-                display: none;
-            }
-
-            .site-header__profile-text {
-                display: none;
-            }
-
-            .site-header__profile {
-                padding-left: 5px;
+            body {
+                padding-bottom: 60px;
             }
         }
     </style>
-
 </head>
+
+
 
 <body>
 
-    <!--==================== Overlay Start ====================-->
+
+
     <div class="overlay"></div>
-    <!--==================== Overlay End ====================-->
 
-    <!--==================== Sidebar Overlay End ====================-->
     <div class="side-overlay"></div>
-    <!--==================== Sidebar Overlay End ====================-->
 
-    <!-- ==================== Scroll to Top End Here ==================== -->
+
+
     <div class="progress-wrap">
+
         <svg class="progress-circle svg-content" width="100%" height="100%" viewBox="-1 -1 102 102">
+
             <path d="M50,1 a49,49 0 0,1 0,98 a49,49 0 0,1 0,-98" />
+
         </svg>
+
     </div>
-    <!-- ==================== Scroll to Top End Here ==================== -->
 
-    <!-- ==================== Mobile Menu Start Here ==================== -->
+
+
+    <!-- Mobile Menu -->
+
     <div class="mobile-menu d-lg-none d-block">
-        <button type="button" class="close-button"> <i class="las la-times"></i> </button>
+
+        <button type="button" class="close-button"><i class="las la-times"></i></button>
+
         <div class="mobile-menu__inner">
+
             <a href="{% url 'index' %}" class="mobile-menu__logo">
-                <img src="{% static 'assets/images/logo/logo.png' %}" alt="Logo">
+
+                {% if site_settings.logo %}
+
+                <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}">
+
+                {% else %}
+
+                <img src="{% static 'assets/images/logo/logo.png' %}" alt="{{ site_settings.site_name|default:'Logo' }}">
+
+                {% endif %}
+
             </a>
-            <div class="mobile-menu__menu">
 
-                        <a href="{% url 'index' %}" class="nav-menu__link">Bosh sahifa</a>
-                        <a href="{% url 'all_products' %}" class="nav-menu__link">Mahsulotlar</a>
-                        <a href="javascript:void(0)" class="nav-menu__link">Sahifalar</a>
-                        <a href="{% url 'profile' %}" class="nav-submenu__link"> Profil</a>
-                        <a href="{% url 'cart' %}" class="nav-submenu__link"> Savat</a>
-                        <a href="{% url 'order_history' %}" class="nav-submenu__link"> Buyurtmalar</a>
-                </ul>
-                <div class="header-right__inner d-lg-none my-3 gap-1 d-flex flx-align">
+            <nav class="mobile-menu__menu">
 
+                <a href="{% url 'index' %}" class="nav-menu__link d-block mb-2">Bosh sahifa</a>
+
+                <a href="{% url 'all_products' %}" class="nav-menu__link d-block mb-2">Mahsulotlar</a>
+
+                <a href="{% url 'cart' %}" class="nav-submenu__link d-block mb-2">Savat</a>
+
+                <a href="{% url 'wishlist' %}" class="nav-submenu__link d-block mb-2">Sevimlilar</a>
+
+                {% if user.is_authenticated %}
+
+                <a href="{% url 'profile' %}" class="nav-submenu__link d-block mb-2">Profil</a>
+
+                <a href="{% url 'order_history' %}" class="nav-submenu__link d-block mb-2">Buyurtmalarim</a>
+
+                {% endif %}
+
+                <div class="header-right__inner d-lg-none my-3 gap-2 d-flex flx-align flex-wrap">
 
                     {% if user.is_authenticated %}
+
                     <a href="{% url 'profile' %}" class="btn btn-main pill">
+
                         <span class="icon-left icon">
+
                             <img src="{% static 'assets/images/icons/user.svg' %}" alt="">
+
                         </span>Profil
+
                     </a>
+
                     {% else %}
+
                     <a href="{% url 'login' %}" class="btn btn-main pill">
+
                         <span class="icon-left icon">
+
                             <img src="{% static 'assets/images/icons/user.svg' %}" alt="">
+
                         </span>Kirish
+
                     </a>
+
                     {% endif %}
 
-
-                    <div class="language-select flx-align select-has-icon">
-                        <img src="{% static 'assets/images/icons/globe.svg' %}" alt="" class="globe-icon">
-                        <select class="select py-0 ps-2 border-0 fw-500">
-                            <option value="1">Eng</option>
-                            <option value="2">Bn</option>
-                            <option value="3">Eur</option>
-                            <option value="4">Urd</option>
-                        </select>
-                    </div>
                 </div>
-            </div>
+
+            </nav>
+
         </div>
+
     </div>
-    <!-- ==================== Mobile Menu End Here ==================== -->
+
+
 
     <main class="change-gradient">
-        <!-- ==================== Header Start Here ==================== -->
-        <header class="header site-header">
+
+        <header class="header">
+
             <div class="container container-full">
-                <nav class="header-inner site-header__inner flx-between">
-                    <!-- Logo Start -->
-                    <div class="logo site-header__brand">
-                        <a href="{% url 'index' %}" class="link">
-                            {% if site_settings.logo %}
-                            <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}">
-                            {% else %}
-                            <img src="{% static 'assets/images/logo/logo-two.png' %}" alt="Logo">
-                            {% endif %}
-                        </a>
+
+                <nav class="header-inner flx-between gap-3 align-items-center">
+
+                    <!-- Left: Logo & Katalog Button -->
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="logo">
+                            <a href="{% url 'index' %}" class="link">
+                                {% if site_settings.logo %}
+                                <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}">
+                                {% else %}
+                                <img src="{% static 'assets/images/logo/logo-two.png' %}" alt="{{ site_settings.site_name|default:'Logo' }}">
+                                {% endif %}
+                            </a>
+                        </div>
+
+                        <!-- Katalog Button (Right next to Logo) -->
+                        <div class="dropdown d-none d-md-block">
+                            <a href="javascript:void(0)" class="nav-category-btn" id="katalogHeaderDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-th-large"></i> <span>Katalog</span> <i class="fas fa-angle-down font-12 ms-1"></i>
+                            </a>
+                            <ul class="dropdown-menu category-dropdown-menu" aria-labelledby="katalogHeaderDropdown">
+                                {% for cat in nav_categories %}
+                                <li>
+                                    <a href="{% url 'category_filter' cat.id %}" class="category-dropdown-item">
+                                        {% if cat.logo %}
+                                        <img src="{{ cat.logo.url }}" width="20" height="20" style="object-fit:contain;">
+                                        {% else %}
+                                        <i class="fas fa-box text-main font-14"></i>
+                                        {% endif %}
+                                        <span>{{ cat.name }}</span>
+                                    </a>
+                                </li>
+                                {% empty %}
+                                <li><a class="dropdown-item text-muted font-14 px-3" href="{% url 'all_products' %}">Barcha mahsulotlar</a></li>
+                                {% endfor %}
+                            </ul>
+                        </div>
                     </div>
-                    <!-- Logo End  -->
 
-                    <!-- Menu Start  -->
-                    <div class="header-menu site-header__nav d-lg-block d-none">
-
-                        <ul class="nav-menu site-header__menu flx-align ">
-                            <li class="nav-menu__item">
-                                <a href="{% url 'index' %}" class="nav-menu__link">Bosh sahifa</a>
-                            </li>
-                            <li class="nav-menu__item has-submenu">
-                                <a href="javascript:void(0)" class="nav-menu__link">Mahsulotlar</a>
-                                <ul class="nav-submenu">
-                                    <li class="nav-submenu__item">
-                                        <a href="{% url 'all_products' %}" class="nav-submenu__link"> Barcha mahsulotlar</a>
-                                    </li>
-                                    <li class="nav-submenu__item">
-                                        <a href="{% url 'wishlist' %}" class="nav-submenu__link"> Saralanganlar</a>
-                                    </li>
-                                </ul>
-                            </li>
-                            <li class="nav-menu__item has-submenu">
-                                <a href="javascript:void(0)" class="nav-menu__link">Sahifalar</a>
-                                <ul class="nav-submenu">
-                                    <li class="nav-submenu__item">
-                                        <a href="{% url 'profile' %}" class="nav-submenu__link"> Profil</a>
-                                    </li>
-                                    <li class="nav-submenu__item">
-                                        <a href="{% url 'cart' %}" class="nav-submenu__link"> Savat</a>
-                                    </li>
-                                     <li class="nav-submenu__item">
-                                         <a href="{% url 'wishlist' %}" class="nav-submenu__link"> Saralanganlar</a>
-                                     </li>
-                                     <li class="nav-submenu__item">
-                                         <a href="{% url 'order_history' %}" class="nav-submenu__link"> Buyurtmalar</a>
-                                     </li>
-                                     {% if user.is_staff %}
-                                    <li class="nav-submenu__item">
-                                        <a href="{% url 'd_index' %}" class="nav-submenu__link"> Dashboard</a>
-                                    </li>
-                                    {% endif %}
-                                </ul>
-                            </li>
-                        </ul>
+                    <!-- Center: Long Search Bar -->
+                    <div class="header-search-wrap flex-grow-1 mx-lg-4 mx-2 position-relative d-none d-sm-block">
+                        <form action="{% url 'all_products' %}" method="get" class="d-flex w-100 position-relative">
+                            <div class="input-group search-input-group w-100">
+                                <input type="text" name="search" id="header-live-search-input" class="form-control header-search-input" placeholder="Mahsulotlarni qidirish..." autocomplete="off" value="{{ request.GET.search|default:'' }}">
+                                <button type="submit" class="btn btn-main header-search-btn px-4">
+                                    <i class="fas fa-search me-1"></i> <span>Qidirish</span>
+                                </button>
+                            </div>
+                        </form>
+                        <!-- Live Search Pop-up Results -->
+                        <div id="header-live-search-results" class="header-search-results-popup" style="display:none;"></div>
                     </div>
-                    <!-- Menu End  -->
 
-                    <!-- Header Right start -->
-                    <div class="header-right site-header__actions flx-align">
-                        <a href="{% url 'cart' %}" class="site-header__icon">
+
+
+                    <div class="header-right flx-align">
+
+                        <a href="{% url 'cart' %}" class="header-right__button cart-btn position-relative" aria-label="Savat">
+
                             <img src="{% static 'assets/images/icons/cart.svg' %}" alt="">
-                            <span class="qty-badge font-12">
-                                {% if user.is_authenticated %}
-                                    {{ user.cart_items_count }}
-                                {% else %}
-                                    0
-                                {% endif %}
-                            </span>
-                        </a>
-                        <a href="{% url 'wishlist' %}" class="site-header__icon">
 
-                            <i class="fa fa-heart" style="font-size:24px;color:red"></i>
-                            <span class="qty-badge font-12">
-                                {% if user.is_authenticated %}
-                                    {{ user.wishlist_count }}
-                                {% else %}
-                                    0
-                                {% endif %}
+                            <span class="qty-badge font-12 cart-count-badge">
+
+                                {% if user.is_authenticated %}{{ user.cart_items_count }}{% else %}0{% endif %}
+
                             </span>
+
                         </a>
-                        <div class="header-right__inner gap-3 flx-align d-lg-flex d-none">
+
+                        <a href="{% url 'wishlist' %}" class="header-right__button cart-btn position-relative" aria-label="Sevimlilar">
+
+                            <i class="fa fa-heart text-danger" style="font-size:24px;"></i>
+
+                            <span class="qty-badge font-12 wishlist-count-badge">
+
+                                {% if user.is_authenticated %}{{ user.wishlist_count }}{% else %}0{% endif %}
+
+                            </span>
+
+                        </a>
+
+
+
+                        <div class="header-right__inner gap-3 flx-align d-none d-lg-flex">
 
                             {% if user.is_authenticated %}
-                            <a href="{% url 'profile' %}" class="site-header__profile">
-                                <span class="site-header__profile-text">
-                                    <small>Akkaunt</small>
-                                    <strong>{{ user.username }}</strong>
-                                </span>
-                                <span class="site-header__avatar">
+
+                            <div class="dropdown">
+                                <a href="javascript:void(0)" class="user-profile-pill" id="userProfileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                                     {% if user.photo %}
-                                    <img src="{{ user.photo.url }}" alt="{{ user.username }}">
+                                    <img src="{{ user.photo.url }}" class="user-avatar-circle" alt="{{ user.username }}">
                                     {% else %}
-                                    <img src="{% static 'assets/images/icons/user.svg' %}" alt="{{ user.username }}">
+                                    <div class="user-avatar-circle">
+                                        {{ user.first_name|default:user.username|slice:":1"|upper }}
+                                    </div>
                                     {% endif %}
-                                </span>
-                            </a>
+                                    <span class="user-name-text">{{ user.first_name|default:user.username }}</span>
+                                    <i class="fas fa-angle-down font-12 text-muted ms-1"></i>
+                                </a>
+                                <ul class="dropdown-menu user-dropdown-menu dropdown-menu-end" aria-labelledby="userProfileDropdown">
+                                    <li class="px-3 py-2 border-bottom">
+                                        <div class="fw-bold text-heading font-15">{{ user.get_full_name|default:user.username }}</div>
+                                        {% if user.email %}<div class="text-muted font-12">{{ user.email }}</div>{% endif %}
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'profile' %}" class="dropdown-item py-2 px-3 font-14"><i class="fas fa-user-circle me-2 text-main"></i>Profil sozlamalari</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'order_history' %}" class="dropdown-item py-2 px-3 font-14"><i class="fas fa-box-open me-2 text-main"></i>Mening buyurtmalarim</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'wishlist' %}" class="dropdown-item py-2 px-3 font-14"><i class="fas fa-heart me-2 text-danger"></i>Sevimlilarim</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'cart' %}" class="dropdown-item py-2 px-3 font-14"><i class="fas fa-shopping-cart me-2 text-main"></i>Mening savatim</a>
+                                    </li>
+                                    <li class="border-top mt-1 pt-1">
+                                        <form method="post" action="{% url 'logout' %}" class="d-inline w-100">
+                                            {% csrf_token %}
+                                            <button type="submit" class="dropdown-item py-2 px-3 font-14 text-danger border-0 bg-transparent w-100 text-start">
+                                                <i class="fas fa-sign-out-alt me-2"></i>Tizimdan chiqish
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+
                             {% else %}
-                            <a href="{% url 'login' %}" class="site-header__profile">
-                                <span class="site-header__profile-text">
-                                    <small>Xush kelibsiz</small>
-                                    <strong>Kirish</strong>
-                                </span>
-                                <span class="site-header__avatar">
-                                    <img src="{% static 'assets/images/icons/user.svg' %}" alt="Kirish">
-                                </span>
+
+                            <a href="{% url 'login' %}" class="btn btn-main pill">
+
+                                <span class="icon-left icon">
+
+                                    <img src="{% static 'assets/images/icons/user.svg' %}" alt="">
+
+                                </span>Kirish
+
                             </a>
+
                             {% endif %}
 
-
                         </div>
-                        <button type="button" class="toggle-mobileMenu d-lg-none site-header__icon"> <i class="las la-bars"></i>
-                        </button>
-                        <!-- Header Right End  -->
-                </nav>
-            </div>
-        </header>
-        <!-- ==================== Header End Here ==================== -->
 
-        {% if messages %}
-        <div class="container container-two mt-4">
-            {% for message in messages %}
-            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} mb-3" role="alert">
-                {{ message }}
+
+
+                        <button type="button" class="toggle-mobileMenu d-lg-none ms-2 btn btn-outline-light pill" aria-label="Menyu">
+
+                            <i class="las la-bars"></i>
+
+                        </button>
+
+                    </div>
+
+                </nav>
+
             </div>
-            {% endfor %}
-        </div>
-        {% endif %}
+
+        </header>
+
+
+
+        {% include 'front/partials/messages.html' %}
+
 
 
         {% block content %}
+
         {% endblock %}
 
 
 
-
-
-        <!-- ==================== Footer Start Here ==================== -->
         <footer class="footer">
+
+            <img src="{% static 'assets/images/shapes/pattern.png' %}" alt="" class="bg-pattern">
+
+            <img src="{% static 'assets/images/shapes/element1.png' %}" alt="" class="element one">
+
+            <img src="{% static 'assets/images/shapes/element2.png' %}" alt="" class="element two">
+
+            <img src="{% static 'assets/images/gradients/footer-gradient.png' %}" alt="" class="bg--gradient">
+
+
+
             <div class="container container-two">
-                <div class="row gy-4">
-                    <div class="col-xl-4 col-lg-6 col-sm-12">
-                        <div class="footer-widget__about">
-                            <div class="footer-widget__logo">
-                                <a href="{% url 'index' %}" class="link">
-                                    {% if site_settings.logo %}
-                                    <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}">
-                                    {% else %}
-                                    <img src="{% static 'assets/images/logo/logo.png' %}" alt="Logo">
-                                    {% endif %}
-                                </a>
-                            </div>
-                            <div class="footer-widget__desc font-14 text-body mt-3">{{ site_settings.footer_description|default:'Buyurtmangiz bo\'yicha yordam kerakmi? Qo\'llab-quvvatlash jamoamizga murojaat qiling.' }}</div>
-                            <div class="social-icons pt-3 flx-align">
-                                <a href="{{ site_settings.facebook|default:'#' }}" class="social-icons__item" aria-label="Facebook"><i
-                                        class="fab fa-facebook-f"></i></a>
-                                <a href="{{ site_settings.twitter|default:'#' }}" class="social-icons__item" aria-label="Twitter"><i
-                                        class="fab fa-twitter"></i></a>
-                                <a href="{{ site_settings.instagram|default:'#' }}" class="social-icons__item" aria-label="Instagram"><i
-                                        class="fab fa-instagram"></i></a>
-                                <a href="{{ site_settings.linkedin|default:'#' }}" class="social-icons__item" aria-label="Linkedin"><i
-                                        class="fab fa-linkedin-in"></i></a>
-                            </div>
+
+                <!-- Newsletter Banner Section inside Footer -->
+                <div class="newsletter-box padding-y-40 bg-white-10 rounded-4 mb-5 border border-white-10" style="background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px);">
+                    <div class="row align-items-center justify-content-between p-4">
+                        <div class="col-lg-6 mb-3 mb-lg-0">
+                            <h4 class="text-white mb-2 font-22 fw-700">Yangiliklar va Chegirmalarga Obuna Bo'ling</h4>
+                            <p class="text-white-50 mb-0 font-14">Birinchi xaridingiz va maxsus chegirmalar haqida xabardor bo'ling.</p>
+                        </div>
+                        <div class="col-lg-5">
+                            <form onsubmit="event.preventDefault(); window.showToast('Obuna muvaffaqiyatli amalga oshirildi!'); this.reset();" class="d-flex gap-2">
+                                <input type="email" required placeholder="Email manzilingizni kiriting..." class="form-control rounded-pill px-4 bg-white border-0 font-15">
+                                <button type="submit" class="btn btn-main pill px-4 flex-shrink-0 fw-600">Obuna bo'lish</button>
+                            </form>
                         </div>
                     </div>
-                     <div class="col-xl-2 col-lg-6 col-sm-12 col-6">
-                         <h6 class="footer-widget__title">Bo'limlar</h6>
-                        <ul class="footer-widget__list mt-3">
-                            <li><a href="{% url 'index' %}" class="footer-link">Bosh sahifa</a></li>
-                            <li><a href="{% url 'all_products' %}" class="footer-link">Mahsulotlar</a></li>
-                             <li><a href="{% url 'cart' %}" class="footer-link">Savat</a></li>
-                             <li><a href="{% url 'order_history' %}" class="footer-link">Buyurtmalar</a></li>
-                         </ul>
-                     </div>
-                    <div class="col-xl-3 col-lg-6 col-sm-12 col-6">
-                        <h6 class="footer-widget__title">Hisob</h6>
-                        <ul class="footer-widget__list mt-3">
-                            <li><a href="{% url 'profile' %}" class="footer-link">Profil</a></li>
-                             <li><a href="{% url 'wishlist' %}" class="footer-link">Saralanganlar</a></li>
-                             <li><a href="{% url 'order_history' %}" class="footer-link">Buyurtmalar</a></li>
-                             {% if user.is_authenticated %}
-                            <li>
-                                <form method="post" action="{% url 'logout' %}" class="m-0">
-                                    {% csrf_token %}
-                                    <button type="submit" class="footer-link">Chiqish</button>
-                                </form>
-                            </li>
-                            {% else %}
-                            <li><a href="{% url 'login' %}" class="footer-link">Kirish</a></li>
-                            {% endif %}
-                        </ul>
-                    </div>
-                    <div class="col-xl-3 col-lg-6 col-sm-12 col-6">
-                        <h6 class="footer-widget__title">{{ site_settings.contact_title|default:'Aloqa' }}</h6>
-                        <p class="footer-widget__desc font-14 text-body mt-3">{{ site_settings.contact_description|default:'Savol yoki takliflar bo\'lsa, biz bilan bog\'laning.' }}</p>
-                        {% if site_settings.phone %}
-                        <p class="font-14 text-body mt-2 mb-0"><i class="las la-phone me-1"></i>{{ site_settings.phone }}</p>
-                        {% endif %}
-                        {% if site_settings.email %}
-                        <p class="font-14 text-body mt-2 mb-0"><i class="las la-envelope me-1"></i>{{ site_settings.email }}</p>
-                        {% endif %}
-                        {% if site_settings.address %}
-                        <p class="font-14 text-body mt-2 mb-0"><i class="las la-map-marker me-1"></i>{{ site_settings.address }}</p>
-                        {% endif %}
-                        <a href="{% url 'profile' %}" class="btn btn-main btn-sm mt-3">Biz bilan bog'lanish</a>
-                    </div>
                 </div>
+
+                <div class="row gy-5">
+
+                    <div class="col-xl-4 col-sm-6">
+
+                        <div class="footer-item">
+
+                            <div class="footer-item__logo">
+
+                                <a href="{% url 'index' %}">
+
+                                    <img src="{% static 'assets/images/logo/white-logo.png' %}" alt="{{ site_settings.site_name }}">
+
+                                </a>
+
+                            </div>
+
+                            <p class="footer-item__desc">
+
+                                {{ site_settings.footer_description|default:"To'garak do'konida sifatli mahsulotlarni qulay narxlarda xarid qiling." }}
+
+                            </p>
+
+                            {% if site_settings.phone or site_settings.email %}
+
+                            <p class="footer-item__desc mb-1">
+
+                                {% if site_settings.phone %}Tel: {{ site_settings.phone }}<br>{% endif %}
+
+                                {% if site_settings.email %}Email: {{ site_settings.email }}{% endif %}
+
+                            </p>
+
+                            {% endif %}
+
+                            <div class="footer-item__social">
+
+                                <ul class="social-list">
+
+                                    {% if site_settings.facebook %}
+
+                                    <li class="social-list__item">
+
+                                        <a href="{{ site_settings.facebook }}" class="social-list__link flx-center" target="_blank" rel="noopener"><i class="fab fa-facebook-f"></i></a>
+
+                                    </li>
+
+                                    {% endif %}
+
+                                    {% if site_settings.twitter %}
+
+                                    <li class="social-list__item">
+
+                                        <a href="{{ site_settings.twitter }}" class="social-list__link flx-center" target="_blank" rel="noopener"><i class="fab fa-twitter"></i></a>
+
+                                    </li>
+
+                                    {% endif %}
+
+                                    {% if site_settings.linkedin %}
+
+                                    <li class="social-list__item">
+
+                                        <a href="{{ site_settings.linkedin }}" class="social-list__link flx-center" target="_blank" rel="noopener"><i class="fab fa-linkedin-in"></i></a>
+
+                                    </li>
+
+                                    {% endif %}
+
+                                    {% if site_settings.instagram %}
+
+                                    <li class="social-list__item">
+
+                                        <a href="{{ site_settings.instagram }}" class="social-list__link flx-center" target="_blank" rel="noopener"><i class="fab fa-instagram"></i></a>
+
+                                    </li>
+
+                                    {% endif %}
+
+                                </ul>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-xl-2 col-sm-6 col-xs-6">
+
+                        <div class="footer-item">
+
+                            <h5 class="footer-item__title">Foydali havolalar</h5>
+
+                            <ul class="footer-menu">
+
+                                <li class="footer-menu__item"><a href="{% url 'all_products' %}" class="footer-menu__link">Mahsulotlar</a></li>
+
+                                <li class="footer-menu__item"><a href="{% url 'cart' %}" class="footer-menu__link">Savat</a></li>
+
+                                <li class="footer-menu__item"><a href="{% url 'wishlist' %}" class="footer-menu__link">Sevimlilar</a></li>
+
+                                {% if user.is_authenticated %}
+
+                                <li class="footer-menu__item"><a href="{% url 'order_history' %}" class="footer-menu__link">Buyurtmalar</a></li>
+
+                                {% endif %}
+
+                            </ul>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-xl-2 col-sm-6 col-xs-6">
+
+                        <div class="footer-item">
+
+                            <h5 class="footer-item__title">Hisob</h5>
+
+                            <ul class="footer-menu">
+
+                                {% if user.is_authenticated %}
+
+                                <li class="footer-menu__item"><a href="{% url 'profile' %}" class="footer-menu__link">Profil</a></li>
+
+                                {% else %}
+
+                                <li class="footer-menu__item"><a href="{% url 'login' %}" class="footer-menu__link">Kirish</a></li>
+
+                                <li class="footer-menu__item"><a href="{% url 'register' %}" class="footer-menu__link">Ro'yxatdan o'tish</a></li>
+
+                                {% endif %}
+
+                            </ul>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
             </div>
+
         </footer>
 
-        <!-- bottom Footer -->
+
+
         <div class="bottom-footer">
+
             <div class="container container-two">
+
                 <div class="bottom-footer__inner flx-between gap-3">
-                    <p class="bottom-footer__text font-14">{{ site_settings.copyright_text|default:'Copyright &copy; 2024 DpMarket, All rights reserved.' }}</p>
-                    <div class="footer-links">
-                         <a href="{% url 'all_products' %}" class="footer-link font-14">Mahsulotlar</a>
-                         <a href="{% url 'profile' %}" class="footer-link font-14">Profil</a>
-                         <a href="{% url 'wishlist' %}" class="footer-link font-14">Saralanganlar</a>
-                         <a href="{% url 'order_history' %}" class="footer-link font-14">Buyurtmalar</a>
-                     </div>
-                 </div>
+
+                    <p class="bottom-footer__text font-14">
+
+                        {{ site_settings.copyright_text|default:"© 2026 To'garak shop. Barcha huquqlar himoyalangan." }}
+
+                    </p>
+
+                </div>
+
             </div>
+
         </div>
-        <!-- ==================== Footer End Here ==================== -->
 
     </main>
 
-    <!-- Jquery js -->
+
+
     <script src="{% static 'assets/js/jquery-3.7.1.min.js' %}"></script>
-    <!-- Bootstrap Bundle Js -->
+
     <script src="{% static 'assets/js/boostrap.bundle.min.js' %}"></script>
-    <!-- CountDown -->
+
     <script src="{% static 'assets/js/countdown.js' %}"></script>
-    <!-- counter up -->
+
     <script src="{% static 'assets/js/counterup.min.js' %}"></script>
-    <!-- Slick js -->
+
     <script src="{% static 'assets/js/slick.min.js' %}"></script>
-    <!-- magnific popup -->
+
     <script src="{% static 'assets/js/jquery.magnific-popup.js' %}"></script>
-    <!-- apex chart -->
+
     <script src="{% static 'assets/js/apexchart.js' %}"></script>
 
-    <!-- main js -->
     <script src="{% static 'assets/js/main.js' %}"></script>
 
-    {% block extra_js %}{% endblock %}
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        window.hideToast = function() {
+            let toastEl = document.getElementById('global-toast');
+            if (toastEl) {
+                toastEl.style.transform = 'translateY(-50px) scale(0.9)';
+                toastEl.style.opacity = '0';
+            }
+        };
+
+        window.showToast = function(message) {
+            let toastEl = document.getElementById('global-toast');
+            if (!toastEl) {
+                toastEl = document.createElement('div');
+                toastEl.id = 'global-toast';
+                toastEl.style.cssText = 'position:fixed;top:90px;right:30px;z-index:999999;background:rgba(16,24,40,0.95);backdrop-filter:blur(8px);color:#fff;padding:14px 20px;border-radius:16px;box-shadow:0 12px 32px rgba(0,0,0,0.25);font-size:15px;font-weight:600;display:flex;align-items:center;gap:12px;transition:all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);transform:translateY(-20px) scale(0.95);opacity:0;border:1px solid rgba(255,255,255,0.15);';
+                toastEl.innerHTML = '<i class="fas fa-check-circle text-success font-20"></i><span id="global-toast-text" style="flex:1;"></span><button type="button" onclick="window.hideToast()" style="background:transparent;border:0;color:rgba(255,255,255,0.7);font-size:20px;cursor:pointer;padding:0 4px;line-height:1;margin-left:12px;">&times;</button>';
+                document.body.appendChild(toastEl);
+            }
+            document.getElementById('global-toast-text').innerText = message;
+            toastEl.style.transform = 'translateY(0) scale(1)';
+            toastEl.style.opacity = '1';
+
+            if (window.toastTimer) clearTimeout(window.toastTimer);
+            window.toastTimer = setTimeout(() => {
+                window.hideToast();
+            }, 3500);
+        };
+
+        // Global Instant (0ms Optimistic UI) for Cart and Wishlist forms
+        document.addEventListener('submit', function(e) {
+            const form = e.target;
+            if (!form || !form.action) return;
+
+            const isCartAdd = form.action.includes('/add-to-cart/');
+            const isCartRemove = form.action.includes('/remove-from-cart/');
+            const isWishAdd = form.action.includes('/add-wishlist/');
+            const isWishDelete = form.action.includes('/delete-wishlist/');
+
+            if (isCartAdd || isCartRemove || isWishAdd || isWishDelete || form.classList.contains('ajax-action-form')) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const btn = form.querySelector('button');
+
+                // Helper to update badge number & trigger pop pulse
+                function updateBadge(selector, diff) {
+                    document.querySelectorAll(selector).forEach(el => {
+                        let current = parseInt(el.innerText) || 0;
+                        let next = Math.max(0, current + diff);
+                        el.innerText = next;
+                        el.classList.remove('badge-pop-animate');
+                        void el.offsetWidth;
+                        el.classList.add('badge-pop-animate');
+                    });
+                }
+
+                // --- 1. INSTANT OPTIMISTIC UI UPDATE (0ms delay) ---
+                if (isCartAdd) {
+                    form.action = form.action.replace('/add-to-cart/', '/remove-from-cart/');
+                    if (btn) {
+                        btn.classList.add('added');
+                        btn.innerHTML = '<i class="fas fa-check-circle me-1"></i> Savatda';
+                    }
+                    updateBadge('.cart-count-badge', 1);
+                } else if (isCartRemove) {
+                    form.action = form.action.replace('/remove-from-cart/', '/add-to-cart/');
+                    if (btn) {
+                        btn.classList.remove('added');
+                        btn.innerHTML = '<i class="fas fa-shopping-bag me-1"></i> Savatga qo\'shish';
+                    }
+                    updateBadge('.cart-count-badge', -1);
+                } else if (isWishAdd) {
+                    form.action = form.action.replace('/add-wishlist/', '/delete-wishlist/');
+                    if (btn) {
+                        btn.classList.add('active');
+                        btn.innerHTML = '<i class="fas fa-heart text-danger"></i>';
+                    }
+                    updateBadge('.wishlist-count-badge', 1);
+                } else if (isWishDelete) {
+                    form.action = form.action.replace('/delete-wishlist/', '/add-wishlist/');
+                    if (btn) {
+                        btn.classList.remove('active');
+                        btn.innerHTML = '<i class="far fa-heart"></i>';
+                    }
+                    updateBadge('.wishlist-count-badge', -1);
+                }
+
+                // --- 2. ASYNC BACKGROUND SYNC ---
+                const formData = new FormData(form);
+
+                fetch(form.action + '?ajax=1', {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: formData
+                })
+                .then(res => {
+                    if (res.status === 401) {
+                        // Revert Optimistic Change if unauthenticated
+                        if (isCartAdd) {
+                            form.action = form.action.replace('/remove-from-cart/', '/add-to-cart/');
+                            if (btn) { btn.classList.remove('added'); btn.innerHTML = '<i class="fas fa-shopping-bag me-1"></i> Savatga qo\'shish'; }
+                            updateBadge('.cart-count-badge', -1);
+                        } else if (isWishAdd) {
+                            form.action = form.action.replace('/delete-wishlist/', '/add-wishlist/');
+                            if (btn) { btn.classList.remove('active'); btn.innerHTML = '<i class="far fa-heart"></i>'; }
+                            updateBadge('.wishlist-count-badge', -1);
+                        }
+                        window.showToast('Iltimos, avval tizimga kiring!');
+                        setTimeout(() => { window.location.href = '/login/'; }, 800);
+                        return null;
+                    }
+                    if (!res.ok) throw new Error('Network error');
+                    return res.json();
+                })
+                .then(data => {
+                    if (!data) return;
+
+                    if (data.status === 'success') {
+                        window.showToast(data.message);
+
+                        // Sync exact badge counts from server
+                        if (data.cart_count !== undefined) {
+                            document.querySelectorAll('.cart-count-badge').forEach(el => el.innerText = data.cart_count);
+                        }
+                        if (data.wishlist_count !== undefined) {
+                            document.querySelectorAll('.wishlist-count-badge').forEach(el => el.innerText = data.wishlist_count);
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error('Background sync error:', err);
+                });
+            }
+        });
+
+        // Header Live Search Listener
+        const headerSearchInput = document.getElementById('header-live-search-input');
+        const headerSearchResults = document.getElementById('header-live-search-results');
+        let headerSearchTimer;
+
+        if (headerSearchInput && headerSearchResults) {
+            headerSearchInput.addEventListener('input', function() {
+                clearTimeout(headerSearchTimer);
+                const query = this.value.trim();
+                if (query.length < 1) {
+                    headerSearchResults.style.display = 'none';
+                    return;
+                }
+                headerSearchTimer = setTimeout(() => {
+                    fetch('/api/live-search/?q=' + encodeURIComponent(query))
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.results && data.results.length > 0) {
+                                let html = '';
+                                data.results.forEach(item => {
+                                    html += `
+                                        <a href="${item.url}" class="d-flex align-items-center gap-3 p-2 hover-bg rounded-3 text-decoration-none border-bottom">
+                                            <img src="${item.image}" width="44" height="44" style="object-fit:cover;border-radius:8px;">
+                                            <div class="flex-grow-1 overflow-hidden">
+                                                <div class="fw-bold text-heading font-14 text-truncate">${item.name}</div>
+                                                <small class="text-muted font-12">${item.category}</small>
+                                            </div>
+                                            <div class="fw-bold text-main font-14 flex-shrink-0">${item.price}</div>
+                                        </a>
+                                    `;
+                                });
+                                headerSearchResults.innerHTML = html;
+                                headerSearchResults.style.display = 'block';
+                            } else {
+                                headerSearchResults.innerHTML = '<div class="p-3 text-center text-muted font-14">Mahsulot topilmadi</div>';
+                                headerSearchResults.style.display = 'block';
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Live search error:', err);
+                        });
+                }, 200);
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!headerSearchInput.contains(e.target) && !headerSearchResults.contains(e.target)) {
+                    headerSearchResults.style.display = 'none';
+                }
+            });
+        }
+    });
+    </script>
+
+    <!-- Mobile Bottom Navigation Bar -->
+    <div class="mobile-bottom-nav d-flex d-lg-none align-items-center justify-content-around">
+        <a href="{% url 'index' %}" class="mobile-bottom-nav__item {% if request.resolver_match.url_name == 'index' %}active{% endif %}">
+            <i class="fas fa-home"></i>
+            <span>Bosh sahifa</span>
+        </a>
+        <a href="{% url 'all_products' %}" class="mobile-bottom-nav__item {% if request.resolver_match.url_name == 'all_products' or request.resolver_match.url_name == 'category_filter' %}active{% endif %}">
+            <i class="fas fa-th-large"></i>
+            <span>Katalog</span>
+        </a>
+        <a href="{% url 'cart' %}" class="mobile-bottom-nav__item {% if request.resolver_match.url_name == 'cart' %}active{% endif %}">
+            <i class="fas fa-shopping-cart"></i>
+            <span>Savat</span>
+            <span class="mobile-bottom-nav__badge cart-count-badge">{% if user.is_authenticated %}{{ user.cart_items_count }}{% else %}0{% endif %}</span>
+        </a>
+        <a href="{% url 'wishlist' %}" class="mobile-bottom-nav__item {% if request.resolver_match.url_name == 'wishlist' %}active{% endif %}">
+            <i class="fas fa-heart"></i>
+            <span>Sevimlilar</span>
+            <span class="mobile-bottom-nav__badge wishlist-count-badge">{% if user.is_authenticated %}{{ user.wishlist_count }}{% else %}0{% endif %}</span>
+        </a>
+        <a href="{% url 'profile' %}" class="mobile-bottom-nav__item {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+            <i class="fas fa-user"></i>
+            <span>Profil</span>
+        </a>
+    </div>
 
 </body>
 
+
+
 </html>
+
+

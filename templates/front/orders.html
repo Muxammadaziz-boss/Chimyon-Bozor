@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static shop_extras %}
 
 {% block content %}
 <section class="breadcrumb breadcrumb-one padding-y-60 section-bg position-relative z-index-1 overflow-hidden">
@@ -37,7 +37,7 @@
                         <td>{{ order.get_status_display }}</td>
                         <td>{{ order.date|date:"d.m.Y H:i" }}</td>
                         <td>{{ order.count_product }}</td>
-                        <td>${{ order.total_price|floatformat:2 }}</td>
+                        <td>{{ order.total_price|uz_price }}</td>
                         <td>
                             <a href="{% url 'order_detail' order.code %}" class="btn btn-main btn-sm pill">Ko'rish</a>
                         </td>
