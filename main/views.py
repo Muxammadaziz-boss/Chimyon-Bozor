@@ -159,7 +159,7 @@ def _build_catalog_context(request, products_qs, active_category=None):
         products_qs = products_qs.filter(Q(name__icontains=search_query) | Q(category__name__icontains=search_query) | Q(code__icontains=search_query))
 
     products_qs = products_qs.select_related('category').order_by('-created_at')
-    page_obj = paginate_queryset(request, products_qs, per_page=12)
+    page_obj = paginate_queryset(request, products_qs, per_page=20)
 
     context = {
         'categories': models.Category.objects.all(),
