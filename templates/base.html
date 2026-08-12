@@ -1050,9 +1050,9 @@
         let headerSearchTimer;
 
         if (headerSearchInput && headerSearchResults) {
-            headerSearchInput.addEventListener('input', function() {
+            function performSearch() {
                 clearTimeout(headerSearchTimer);
-                const query = this.value.trim();
+                const query = headerSearchInput.value.trim();
                 if (query.length < 1) {
                     headerSearchResults.style.display = 'none';
                     return;
@@ -1065,7 +1065,7 @@
                                 let html = '';
                                 data.results.forEach(item => {
                                     html += `
-                                        <a href="${item.url}" class="d-flex align-items-center gap-3 p-2 hover-bg rounded-3 text-decoration-none border-bottom">
+                                        <a href="${item.url}" class="d-flex align-items-center gap-3 p-2.5 hover-bg rounded-3 text-decoration-none border-bottom">
                                             <img src="${item.image}" width="44" height="44" style="object-fit:cover;border-radius:8px;">
                                             <div class="flex-grow-1 overflow-hidden">
                                                 <div class="fw-bold text-heading font-14 text-truncate">${item.name}</div>
@@ -1085,8 +1085,11 @@
                         .catch(err => {
                             console.error('Live search error:', err);
                         });
-                }, 200);
-            });
+                }, 150);
+            }
+
+            headerSearchInput.addEventListener('input', performSearch);
+            headerSearchInput.addEventListener('focus', performSearch);
 
             document.addEventListener('click', function(e) {
                 if (!headerSearchInput.contains(e.target) && !headerSearchResults.contains(e.target)) {

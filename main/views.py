@@ -138,12 +138,13 @@ def product_detail(request, code):
 
 
 def _build_catalog_context(request, products_qs, active_category=None):
-    search_query = (request.GET.get('q') or request.GET.get('query') or '').strip()
+    search_query = (request.GET.get('q') or request.GET.get('query') or request.GET.get('search') or '').strip()
     query = request.GET.get('query')
     if query:
         products_qs = products_qs.filter(name__icontains=query)
     if search_query:
-        products_qs = products_qs.filter(name__icontains=search_query)
+        from django.db.models import Q
+        products_qs = products_qs.filter(Q(name__icontains=search_query) | Q(category__name__icontains=search_query) | Q(code__icontains=search_query))
 
     products_qs = products_qs.select_related('category').order_by('-created_at')
     page_obj = paginate_queryset(request, products_qs, per_page=12)
@@ -505,13 +506,14 @@ def order_detail(request, code):
 
 
 def live_search(request):
-    q = request.GET.get('q', '').strip()
-    if not q or len(q) < 2:
+    q = (request.GET.get('q') or request.GET.get('search') or '').strip()
+    if not q:
         return JsonResponse({'results': []})
 
+    from django.db.models import Q
     products = models.Product.objects.filter(
-        name__icontains=q
-    ).select_related('category')[:6]
+        Q(name__icontains=q) | Q(category__name__icontains=q) | Q(code__icontains=q)
+    ).select_related('category').distinct()[:8]
 
     results = []
     for p in products:
