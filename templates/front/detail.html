@@ -297,7 +297,7 @@
 
                     <!-- Cart Actions -->
                     {% if product.id not in cart_ids %}
-                    <form method="post" action="{% url 'add_to_cart' product.code %}">
+                    <form method="post" action="{% url 'add_to_cart' product.code %}" class="no-ajax">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-main w-100 btn-action-lg d-flex align-items-center justify-content-center gap-2">
                             <i class="fas fa-shopping-bag"></i> Savatga qo'shish
@@ -315,7 +315,7 @@
                             </div>
                         </form>
                         
-                        <form method="post" action="{% url 'remove_from_cart' product.code %}">
+                        <form method="post" action="{% url 'remove_from_cart' product.code %}" class="no-ajax">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-light text-danger border w-100 btn-action-lg" style="height: 48px; border-radius: 14px;">
                                 <i class="fas fa-trash-alt me-1"></i> Savatdan o'chirish

@@ -1345,7 +1345,7 @@
         // Global Instant (0ms Optimistic UI) for Cart and Wishlist forms
         document.addEventListener('submit', function(e) {
             const form = e.target;
-            if (!form || !form.action) return;
+            if (!form || !form.action || form.classList.contains('no-ajax')) return;
 
             const isCartAdd = form.action.includes('/add-to-cart/');
             const isCartRemove = form.action.includes('/remove-from-cart/');
@@ -1357,6 +1357,7 @@
                 e.stopPropagation();
 
                 const btn = form.querySelector('button');
+                const originalAction = form.action;
 
                 // Helper to update badge number & trigger pop pulse
                 function updateBadge(selector, diff) {
@@ -1406,7 +1407,7 @@
                 // --- 2. ASYNC BACKGROUND SYNC ---
                 const formData = new FormData(form);
 
-                fetch(form.action + '?ajax=1', {
+                fetch(originalAction + '?ajax=1', {
                     method: 'POST',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest'
