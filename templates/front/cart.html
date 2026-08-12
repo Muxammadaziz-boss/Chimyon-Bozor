@@ -348,7 +348,7 @@
 
                             <div>
                                 <div class="cart-col__label">Amallar</div>
-                                <form method="post" action="{% url 'remove_from_cart' item.product.code %}" class="m-0">
+                                <form method="post" action="{% url 'remove_from_cart' item.product.code %}" class="m-0 no-ajax">
                                     {% csrf_token %}
                                     <button type="submit" class="btn btn-danger pill cart-checkout-btn cart-remove-btn">O'chirish</button>
                                 </form>
@@ -478,24 +478,72 @@ document.addEventListener('DOMContentLoaded', function() {
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': '{{ csrf_token }}'
+
+        qtyMinus.addEventListener('click', () => {
+            const currentQty = parseInt(qtyInput.value, 10) || 1;
+            const newQty = Math.max(0, currentQty - 1);
+            qtyInput.value = newQty;
+            updateQuantity(productCode, newQty, row, itemTotal, price, qtyInput);
+        });
+
+        qtyPlus.addEventListener('click', () => {
+            const currentQty = parseInt(qtyInput.value, 10) || 1;
+            const newQty = currentQty + 1;
+            qtyInput.value = newQty;
+            updateQuantity(productCode, newQty, row, itemTotal, price, qtyInput);
+        });
+
+        qtyInput.addEventListener('change', () => {
+            const newQty = Math.max(1, parseInt(qtyInput.value, 10) || 1);
+            qtyInput.value = newQty;
+            updateQuantity(productCode, newQty, row, itemTotal, price, qtyInput);
+        });
+
+    });
+
+    function updateQuantity(productCode, newQty, row, itemTotal, price, qtyInput) {
+        if (newQty <= 0) {
+            pendingProductCode = productCode;
+            pendingRow = row;
+            pendingInput = qtyInput;
+            deleteModal.show();
+        } else {
+            sendQuantityUpdate(productCode, newQty, row, itemTotal, price, qtyInput);
+        }
+    }
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
+        deleteModal.hide();
+        sendQuantityUpdate(pendingProductCode, 0, pendingRow, null, null, null);
+    });
+
+    document.getElementById('deleteConfirmModal').addEventListener('hidden.bs.modal', () => {
+        if (pendingInput && pendingRow && document.body.contains(pendingRow)) {
+            pendingInput.value = 1;
+        }
+        pendingProductCode = null;
+        pendingRow = null;
+        pendingInput = null;
+    });
+
+    function sendQuantityUpdate(productCode, quantity, row, itemTotal, price, qtyInput) {
+        fetch(`{% url 'update_cart_quantity' 'PRODUCT_CODE' %}`.replace('PRODUCT_CODE', productCode), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
             },
             body: JSON.stringify({ quantity: quantity })
         })
         .then(response => response.json())
         .then(data => {
             if (data.status === 'deleted') {
-                if (row) {
-                    row.remove();
-                }
-                if (document.querySelectorAll('[data-product-code]').length === 0) {
-                    location.reload();
-                }
+                location.reload();
             } else if (data.status === 'updated' && itemTotal && price) {
                 itemTotal.textContent = data.total_price.toLocaleString('uz-UZ') + " so'm";
                 if (qtyInput) {
                     qtyInput.value = data.count;
                 }
-            }
         })
         .catch(error => {
             console.error('Error:', error);
