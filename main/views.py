@@ -197,15 +197,16 @@ def register(request):
         confirm_password = request.POST['confirm_password']
 
         if password != confirm_password:
-            return render(request, 'front/register.html', {'error': 'Parollar mos kelmadi'})
+            return render(request, 'front/login.html', {'reg_error': 'Parollar mos kelmadi', 'is_register_page': True})
 
         if not PHONE_RE.match(phone):
-            return render(request, 'front/register.html', {
-                'error': "Telefon raqam noto'g'ri. Masalan: +998901234567"
+            return render(request, 'front/login.html', {
+                'reg_error': "Telefon raqam noto'g'ri. Masalan: +998901234567",
+                'is_register_page': True
             })
 
         if models.User.objects.filter(username=username).exists():
-            return render(request, 'front/register.html', {'error': 'Bu foydalanuvchi nomi band'})
+            return render(request, 'front/login.html', {'reg_error': 'Bu foydalanuvchi nomi band', 'is_register_page': True})
 
         models.User.objects.create_user(username=username, password=password, phone=phone)
         user = authenticate(username=username, password=password)
@@ -213,7 +214,7 @@ def register(request):
         messages.success(request, "Ro'yxatdan o'tish muvaffaqiyatli yakunlandi")
         return redirect('index')
 
-    return render(request, 'front/register.html')
+    return render(request, 'front/login.html', {'is_register_page': True})
 
 
 def log_in(request):

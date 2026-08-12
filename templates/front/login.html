@@ -5,191 +5,416 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kirish | DpMarket</title>
+    <title>Kirish & Ro'yxat | DpMarket</title>
     <link rel="shortcut icon" href="{% static 'assets/images/logo/favicon.png' %}">
     <link rel="stylesheet" href="{% static 'assets/css/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'assets/css/fontawesome-all.min.css' %}">
     <link rel="stylesheet" href="{% static 'assets/css/line-awesome.min.css' %}">
     <link rel="stylesheet" href="{% static 'assets/css/main.css' %}">
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #fafbfc;
+            background: linear-gradient(135deg, #f0f4ff 0%, #faf5ff 50%, #f0fdf4 100%);
             padding: 32px 16px;
             font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+            position: relative;
+            overflow: hidden;
         }
 
-        .auth-card {
+        /* Decorative orbs */
+        body::before {
+            content: '';
+            position: fixed;
+            width: 500px; height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(124,58,237,0.08) 0%, transparent 70%);
+            top: -150px; left: -150px;
+            pointer-events: none;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            width: 400px; height: 400px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(99,102,241,0.07) 0%, transparent 70%);
+            bottom: -100px; right: -100px;
+            pointer-events: none;
+        }
+
+        /* ── Flip Container ── */
+        .flip-scene {
             width: 100%;
-            max-width: 440px;
-            background: #fff;
-            border: 1px solid #e8eaed;
-            border-radius: 16px;
-            padding: 40px 36px;
-            box-shadow: 0 20px 48px rgba(16, 24, 40, 0.06);
+            max-width: 460px;
+            perspective: 1200px;
         }
 
-        .auth-card__logo {
+        .flip-card {
+            width: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.7s cubic-bezier(0.4, 0.2, 0.2, 1);
+        }
+
+        .flip-card.is-flipped {
+            transform: rotateY(180deg);
+        }
+
+        .flip-face {
+            width: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            background: #fff;
+            border-radius: 24px;
+            padding: 44px 40px 36px;
+            box-shadow: 0 24px 64px rgba(16,24,40,0.10), 0 4px 16px rgba(124,58,237,0.06);
+            border: 1px solid rgba(124,58,237,0.08);
+        }
+
+        .flip-face--back {
+            position: absolute;
+            top: 0; left: 0;
+            transform: rotateY(180deg);
+        }
+
+        /* ── Logo ── */
+        .auth-logo {
             display: block;
             text-align: center;
             margin-bottom: 28px;
         }
+        .auth-logo img { max-height: 42px; }
 
-        .auth-card__logo img {
-            max-height: 40px;
-        }
-
-        .auth-card__title {
-            font-size: 24px;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-            color: #1b2233;
-            text-align: center;
-            margin-bottom: 6px;
-        }
-
-        .auth-card__subtitle {
-            font-size: 14px;
-            color: #5b6470;
-            text-align: center;
+        /* ── Tab Toggle ── */
+        .auth-tabs {
+            display: flex;
+            gap: 4px;
+            background: #f3f4f6;
+            border-radius: 14px;
+            padding: 5px;
             margin-bottom: 32px;
         }
-
-        .form-label {
+        .auth-tab-btn {
+            flex: 1;
+            border: none;
+            background: transparent;
+            border-radius: 10px;
+            padding: 10px 0;
             font-size: 14px;
             font-weight: 600;
-            color: #1b2233;
-            margin-bottom: 8px;
-        }
-
-        .form-control {
-            height: 48px;
-            border-radius: 10px;
-            border-color: #e4e6eb;
-            font-size: 15px;
-            padding: 0 16px;
-        }
-
-        .form-control:focus {
-            border-color: hsl(var(--main));
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-        }
-
-        .password-toggle {
-            position: absolute;
-            right: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            border: 0;
-            background: transparent;
-            color: #8a919c;
-            font-size: 18px;
+            color: #6b7280;
             cursor: pointer;
-            line-height: 1;
+            transition: all 0.25s ease;
+        }
+        .auth-tab-btn.active {
+            background: #fff;
+            color: #7C3AED;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
 
-        .password-input {
-            padding-right: 44px;
+        /* ── Heading ── */
+        .auth-title {
+            font-size: 22px;
+            font-weight: 800;
+            color: #111827;
+            margin-bottom: 4px;
+            letter-spacing: -0.03em;
+        }
+        .auth-subtitle {
+            font-size: 13.5px;
+            color: #9ca3af;
+            margin-bottom: 26px;
         }
 
-        .btn-submit {
+        /* ── Form ── */
+        .form-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 7px;
+            display: block;
+        }
+        .form-control {
             width: 100%;
             height: 48px;
+            border-radius: 12px;
+            border: 1.5px solid #e5e7eb;
+            font-size: 14.5px;
+            padding: 0 16px;
+            background: #fafafa;
+            color: #111827;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+        .form-control:focus {
+            border-color: #7C3AED;
+            background: #fff;
+            box-shadow: 0 0 0 3.5px rgba(124,58,237,0.12);
+        }
+        .mb-form { margin-bottom: 18px; }
+
+        /* Password toggle */
+        .pw-wrap { position: relative; }
+        .pw-eye {
+            position: absolute;
+            right: 14px; top: 50%;
+            transform: translateY(-50%);
+            border: 0; background: transparent;
+            color: #9ca3af; font-size: 18px;
+            cursor: pointer; line-height: 1;
+            transition: color 0.2s;
+        }
+        .pw-eye:hover { color: #7C3AED; }
+        .pw-input { padding-right: 46px; }
+
+        /* Submit button */
+        .btn-auth {
+            width: 100%;
+            height: 50px;
             border: 0;
-            border-radius: 10px;
-            background: hsl(var(--main));
+            border-radius: 14px;
+            background: linear-gradient(135deg, #7C3AED, #6366F1);
             color: #fff;
             font-size: 15px;
-            font-weight: 600;
-            transition: background 0.15s ease;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 16px rgba(124,58,237,0.3);
+            margin-top: 6px;
         }
-
-        .btn-submit:hover {
-            background: hsl(var(--main2));
-            color: #fff;
+        .btn-auth:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(124,58,237,0.38);
         }
+        .btn-auth:active { transform: translateY(0); }
 
-        .auth-card__footer {
-            margin-top: 24px;
+        /* Footer link */
+        .auth-foot {
             text-align: center;
-            font-size: 14px;
-            color: #5b6470;
+            margin-top: 22px;
+            font-size: 13.5px;
+            color: #9ca3af;
         }
-
-        .auth-card__footer a {
-            color: hsl(var(--main));
-            font-weight: 600;
-            text-decoration: none;
+        .auth-foot button {
+            background: none; border: none;
+            color: #7C3AED; font-weight: 700;
+            cursor: pointer; font-size: 13.5px;
+            padding: 0; text-decoration: none;
         }
+        .auth-foot button:hover { text-decoration: underline; }
 
-        .auth-card__footer a:hover {
-            text-decoration: underline;
-        }
-
+        /* Error */
         .error-msg {
             background: #fef2f2;
             border: 1px solid #fecaca;
             color: #b91c1c;
             border-radius: 10px;
-            padding: 12px 16px;
-            font-size: 14px;
-            margin-bottom: 20px;
+            padding: 11px 15px;
+            font-size: 13.5px;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Divider */
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 20px 0;
+            color: #d1d5db;
+            font-size: 13px;
+        }
+        .auth-divider::before,
+        .auth-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e5e7eb;
+        }
+
+        /* Responsive */
+        @media (max-width: 500px) {
+            .flip-face { padding: 32px 22px 28px; }
+            .auth-title { font-size: 20px; }
         }
     </style>
 </head>
 <body>
 
-    <div class="auth-card">
-        <a href="{% url 'index' %}" class="auth-card__logo">
-            <img src="{% static 'assets/images/logo/logo.png' %}" alt="DpMarket">
-        </a>
-        <h1 class="auth-card__title">Kirish</h1>
-        <p class="auth-card__subtitle">Hisobingizga kiring va xaridni davom eting</p>
+<div class="flip-scene">
+    <div class="flip-card" id="flipCard">
 
-        {% if error %}
-        <div class="error-msg">{{ error }}</div>
-        {% endif %}
+        <!-- ══ FRONT: LOGIN ══ -->
+        <div class="flip-face flip-face--front">
+            <a href="{% url 'index' %}" class="auth-logo">
+                <img src="{% static 'assets/images/logo/logo.png' %}" alt="DpMarket">
+            </a>
 
-        <form method="POST">
-            {% csrf_token %}
-            <input type="hidden" name="next" value="{{ next }}">
-
-            <div class="mb-4">
-                <label for="name" class="form-label">Foydalanuvchi nomi</label>
-                <input type="text" class="form-control" id="name" name="username" placeholder="Foydalanuvchi nomi" required>
+            <!-- Tabs -->
+            <div class="auth-tabs">
+                <button class="auth-tab-btn active" onclick="return false;">Kirish</button>
+                <button class="auth-tab-btn" onclick="flipToRegister()">Ro'yxatdan o'tish</button>
             </div>
 
-            <div class="mb-4">
-                <label for="your-password" class="form-label">Parol</label>
-                <div class="position-relative">
-                    <input type="password" class="form-control password-input" name="password" id="your-password" placeholder="Parolingiz" required>
-                    <button type="button" class="password-toggle toggle-password" data-target="#your-password"><i class="las la-eye"></i></button>
+            <h1 class="auth-title">Xush kelibsiz! 👋</h1>
+            <p class="auth-subtitle">Hisobingizga kiring va xaridni davom eting</p>
+
+            {% if error %}
+            <div class="error-msg"><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
+            {% endif %}
+
+            <form method="POST" action="{% url 'login' %}">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ next }}">
+
+                <div class="mb-form">
+                    <label for="login-username" class="form-label">Foydalanuvchi nomi</label>
+                    <input type="text" class="form-control" id="login-username" name="username"
+                           placeholder="Username kiriting" required autocomplete="username">
                 </div>
+
+                <div class="mb-form">
+                    <label for="login-password" class="form-label">Parol</label>
+                    <div class="pw-wrap">
+                        <input type="password" class="form-control pw-input" id="login-password"
+                               name="password" placeholder="Parolingiz" required autocomplete="current-password">
+                        <button type="button" class="pw-eye toggle-pw" data-target="login-password">
+                            <i class="las la-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-auth">
+                    <i class="fas fa-sign-in-alt me-2"></i>Kirish
+                </button>
+            </form>
+
+            <p class="auth-foot">
+                Akkaunt yo'qmi?
+                <button onclick="flipToRegister()">Ro'yxatdan o'tish</button>
+            </p>
+        </div>
+
+        <!-- ══ BACK: REGISTER ══ -->
+        <div class="flip-face flip-face--back">
+            <a href="{% url 'index' %}" class="auth-logo">
+                <img src="{% static 'assets/images/logo/logo.png' %}" alt="DpMarket">
+            </a>
+
+            <!-- Tabs -->
+            <div class="auth-tabs">
+                <button class="auth-tab-btn" onclick="flipToLogin()">Kirish</button>
+                <button class="auth-tab-btn active" onclick="return false;">Ro'yxatdan o'tish</button>
             </div>
 
-            <button type="submit" class="btn-submit">Kirish</button>
-        </form>
+            <h1 class="auth-title">Akkaunt yarating 🚀</h1>
+            <p class="auth-subtitle">Bepul ro'yxatdan o'ting va xarid qilishni boshlang</p>
 
-        <p class="auth-card__footer">Akkaunt yo'qmi? <a href="{% url 'register' %}">Ro'yxatdan o'tish</a></p>
-    </div>
+            {% if reg_error %}
+            <div class="error-msg"><i class="fas fa-exclamation-circle"></i> {{ reg_error }}</div>
+            {% endif %}
 
-    <script src="{% static 'assets/js/jquery-3.7.1.min.js' %}"></script>
-    <script src="{% static 'assets/js/bootstrap.bundle.min.js' %}"></script>
-    <script>
-        document.querySelectorAll('.toggle-password').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var input = document.querySelector(btn.dataset.target);
-                if (!input) return;
-                var type = input.getAttribute('type') === 'password' ? 'text' : 'password';
-                input.setAttribute('type', type);
-                btn.querySelector('i').classList.toggle('la-eye');
-                btn.querySelector('i').classList.toggle('la-eye-slash');
-            });
+            <form method="POST" action="{% url 'register' %}">
+                {% csrf_token %}
+
+                <div class="mb-form">
+                    <label for="reg-username" class="form-label">Foydalanuvchi nomi</label>
+                    <input type="text" class="form-control" id="reg-username" name="username"
+                           placeholder="Username kiriting" required autocomplete="username">
+                </div>
+
+                <div class="mb-form">
+                    <label for="reg-phone" class="form-label">Telefon raqam</label>
+                    <input type="text" class="form-control" id="reg-phone" name="phone"
+                           placeholder="+998901234567" required autocomplete="tel">
+                </div>
+
+                <div class="mb-form">
+                    <label for="reg-password" class="form-label">Parol</label>
+                    <div class="pw-wrap">
+                        <input type="password" class="form-control pw-input" id="reg-password"
+                               name="password" placeholder="Kamida 6 ta belgi" required autocomplete="new-password">
+                        <button type="button" class="pw-eye toggle-pw" data-target="reg-password">
+                            <i class="las la-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mb-form">
+                    <label for="reg-confirm" class="form-label">Parolni tasdiqlash</label>
+                    <div class="pw-wrap">
+                        <input type="password" class="form-control pw-input" id="reg-confirm"
+                               name="confirm_password" placeholder="Parolni qaytaring" required autocomplete="new-password">
+                        <button type="button" class="pw-eye toggle-pw" data-target="reg-confirm">
+                            <i class="las la-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-auth">
+                    <i class="fas fa-user-plus me-2"></i>Ro'yxatdan o'tish
+                </button>
+            </form>
+
+            <p class="auth-foot">
+                Akkauntingiz bormi?
+                <button onclick="flipToLogin()">Kirish</button>
+            </p>
+        </div>
+
+    </div><!-- /flip-card -->
+</div><!-- /flip-scene -->
+
+<script src="{% static 'assets/js/jquery-3.7.1.min.js' %}"></script>
+<script src="{% static 'assets/js/bootstrap.bundle.min.js' %}"></script>
+<script>
+    const card = document.getElementById('flipCard');
+
+    function flipToRegister() {
+        card.classList.add('is-flipped');
+        document.title = "Ro'yxatdan o'tish | DpMarket";
+    }
+
+    function flipToLogin() {
+        card.classList.remove('is-flipped');
+        document.title = "Kirish | DpMarket";
+    }
+
+    // Password toggle
+    document.querySelectorAll('.toggle-pw').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var input = document.getElementById(this.dataset.target);
+            if (!input) return;
+            var isPass = input.type === 'password';
+            input.type = isPass ? 'text' : 'password';
+            this.querySelector('i').classList.toggle('la-eye', !isPass);
+            this.querySelector('i').classList.toggle('la-eye-slash', isPass);
         });
-    </script>
+    });
 
+    // If server returned reg_error or page is register, auto-flip to register side
+    {% if reg_error or is_register_page %}
+    flipToRegister();
+    {% endif %}
+
+    // Flip card height sync — back face needs height of its content
+    function syncHeight() {
+        const front = document.querySelector('.flip-face--front');
+        const back  = document.querySelector('.flip-face--back');
+        const h = Math.max(front.scrollHeight, back.scrollHeight);
+        card.style.height = h + 'px';
+    }
+    syncHeight();
+    window.addEventListener('resize', syncHeight);
+</script>
 </body>
 </html>
