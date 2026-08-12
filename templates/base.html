@@ -118,12 +118,102 @@
             right: 0;
             z-index: 1050;
             background: #ffffff;
-            border-radius: 16px;
-            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.15);
-            border: 1px solid #f0f0f0;
-            max-height: 400px;
+            border-radius: 18px;
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18), 0 4px 12px rgba(124, 58, 237, 0.08);
+            border: 1px solid #ede9fe;
+            max-height: 520px;
             overflow-y: auto;
-            padding: 8px;
+            padding: 12px;
+        }
+        .header-search-results-popup::-webkit-scrollbar {
+            width: 6px;
+        }
+        .header-search-results-popup::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .header-search-results-popup::-webkit-scrollbar-thumb {
+            background: rgba(124, 58, 237, 0.2);
+            border-radius: 3px;
+        }
+        .search-result-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.2s ease;
+            margin-bottom: 4px;
+        }
+        .search-result-item:hover {
+            background: #f5f3ff;
+            transform: translateX(4px);
+            color: inherit;
+        }
+        .search-result-item img {
+            width: 64px;
+            height: 64px;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 1px solid #f0f0f0;
+            flex-shrink: 0;
+        }
+        .search-result-info {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+        }
+        .search-result-name {
+            font-weight: 700;
+            font-size: 15px;
+            color: #1e293b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 3px;
+        }
+        .search-result-category {
+            font-size: 13px;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+        .search-result-price {
+            font-weight: 800;
+            font-size: 16px;
+            color: #7C3AED;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .search-result-discount {
+            display: inline-block;
+            background: #fee2e2;
+            color: #ef4444;
+            font-weight: 700;
+            font-size: 11px;
+            padding: 2px 7px;
+            border-radius: 6px;
+            margin-left: 6px;
+        }
+        .search-results-header {
+            padding: 8px 14px 10px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .search-no-result {
+            text-align: center;
+            padding: 32px 16px;
+            color: #94a3b8;
+            font-size: 15px;
+        }
+        .search-no-result i {
+            font-size: 36px;
+            display: block;
+            margin-bottom: 10px;
+            color: #c4b5fd;
         }
         .category-dropdown-menu {
             min-width: 240px;
@@ -411,6 +501,312 @@
                 padding-bottom: 60px;
             }
         }
+
+        /* ========== Modern Premium Footer ========== */
+        .modern-footer {
+            background: linear-gradient(135deg, #0f0a1e 0%, #1a1035 40%, #0d1b2a 100%);
+            position: relative;
+            overflow: hidden;
+            padding: 60px 0 0 0;
+            margin-top: 0;
+        }
+        .modern-footer::before {
+            content: '';
+            position: absolute;
+            top: -150px;
+            right: -100px;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(124, 58, 237, 0.15), transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .modern-footer::after {
+            content: '';
+            position: absolute;
+            bottom: -80px;
+            left: -60px;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.1), transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .footer-newsletter-section {
+            background: linear-gradient(135deg, #7C3AED, #6366F1);
+            border-radius: 24px;
+            padding: 40px 48px;
+            position: relative;
+            z-index: 10;
+            box-shadow: 0 20px 60px rgba(124, 58, 237, 0.35);
+        }
+        .footer-newsletter-section h4 {
+            font-size: 22px;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 8px;
+        }
+        .footer-newsletter-section p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            margin: 0;
+        }
+        .newsletter-input-wrap {
+            display: flex;
+            gap: 10px;
+        }
+        .newsletter-input-wrap input {
+            flex: 1;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+            border-radius: 14px;
+            padding: 14px 22px;
+            font-size: 15px;
+            backdrop-filter: blur(6px);
+            transition: all 0.3s ease;
+        }
+        .newsletter-input-wrap input::placeholder {
+            color: rgba(255, 255, 255, 0.55);
+        }
+        .newsletter-input-wrap input:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.18);
+        }
+        .newsletter-submit-btn {
+            background: #ffffff;
+            color: #7C3AED;
+            border: none;
+            border-radius: 14px;
+            padding: 14px 32px;
+            font-weight: 700;
+            font-size: 15px;
+            white-space: nowrap;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+        .newsletter-submit-btn:hover {
+            background: #f0e6ff;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+        .footer-main-content {
+            padding: 56px 0 48px;
+            position: relative;
+            z-index: 2;
+        }
+        .footer-brand-desc {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14.5px;
+            line-height: 1.75;
+            margin: 20px 0 28px;
+        }
+        .footer-contact-card {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 0;
+        }
+        .footer-contact-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: rgba(124, 58, 237, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #a78bfa;
+            font-size: 16px;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        .footer-contact-card:hover .footer-contact-icon {
+            background: rgba(124, 58, 237, 0.3);
+            transform: scale(1.08);
+        }
+        .footer-contact-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        .footer-contact-value {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 14.5px;
+            font-weight: 500;
+        }
+        .footer-contact-value a {
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .footer-contact-value a:hover {
+            color: #a78bfa;
+        }
+        .footer-col-title {
+            color: #ffffff;
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            position: relative;
+            padding-bottom: 12px;
+        }
+        .footer-col-title::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 32px;
+            height: 3px;
+            background: linear-gradient(90deg, #7C3AED, #6366F1);
+            border-radius: 2px;
+        }
+        .footer-links-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .footer-links-list li {
+            margin-bottom: 10px;
+        }
+        .footer-links-list a {
+            color: rgba(255, 255, 255, 0.55);
+            text-decoration: none;
+            font-size: 14.5px;
+            font-weight: 400;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.25s ease;
+            padding: 3px 0;
+        }
+        .footer-links-list a i {
+            font-size: 10px;
+            transition: transform 0.25s ease;
+            opacity: 0;
+            transform: translateX(-6px);
+        }
+        .footer-links-list a:hover {
+            color: #c4b5fd;
+            transform: translateX(4px);
+        }
+        .footer-links-list a:hover i {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        .footer-social-list {
+            display: flex;
+            gap: 10px;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+        .footer-social-link {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 16px;
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+        .footer-social-link:hover {
+            background: rgba(124, 58, 237, 0.25);
+            border-color: rgba(124, 58, 237, 0.4);
+            color: #c4b5fd;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(124, 58, 237, 0.2);
+        }
+        .footer-divider {
+            border: none;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            margin: 0;
+        }
+        .footer-bottom-bar {
+            padding: 24px 0;
+            position: relative;
+            z-index: 2;
+        }
+        .footer-bottom-bar p {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 13.5px;
+            margin: 0;
+            font-weight: 400;
+        }
+        .footer-payment-icons {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .footer-payment-icon {
+            width: 48px;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.07);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.45);
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+        .footer-payment-icon:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: rgba(255, 255, 255, 0.7);
+        }
+        .footer-category-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .footer-category-tag {
+            display: inline-block;
+            padding: 7px 16px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.55);
+            font-size: 13px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.25s ease;
+        }
+        .footer-category-tag:hover {
+            background: rgba(124, 58, 237, 0.15);
+            border-color: rgba(124, 58, 237, 0.3);
+            color: #c4b5fd;
+            transform: translateY(-2px);
+        }
+        @media (max-width: 991.98px) {
+            .footer-newsletter-section {
+                padding: 28px 24px;
+            }
+            .newsletter-input-wrap {
+                flex-direction: column;
+            }
+            .footer-main-content {
+                padding: 40px 0 28px;
+            }
+            .modern-footer {
+                padding-top: 40px;
+            }
+        }
+        @media (max-width: 575.98px) {
+            .footer-newsletter-section {
+                padding: 24px 18px;
+                border-radius: 18px;
+            }
+            .footer-newsletter-section h4 {
+                font-size: 18px;
+            }
+        }
     </style>
 </head>
 
@@ -692,199 +1088,150 @@
 
 
 
-        <footer class="footer">
-
-            <img src="{% static 'assets/images/shapes/pattern.png' %}" alt="" class="bg-pattern">
-
-            <img src="{% static 'assets/images/shapes/element1.png' %}" alt="" class="element one">
-
-            <img src="{% static 'assets/images/shapes/element2.png' %}" alt="" class="element two">
-
-            <img src="{% static 'assets/images/gradients/footer-gradient.png' %}" alt="" class="bg--gradient">
-
-
-
+        <!-- ========== Modern Premium Footer ========== -->
+        <footer class="modern-footer">
             <div class="container container-two">
 
-                <!-- Newsletter Banner Section inside Footer -->
-                <div class="newsletter-box padding-y-40 bg-white-10 rounded-4 mb-5 border border-white-10" style="background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px);">
-                    <div class="row align-items-center justify-content-between p-4">
+                <!-- Newsletter Section -->
+                <div class="footer-newsletter-section">
+                    <div class="row align-items-center">
                         <div class="col-lg-6 mb-3 mb-lg-0">
-                            <h4 class="text-white mb-2 font-22 fw-700">Yangiliklar va Chegirmalarga Obuna Bo'ling</h4>
-                            <p class="text-white-50 mb-0 font-14">Birinchi xaridingiz va maxsus chegirmalar haqida xabardor bo'ling.</p>
+                            <h4><i class="fas fa-envelope" style="margin-right: 10px; opacity: 0.8;"></i>Yangiliklar va Chegirmalarga Obuna Bo'ling</h4>
+                            <p>Maxsus takliflar va yangi mahsulotlar haqida birinchilardan bo'lib xabardor bo'ling.</p>
                         </div>
-                        <div class="col-lg-5">
-                            <form onsubmit="event.preventDefault(); window.showToast('Obuna muvaffaqiyatli amalga oshirildi!'); this.reset();" class="d-flex gap-2">
-                                <input type="email" required placeholder="Email manzilingizni kiriting..." class="form-control rounded-pill px-4 bg-white border-0 font-15">
-                                <button type="submit" class="btn btn-main pill px-4 flex-shrink-0 fw-600">Obuna bo'lish</button>
+                        <div class="col-lg-6">
+                            <form onsubmit="event.preventDefault(); window.showToast && window.showToast('Obuna muvaffaqiyatli amalga oshirildi!'); this.reset();" class="newsletter-input-wrap">
+                                <input type="email" required placeholder="Email manzilingizni kiriting...">
+                                <button type="submit" class="newsletter-submit-btn"><i class="fas fa-paper-plane" style="margin-right: 6px;"></i>Obuna</button>
                             </form>
                         </div>
                     </div>
                 </div>
 
-                <div class="row gy-5">
+                <!-- Main Footer Content -->
+                <div class="footer-main-content">
+                    <div class="row gy-5">
 
-                    <div class="col-xl-4 col-sm-6">
+                        <!-- Column 1: Brand + Contact -->
+                        <div class="col-lg-4 col-md-6">
+                            <a href="{% url 'index' %}" style="display: inline-block; margin-bottom: 6px;">
+                                <img src="{% static 'assets/images/logo/white-logo.png' %}" alt="{{ site_settings.site_name }}" style="max-width: 180px; max-height: 52px; filter: brightness(1.1);">
+                            </a>
+                            <p class="footer-brand-desc">
+                                {{ site_settings.footer_description|default:"Sifatli mahsulotlarni qulay narxlarda xarid qiling. Tez yetkazib berish va ishonchli xizmat — bizning ustuvorligimiz." }}
+                            </p>
 
-                        <div class="footer-item">
-
-                            <div class="footer-item__logo">
-
-                                <a href="{% url 'index' %}">
-
-                                    <img src="{% static 'assets/images/logo/white-logo.png' %}" alt="{{ site_settings.site_name }}">
-
-                                </a>
-
+                            {% if site_settings.phone %}
+                            <div class="footer-contact-card">
+                                <div class="footer-contact-icon">
+                                    <i class="fas fa-phone-alt"></i>
+                                </div>
+                                <div>
+                                    <div class="footer-contact-label">Telefon</div>
+                                    <div class="footer-contact-value"><a href="tel:{{ site_settings.phone }}">{{ site_settings.phone }}</a></div>
+                                </div>
                             </div>
-
-                            <p class="footer-item__desc">
-
-                                {{ site_settings.footer_description|default:"To'garak do'konida sifatli mahsulotlarni qulay narxlarda xarid qiling." }}
-
-                            </p>
-
-                            {% if site_settings.phone or site_settings.email %}
-
-                            <p class="footer-item__desc mb-1">
-
-                                {% if site_settings.phone %}Tel: {{ site_settings.phone }}<br>{% endif %}
-
-                                {% if site_settings.email %}Email: {{ site_settings.email }}{% endif %}
-
-                            </p>
-
                             {% endif %}
 
-                            <div class="footer-item__social">
+                            {% if site_settings.email %}
+                            <div class="footer-contact-card">
+                                <div class="footer-contact-icon">
+                                    <i class="fas fa-envelope"></i>
+                                </div>
+                                <div>
+                                    <div class="footer-contact-label">Email</div>
+                                    <div class="footer-contact-value"><a href="mailto:{{ site_settings.email }}">{{ site_settings.email }}</a></div>
+                                </div>
+                            </div>
+                            {% endif %}
 
-                                <ul class="social-list">
+                            {% if site_settings.address %}
+                            <div class="footer-contact-card">
+                                <div class="footer-contact-icon">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </div>
+                                <div>
+                                    <div class="footer-contact-label">Manzil</div>
+                                    <div class="footer-contact-value">{{ site_settings.address }}</div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
 
-                                    {% if site_settings.facebook %}
+                        <!-- Column 2: Quick Links -->
+                        <div class="col-lg-2 col-md-3 col-6">
+                            <h5 class="footer-col-title">Tezkor havolalar</h5>
+                            <ul class="footer-links-list">
+                                <li><a href="{% url 'index' %}"><i class="fas fa-chevron-right"></i>Bosh sahifa</a></li>
+                                <li><a href="{% url 'all_products' %}"><i class="fas fa-chevron-right"></i>Mahsulotlar</a></li>
+                                <li><a href="{% url 'cart' %}"><i class="fas fa-chevron-right"></i>Savat</a></li>
+                                <li><a href="{% url 'wishlist' %}"><i class="fas fa-chevron-right"></i>Sevimlilar</a></li>
+                                {% if user.is_authenticated %}
+                                <li><a href="{% url 'order_history' %}"><i class="fas fa-chevron-right"></i>Buyurtmalar</a></li>
+                                {% endif %}
+                            </ul>
+                        </div>
 
-                                    <li class="social-list__item">
+                        <!-- Column 3: Account -->
+                        <div class="col-lg-2 col-md-3 col-6">
+                            <h5 class="footer-col-title">Hisob</h5>
+                            <ul class="footer-links-list">
+                                {% if user.is_authenticated %}
+                                <li><a href="{% url 'profile' %}"><i class="fas fa-chevron-right"></i>Profil</a></li>
+                                <li><a href="{% url 'order_history' %}"><i class="fas fa-chevron-right"></i>Buyurtmalarim</a></li>
+                                <li><a href="{% url 'wishlist' %}"><i class="fas fa-chevron-right"></i>Sevimlilarim</a></li>
+                                {% else %}
+                                <li><a href="{% url 'login' %}"><i class="fas fa-chevron-right"></i>Kirish</a></li>
+                                <li><a href="{% url 'register' %}"><i class="fas fa-chevron-right"></i>Ro'yxatdan o'tish</a></li>
+                                {% endif %}
+                            </ul>
+                        </div>
 
-                                        <a href="{{ site_settings.facebook }}" class="social-list__link flx-center" target="_blank" rel="noopener"><i class="fab fa-facebook-f"></i></a>
-
-                                    </li>
-
-                                    {% endif %}
-
-                                    {% if site_settings.twitter %}
-
-                                    <li class="social-list__item">
-
-                                        <a href="{{ site_settings.twitter }}" class="social-list__link flx-center" target="_blank" rel="noopener"><i class="fab fa-twitter"></i></a>
-
-                                    </li>
-
-                                    {% endif %}
-
-                                    {% if site_settings.linkedin %}
-
-                                    <li class="social-list__item">
-
-                                        <a href="{{ site_settings.linkedin }}" class="social-list__link flx-center" target="_blank" rel="noopener"><i class="fab fa-linkedin-in"></i></a>
-
-                                    </li>
-
-                                    {% endif %}
-
-                                    {% if site_settings.instagram %}
-
-                                    <li class="social-list__item">
-
-                                        <a href="{{ site_settings.instagram }}" class="social-list__link flx-center" target="_blank" rel="noopener"><i class="fab fa-instagram"></i></a>
-
-                                    </li>
-
-                                    {% endif %}
-
-                                </ul>
-
+                        <!-- Column 4: Categories + Social -->
+                        <div class="col-lg-4 col-md-6">
+                            <h5 class="footer-col-title">Kategoriyalar</h5>
+                            <div class="footer-category-tags mb-4">
+                                {% for cat in nav_categories|slice:":8" %}
+                                <a href="{% url 'category_filter' cat.id %}" class="footer-category-tag">{{ cat.name }}</a>
+                                {% endfor %}
                             </div>
 
-                        </div>
-
-                    </div>
-
-                    <div class="col-xl-2 col-sm-6 col-xs-6">
-
-                        <div class="footer-item">
-
-                            <h5 class="footer-item__title">Foydali havolalar</h5>
-
-                            <ul class="footer-menu">
-
-                                <li class="footer-menu__item"><a href="{% url 'all_products' %}" class="footer-menu__link">Mahsulotlar</a></li>
-
-                                <li class="footer-menu__item"><a href="{% url 'cart' %}" class="footer-menu__link">Savat</a></li>
-
-                                <li class="footer-menu__item"><a href="{% url 'wishlist' %}" class="footer-menu__link">Sevimlilar</a></li>
-
-                                {% if user.is_authenticated %}
-
-                                <li class="footer-menu__item"><a href="{% url 'order_history' %}" class="footer-menu__link">Buyurtmalar</a></li>
-
+                            <h5 class="footer-col-title" style="margin-top: 8px;">Ijtimoiy tarmoqlar</h5>
+                            <ul class="footer-social-list">
+                                {% if site_settings.facebook %}
+                                <li><a href="{{ site_settings.facebook }}" class="footer-social-link" target="_blank" rel="noopener" title="Facebook"><i class="fab fa-facebook-f"></i></a></li>
                                 {% endif %}
-
-                            </ul>
-
-                        </div>
-
-                    </div>
-
-                    <div class="col-xl-2 col-sm-6 col-xs-6">
-
-                        <div class="footer-item">
-
-                            <h5 class="footer-item__title">Hisob</h5>
-
-                            <ul class="footer-menu">
-
-                                {% if user.is_authenticated %}
-
-                                <li class="footer-menu__item"><a href="{% url 'profile' %}" class="footer-menu__link">Profil</a></li>
-
-                                {% else %}
-
-                                <li class="footer-menu__item"><a href="{% url 'login' %}" class="footer-menu__link">Kirish</a></li>
-
-                                <li class="footer-menu__item"><a href="{% url 'register' %}" class="footer-menu__link">Ro'yxatdan o'tish</a></li>
-
+                                {% if site_settings.instagram %}
+                                <li><a href="{{ site_settings.instagram }}" class="footer-social-link" target="_blank" rel="noopener" title="Instagram"><i class="fab fa-instagram"></i></a></li>
                                 {% endif %}
-
+                                {% if site_settings.twitter %}
+                                <li><a href="{{ site_settings.twitter }}" class="footer-social-link" target="_blank" rel="noopener" title="Twitter"><i class="fab fa-twitter"></i></a></li>
+                                {% endif %}
+                                {% if site_settings.linkedin %}
+                                <li><a href="{{ site_settings.linkedin }}" class="footer-social-link" target="_blank" rel="noopener" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a></li>
+                                {% endif %}
                             </ul>
-
                         </div>
 
                     </div>
+                </div>
 
+                <!-- Bottom Bar -->
+                <hr class="footer-divider">
+                <div class="footer-bottom-bar">
+                    <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-3">
+                        <p>{{ site_settings.copyright_text|default:"© 2026 To'garak shop. Barcha huquqlar himoyalangan." }}</p>
+                        <div class="footer-payment-icons">
+                            <div class="footer-payment-icon" title="Visa"><i class="fab fa-cc-visa"></i></div>
+                            <div class="footer-payment-icon" title="Mastercard"><i class="fab fa-cc-mastercard"></i></div>
+                            <div class="footer-payment-icon" title="Payme"><i class="fas fa-credit-card"></i></div>
+                            <div class="footer-payment-icon" title="Click"><i class="fas fa-wallet"></i></div>
+                        </div>
+                    </div>
                 </div>
 
             </div>
-
         </footer>
-
-
-
-        <div class="bottom-footer">
-
-            <div class="container container-two">
-
-                <div class="bottom-footer__inner flx-between gap-3">
-
-                    <p class="bottom-footer__text font-14">
-
-                        {{ site_settings.copyright_text|default:"© 2026 To'garak shop. Barcha huquqlar himoyalangan." }}
-
-                    </p>
-
-                </div>
-
-            </div>
-
-        </div>
 
     </main>
 
@@ -1062,23 +1409,27 @@
                         .then(res => res.json())
                         .then(data => {
                             if (data.results && data.results.length > 0) {
-                                let html = '';
+                                let html = '<div class="search-results-header"><i class="fas fa-search" style="margin-right:6px;"></i>' + data.results.length + ' ta natija topildi</div>';
                                 data.results.forEach(item => {
+                                    const discountBadge = item.discount_percent ? `<span class="search-result-discount">-${item.discount_percent}%</span>` : '';
                                     html += `
-                                        <a href="${item.url}" class="d-flex align-items-center gap-3 p-2.5 hover-bg rounded-3 text-decoration-none border-bottom">
-                                            <img src="${item.image}" width="44" height="44" style="object-fit:cover;border-radius:8px;">
-                                            <div class="flex-grow-1 overflow-hidden">
-                                                <div class="fw-bold text-heading font-14 text-truncate">${item.name}</div>
-                                                <small class="text-muted font-12">${item.category}</small>
+                                        <a href="${item.url}" class="search-result-item">
+                                            <img src="${item.image}" alt="${item.name}">
+                                            <div class="search-result-info">
+                                                <div class="search-result-name">${item.name}</div>
+                                                <div class="search-result-category"><i class="fas fa-tag" style="margin-right:4px;font-size:11px;"></i>${item.category}</div>
                                             </div>
-                                            <div class="fw-bold text-main font-14 flex-shrink-0">${item.price}</div>
+                                            <div>
+                                                <div class="search-result-price">${item.price}</div>
+                                                ${discountBadge}
+                                            </div>
                                         </a>
                                     `;
                                 });
                                 headerSearchResults.innerHTML = html;
                                 headerSearchResults.style.display = 'block';
                             } else {
-                                headerSearchResults.innerHTML = '<div class="p-3 text-center text-muted font-14">Mahsulot topilmadi</div>';
+                                headerSearchResults.innerHTML = '<div class="search-no-result"><i class="fas fa-search"></i>Mahsulot topilmadi</div>';
                                 headerSearchResults.style.display = 'block';
                             }
                         })
