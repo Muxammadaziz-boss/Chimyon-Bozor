@@ -246,7 +246,7 @@
                             <button type="submit" class="btn btn-main pill w-100">Savatga qo'shish</button>
                         </form>
 
-                        <form method="post" action="{% url 'delete_wishlist' product.product.code %}">
+                        <form method="post" action="{% url 'delete_wishlist' product.product.code %}" class="no-ajax">
                             {% csrf_token %}
                             <button type="submit" class="btn pill wishlist-remove-btn" aria-label="O'chirish">
                                 <i class="las la-trash-alt"></i>
