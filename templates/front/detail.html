@@ -3,500 +3,316 @@
 
 {% block content %}
 <style>
-    .cart-quantity {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 6px;
-        border: 1px solid hsl(var(--border-color));
-        border-radius: 999px;
-        background-color: hsl(var(--white));
-        box-shadow: 0 8px 24px hsl(var(--black) / 0.04);
-        white-space: nowrap;
-    }
-
-    .cart-quantity__btn {
-        width: 38px;
-        height: 38px;
-        display: inline-flex;
+    /* ── Product Thumb & Zoom ── */
+    .product-detail-thumb {
+        position: relative;
+        overflow: hidden;
+        border-radius: 20px;
+        background: #f8f9fa;
+        display: flex;
         align-items: center;
         justify-content: center;
-        flex: 0 0 38px;
-        border: 0;
-        border-radius: 50%;
-        background: hsl(var(--main) / 0.1);
-        color: hsl(var(--main));
-        font-size: 22px;
-        font-weight: 700;
-        line-height: 1;
-        transition: 0.2s ease;
-        cursor: pointer;
+        box-shadow: 0 12px 32px rgba(0,0,0,0.05);
+    }
+    .product-detail-thumb img {
+        width: 100%;
+        max-height: 550px;
+        object-fit: cover;
+        transition: transform 0.4s ease;
+        border-radius: 20px;
+    }
+    .product-detail-thumb:hover img {
+        transform: scale(1.03);
     }
 
-    .cart-quantity__btn:hover,
-    .cart-quantity__btn:focus {
-        background: hsl(var(--main));
-        color: #fff;
+    /* ── Glass Sidebar ── */
+    .glass-sidebar {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        border-radius: 24px;
+        padding: 32px;
+        box-shadow: 0 16px 48px rgba(124, 58, 237, 0.06);
+        position: sticky;
+        top: 100px;
     }
 
-    .cart-quantity__input {
-        width: 54px;
-        height: 38px;
-        padding: 0 6px;
-        border: 1px solid hsl(var(--border-color));
+    /* ── Social Share ── */
+    .share-btn-wrap {
+        display: flex;
+        gap: 12px;
+        margin-top: 16px;
+    }
+    .share-btn {
+        width: 44px;
+        height: 44px;
         border-radius: 12px;
-        color: hsl(var(--heading-color));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 18px;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .share-btn:hover {
+        transform: translateY(-2px);
+    }
+    .share-telegram { background: #229ED9; box-shadow: 0 4px 12px rgba(34, 158, 217, 0.3); }
+    .share-facebook { background: #1877F2; box-shadow: 0 4px 12px rgba(24, 119, 242, 0.3); }
+    .share-twitter { background: #1DA1F2; box-shadow: 0 4px 12px rgba(29, 161, 242, 0.3); }
+
+    /* ── Action Buttons ── */
+    .btn-action-lg {
+        height: 56px;
+        border-radius: 16px;
+        font-weight: 700;
+        font-size: 16px;
+        transition: all 0.2s ease;
+    }
+    
+    /* Meta items */
+    .meta-list {
+        list-style: none;
+        padding: 0; margin: 24px 0 0;
+        border-top: 1px dashed #e5e7eb;
+        padding-top: 24px;
+    }
+    .meta-list li {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 12px;
+        font-size: 14.5px;
+    }
+    .meta-list li span:first-child {
+        color: #6b7280;
+    }
+    .meta-list li span:last-child {
         font-weight: 600;
-        text-align: center;
-        appearance: textfield;
+        color: #111827;
     }
 
-    .cart-quantity__input::-webkit-outer-spin-button,
-    .cart-quantity__input::-webkit-inner-spin-button {
-        margin: 0;
-        appearance: none;
+    /* Cart Quantity */
+    .qty-control {
+        display: flex;
+        align-items: center;
+        background: #f3f4f6;
+        border-radius: 14px;
+        padding: 4px;
     }
-
-    .heart-btn {
-        position: relative;
-        background: transparent;
-        border-radius: 50%;
-        background-color: white;
-        padding: 10px 10px 8px 10px;
-        box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.25), 0px 2px 5px 0px rgba(0, 0, 0, 0.2);
-        border: 0;
-        cursor: pointer;
-        transition: box-shadow 0.2s;
+    .qty-control button {
+        width: 40px; height: 40px;
+        border: none; background: #fff;
+        border-radius: 10px;
+        font-size: 20px; font-weight: 500;
+        color: #374151; cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
     }
-
-    .heart-btn:active {
-        box-shadow: 0px 0px 4px 0px rgba(0, 0, 0, 0.25);
+    .qty-control button:hover {
+        color: #7C3AED;
     }
-
-    .heart-btn .heart {
-        width: 28px;
-        fill: gray;
-        transition: fill .5s, transform .5s;
-        pointer-events: none;
-        display: block;
+    .qty-control input {
+        flex: 1; border: none; background: transparent;
+        text-align: center; font-weight: 700; font-size: 16px;
+        appearance: none; -moz-appearance: textfield;
     }
-
-    .heart-btn.liked .heart-icon {
-        fill: #ee3529;
-        transform: scale(1.2);
-    }
-
-    .heart-pop {
-        position: absolute;
-        width: 30%;
-        opacity: 0;
-        left: 0;
-        animation: heartPop 1s ease forwards reverse;
-        pointer-events: none;
-    }
-
-    .heart-pop.one   { left: 1%;  transform: rotate(-10deg); animation-delay: .45s; }
-    .heart-pop.two   { left: 15%; transform: rotate(8deg);  animation-delay: .25s; }
-    .heart-pop.three { left: 30%; transform: rotate(-5deg); animation-delay: 0s; }
-    .heart-pop.four  { left: 50%; transform: rotate(-8deg); animation-delay: .3s; }
-    .heart-pop.five  { left: 60%; transform: rotate(-10deg); animation-delay: .9s; }
-    .heart-pop.six   { left: 70%; transform: rotate(-8deg); animation-delay: .2s; }
-    .heart-pop.seven { left: 85%; transform: rotate(6deg);  animation-delay: .35s; }
-    .heart-pop.eight { left: 90%; transform: rotate(-4deg); animation-delay: .5s; }
-    .heart-pop.nine  { left: 95%; transform: rotate(8deg);  animation-delay: .2s; }
-
-    @keyframes heartPop {
-        0%   { left: calc(50% - 7px); top: 10px; }
-        20%  { opacity: 1; }
-        80%  { top: -20px; }
-        100% { opacity: 0; }
+    .qty-control input::-webkit-outer-spin-button,
+    .qty-control input::-webkit-inner-spin-button {
+        -webkit-appearance: none; margin: 0;
     }
 </style>
 
+<!-- ── BREADCRUMB ── -->
+<div class="py-3 bg-white border-bottom position-relative z-index-1">
+    <div class="container container-two">
+        <ul class="breadcrumb-list flx-align gap-2 m-0 p-0" style="list-style: none;">
+            <li class="font-14 text-body">
+                <a href="{% url 'index' %}" class="text-body hover-text-main text-decoration-none">Bosh sahifa</a>
+            </li>
+            <li class="font-14 text-body"><i class="fas fa-chevron-right font-10"></i></li>
+            <li class="font-14 text-body">
+                <a href="{% url 'all_products' %}" class="text-body hover-text-main text-decoration-none">Mahsulotlar</a>
+            </li>
+            <li class="font-14 text-body"><i class="fas fa-chevron-right font-10"></i></li>
+            <li class="font-14 text-body">
+                <a href="{% url 'index_by_category' product.category.id %}" class="text-body hover-text-main text-decoration-none">{{ product.category.name }}</a>
+            </li>
+            <li class="font-14 text-body"><i class="fas fa-chevron-right font-10"></i></li>
+            <li class="font-14 text-heading fw-600">{{ product.name }}</li>
+        </ul>
+    </div>
+</div>
 
-
-
-
-<!-- ======================== Breadcrumb Two Section Start ===================== -->
-<section class="breadcrumb border-bottom p-0 d-block section-bg position-relative z-index-1">
-
-    <div class="breadcrumb-two">
-        <div class="container container-two">
-            <div class="row justify-content-center">
-                <div class="col-lg-12">
-                    <div class="breadcrumb-two-content">
-
-                        <ul class="breadcrumb-list flx-align gap-2 mb-2">
-                            <li class="breadcrumb-list__item font-14 text-body">
-                                <a href="{% url 'index' %}" class="breadcrumb-list__link text-body hover-text-main">Bosh sahifa</a>
-                            </li>
-                            <li class="breadcrumb-list__item font-14 text-body">
-                                <span class="breadcrumb-list__icon font-10"><i class="fas fa-chevron-right"></i></span>
-                            </li>
-                            <li class="breadcrumb-list__item font-14 text-body">
-                                <a href="{% url 'all_products' %}"
-                                    class="breadcrumb-list__link text-body hover-text-main">Mahsulotlar</a>
-                            </li>
-                            <li class="breadcrumb-list__item font-14 text-body">
-                                <span class="breadcrumb-list__icon font-10"><i class="fas fa-chevron-right"></i></span>
-                            </li>
-                            <li class="breadcrumb-list__item font-14 text-body">
-                                <span class="breadcrumb-list__text">SaaS</span>
-                            </li>
-                        </ul>
-
-                        <h3 class="breadcrumb-two-content__title mb-3 text-capitalize">{{product.name}}</h3>
-
-                        <div class="breadcrumb-content flx-align gap-3">
-                            <div class="breadcrumb-content__item text-heading fw-500 flx-align gap-2">
-                                <span class="icon"><img src="{% static 'assets/images/icons/cart-icon.svg' %}" alt=""></span>
-                                <span class="text">{{product.category.name}}</span>
-                            </div>
-                            <div class="breadcrumb-content__item text-heading fw-500 flx-align gap-2">
-                                <span class="icon"><img src="{% static 'assets/images/icons/cart-icon.svg' %}" alt=""></span>
-                                <span class="text">{{ product.count }} ta mavjud</span>
-                            </div>
-                            <div class="breadcrumb-content__item text-heading fw-500 flx-align gap-2">
-                                <span class="icon"><img src="{% static 'assets/images/icons/check-icon.svg' %}" alt=""></span>
-                                <span class="text">Yaqinda yangilangan</span>
-                            </div>
-                            <div class="breadcrumb-content__item text-heading fw-500 flx-align gap-2">
-                                <span class="icon"><img src="{% static 'assets/images/icons/check-icon.svg' %}" alt=""></span>
-                                <span class="text">Mahsulot tafsilotlari mavjud</span>
-                            </div>
-                        </div>
-
+<!-- ── PRODUCT DETAILS ── -->
+<div class="product-details py-5">
+    <div class="container container-two">
+        <div class="row gy-5">
+            <!-- Left Content -->
+            <div class="col-lg-7 col-xl-8">
+                <!-- Title & Tags -->
+                <div class="mb-4">
+                    <h1 class="fw-800 text-heading mb-3" style="font-size: 32px; letter-spacing: -0.02em;">{{ product.name }}</h1>
+                    <div class="d-flex flex-wrap align-items-center gap-3">
+                        <span class="badge bg-light text-body px-3 py-2 rounded-pill font-14 fw-500 border">
+                            <i class="fas fa-layer-group me-1 text-main"></i> {{ product.category.name }}
+                        </span>
+                        <span class="badge bg-light text-body px-3 py-2 rounded-pill font-14 fw-500 border">
+                            <i class="fas fa-box me-1 text-success"></i> {% if product.count > 0 %}Sotuvda mavjud{% else %}Sotuvda qolmagan{% endif %}
+                        </span>
+                        {% if product.discount_status %}
+                        <span class="badge bg-danger text-white px-3 py-2 rounded-pill font-14 fw-600 shadow-sm">
+                            <i class="fas fa-fire me-1"></i> Aksiya
+                        </span>
+                        {% endif %}
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
 
-    <div class="container container-two">
-        <div class="breadcrumb-tab flx-wrap align-items-start gap-lg-4 gap-2">
-            <ul class="nav tab-bordered nav-pills" id="pills-tab" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="pills-product-details-tab" data-bs-toggle="pill"
-                        data-bs-target="#pills-product-details" type="button" role="tab"
-                        aria-controls="pills-product-details" aria-selected="true">Mahsulot tafsilotlari</button>
-                </li>
-            </ul>
-            <div class="social-share">
-                <button type="button" class="social-share__button">
-                    <img src="{% static 'assets/images/icons/share-icon.svg' %}" alt="">
-                </button>
-                <div class="social-share__icons">
-                    <ul class="social-list colorful-style">
-                        <li class="social-list__item">
-                            <a href="https://www.facebook.com" class="social-list__link text-body flex-center"><i
-                                    class="fab fa-facebook-f"></i></a>
-                        </li>
-                        <li class="social-list__item">
-                            <a href="https://www.twitter.com" class="social-list__link text-body flex-center"> <i
-                                    class="fab fa-linkedin-in"></i></a>
-                        </li>
-                        <li class="social-list__item">
-                            <a href="https://www.google.com" class="social-list__link text-body flex-center"> <i
-                                    class="fab fa-twitter"></i></a>
-                        </li>
-                    </ul>
+                <!-- Image -->
+                <div class="product-detail-thumb mb-5">
+                    {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                    {% else %}
+                    <img src="{% static 'assets/images/thumbs/product-details.png' %}" alt="{{ product.name }}">
+                    {% endif %}
                 </div>
-            </div>
-        </div>
-    </div>
 
-</section>
-<!-- ======================== Breadcrumb Two Section End ===================== -->
-
-<!-- ======================= Product Details Section Start ==================== -->
-<div class="product-details mt-32 padding-b-120">
-    <div class="container container-two">
-        <div class="row gy-4">
-            <div class="col-lg-8">
-                <div class="tab-content" id="pills-tabContent">
-                    <div class="tab-pane fade show active" id="pills-product-details" role="tabpanel"
-                        aria-labelledby="pills-product-details-tab" tabindex="0">
-                        <!-- Product Details Content Start -->
-                        <div class="product-details">
-                            <div class="product-details__thumb">
-                                {% if product.image %}
-                                <img src="{{product.image.url}}" alt="{{product.name}}" style="max-height: 450px; width: 100%; object-fit: cover; border-radius: 8px;">
-                                {% else %}
-                                <img src="{% static 'assets/images/thumbs/product-details.png' %}" alt="{{product.name}}" style="max-height: 450px; width: 100%; object-fit: cover; border-radius: 8px;">
-                                {% endif %}
-                            </div>
-                            <p class="product-details__desc"> {{product.description}} </p>
-
-
-                            <div class="more-item">
-                                <div class="flx-between mb-4">
-                                    <h5 class="more-item__title">Boshqa mahsulotlar</h5>
-                                </div>
-                                <div class="row gy-4">
-                                    {% for item in related_products %}
-                                    <div class="col-xl-4 col-lg-6 col-sm-6">
-                                        <div class="product-card">
-                                            <div class="product-card__thumb d-flex">
-                                                <a href="{% url 'product_detail' item.code %}" class="link w-100">
-                                                    {% if item.image %}
-                                                    <img src="{{ item.image.url }}" alt="{{ item.name }}" class="cover-img">
-                                                    {% else %}
-                                                    <img src="{% static 'assets/images/thumbs/product-img1.png' %}" alt="{{ item.name }}" class="cover-img">
-                                                    {% endif %}
-                                                </a>
-                                            </div>
-                                            <div class="product-card__content">
-                                                <h6 class="product-card__title">
-                                                    <a href="{% url 'product_detail' item.code %}" class="link">{{ item.name }}</a>
-                                                </h6>
-                                                <div class="product-card__info flx-between gap-2">
-                                                    <span class="product-card__author">
-                                                        {{ item.category.name }}
-                                                    </span>
-                                                    <div class="flx-align gap-2">
-                                                        {% if item.discount_status and item.discount_price %}
-                                                        <h6 class="product-card__price mb-0">{{ item.discount_price|uz_price }}</h6>
-                                                        <span class="product-card__prevPrice text-decoration-line-through">{{ item.price|uz_price }}</span>
-                                                        {% else %}
-                                                        <h6 class="product-card__price mb-0">{{ item.price|uz_price }}</h6>
-                                                        {% endif %}
-                                                    </div>
-                                                </div>
-                                                <div class="product-card__bottom flx-between gap-2">
-                                                    <div>
-                                                        <span class="product-card__sales font-14 mb-2">{{ item.count }} dona</span>
-                                                    </div>
-                                                    <a href="{% url 'product_detail' item.code %}" class="btn btn-outline-light btn-sm pill">Batafsil</a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {% empty %}
-                                    <div class="col-12">
-                                        <p class="text-muted">Bu kategoriyada boshqa mahsulot yo'q.</p>
-                                    </div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-
-                        </div>
-                        <!-- Product Details Content End -->
+                <!-- Description Tabs -->
+                <ul class="nav nav-tabs mb-4 border-bottom-0 gap-2" id="detailTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active rounded-pill px-4 py-2 border-0 fw-600" style="background:#7C3AED;color:#fff;" id="desc-tab" data-bs-toggle="tab" data-bs-target="#desc-pane" type="button" role="tab">Mahsulot haqida</button>
+                    </li>
+                </ul>
+                <div class="tab-content" id="detailTabsContent">
+                    <div class="tab-pane fade show active text-body font-16" style="line-height:1.7;" id="desc-pane" role="tabpanel" tabindex="0">
+                        {{ product.description|linebreaks }}
                     </div>
                 </div>
+
             </div>
-            <div class="col-lg-4">
 
-
-                <!-- ======================= Product Sidebar Start ========================= -->
-                <div class="product-sidebar section-bg">
-                    <!--    <ul class="sidebar-list">-->
-                    <!--        <li class="sidebar-list__item flx-align gap-2 font-14 fw-300 mb-2">-->
-                    <!--            <span class="icon"><img src="{% static 'assets/images/icons/check-cirlce.svg' %}" alt=""></span>-->
-                    <!--            <span class="text">Quality verified</span>-->
-                    <!--        </li>-->
-                    <!--        <li class="sidebar-list__item flx-align gap-2 font-14 fw-300 mb-2">-->
-                    <!--            <span class="icon"><img src="{% static 'assets/images/icons/check-cirlce.svg' %}" alt=""></span>-->
-                    <!--            <span class="text">Use for a single project</span>-->
-                    <!--        </li>-->
-                    <!--        <li class="sidebar-list__item flx-align gap-2 font-14 fw-300">-->
-                    <!--            <span class="icon"><img src="{% static 'assets/images/icons/check-cirlce.svg' %}" alt=""></span>-->
-                    <!--            <span class="text">Non-paying users only</span>-->
-                    <!--        </li>-->
-                    <!--    </ul>-->
-
-                    <div class="flx-between mt-3">
-                        <div class="common-check mb-0">
-                            <label class="form-check-label mb-0 fw-300 text-body">Mahsulot narxi:</label>
-                        </div>
-                        <div class="flx-align gap-2">
+            <!-- Right Sidebar -->
+            <div class="col-lg-5 col-xl-4">
+                <div class="glass-sidebar">
+                    <h4 class="fw-700 mb-4">Xarid qilish</h4>
+                    
+                    <div class="price-wrap mb-4 pb-4 border-bottom">
+                        <p class="text-body font-14 mb-1">Narxi:</p>
+                        <div class="d-flex align-items-end gap-3">
                             {% if product.discount_status and product.discount_price %}
-                            <span class="product-card__prevPrice text-decoration-line-through">{{product.price|uz_price}}</span>
-                            <h6 class="product-card__price mb-0 font-14 fw-500">{{product.discount_price|uz_price}}</h6>
+                            <h2 class="fw-800 text-main mb-0">{{ product.discount_price|uz_price }}</h2>
+                            <span class="text-decoration-line-through text-muted font-18 mb-1">{{ product.price|uz_price }}</span>
                             {% else %}
-                            <h6 class="product-card__price mb-0 font-14 fw-500">{{product.price|uz_price}}</h6>
+                            <h2 class="fw-800 text-main mb-0">{{ product.price|uz_price }}</h2>
                             {% endif %}
                         </div>
                     </div>
 
+                    <!-- Cart Actions -->
                     {% if product.id not in cart_ids %}
                     <form method="post" action="{% url 'add_to_cart' product.code %}">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-main d-flex w-100 justify-content-center align-items-center gap-2 pill px-sm-5 mt-32">
-                            <img src="{% static 'assets/images/icons/add-to-cart.svg' %}" alt="">
-                            Savatga qo'shish
+                        <button type="submit" class="btn btn-main w-100 btn-action-lg d-flex align-items-center justify-content-center gap-2">
+                            <i class="fas fa-shopping-bag"></i> Savatga qo'shish
                         </button>
                     </form>
                     {% else %}
-                    <div class="cart-quantity mt-32" aria-label="Mahsulot soni">
-                        <button type="button" class="cart-quantity__btn qty-btn" data-action="decrease">−</button>
-                        <input type="number" class="cart-quantity__input qty-input" value="{{ cart_qty }}" min="1" aria-label="Soni">
-                        <button type="button" class="cart-quantity__btn qty-btn" data-action="increase">+</button>
-                    </div>
-                    <div class="d-flex gap-2 mt-3">
-                        <form method="POST" action="{% url 'update_cart_quantity' product.code %}" class="add-cart-form flex-grow-1">
+                    <div class="d-flex flex-column gap-3">
+                        <form method="POST" action="{% url 'update_cart_quantity' product.code %}">
                             {% csrf_token %}
-                            <input type="hidden" name="quantity" class="hidden-quantity" value="{{ cart_qty }}">
-                            <button type="submit"
-                                class="btn btn-main w-100 d-flex justify-content-center align-items-center gap-2 pill py-2 fw-semibold"
-                                style="font-size:14px; min-height:40px;">
-                                <img src="{% static 'assets/images/icons/add-to-cart.svg' %}" alt="" style="height:16px;">
-                                Yangilash
+                            <p class="font-14 text-body fw-500 mb-2">Miqdori:</p>
+                            <div class="qty-control mb-3">
+                                <button type="button" onclick="this.parentNode.querySelector('input').stepDown()">-</button>
+                                <input type="number" name="quantity" value="{{ cart_qty }}" min="1" max="{{ product.count|default:99 }}">
+                                <button type="button" onclick="this.parentNode.querySelector('input').stepUp()">+</button>
+                            </div>
+                            <button type="submit" class="btn btn-outline-main w-100 btn-action-lg">
+                                <i class="fas fa-sync-alt me-1"></i> Yangilash
                             </button>
                         </form>
-                        <button type="button"
-                            class="btn btn-danger d-flex justify-content-center align-items-center gap-2 pill py-2 remove-cart-btn fw-semibold"
-                            style="font-size:14px; min-height:40px; min-width:120px;"
-                            data-product-code="{{ product.code }}">
-                            <i class="fas fa-trash" style="font-size:14px;"></i> O'chirish
-                        </button>
+                        
+                        <form method="post" action="{% url 'remove_from_cart' product.code %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-light text-danger border w-100 btn-action-lg" style="height: 48px; border-radius: 14px;">
+                                <i class="fas fa-trash-alt me-1"></i> Savatdan o'chirish
+                            </button>
+                        </form>
                     </div>
                     {% endif %}
-                    {% if product.id in wishlist_ids %}
-                    <form method="post" action="{% url 'delete_wishlist' product.code %}">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-main d-flex w-100 justify-content-center align-items-center gap-2 pill px-sm-5 mt-32">
-                            <i class="fa fa-heart" style="font-size:24px; color:white;"></i> Saralanganlardan o'chirish
-                        </button>
-                    </form>
-                    {% else %}
-                    <form method="post" action="{% url 'add_wishlist' product.code %}">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-main d-flex w-100 justify-content-center align-items-center gap-2 pill px-sm-5 mt-32">
-                            <i class="far fa-heart" style="font-size:24px; color:white;"></i> Saralanganlarga qo'shish
-                        </button>
-                    </form>
-                    {% endif %}
 
+                    <!-- Wishlist Actions -->
+                    <div class="mt-3">
+                        {% if product.id in wishlist_ids %}
+                        <form method="post" action="{% url 'delete_wishlist' product.code %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger w-100 btn-action-lg d-flex align-items-center justify-content-center gap-2" style="background:#ef4444;border:none;">
+                                <i class="fas fa-heart"></i> Saralanganlardan olish
+                            </button>
+                        </form>
+                        {% else %}
+                        <form method="post" action="{% url 'add_wishlist' product.code %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-secondary w-100 btn-action-lg d-flex align-items-center justify-content-center gap-2" style="border-width:2px;">
+                                <i class="far fa-heart"></i> Saralanganlarga qo'shish
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
 
-                    <!-- Meta Attribute List Start -->
-                    <ul class="meta-attribute">
-                        <li class="meta-attribute__item">
-                            <span class="name">Mahsulot soni</span>
-                            <span class="details">{{product.count}}</span>
+                    <!-- Meta Information -->
+                    <ul class="meta-list">
+                        <li>
+                            <span>Mahsulot kodi</span>
+                            <span>#{{ product.code }}</span>
                         </li>
-
-                        <li class="meta-attribute__item">
-                            <span class="name">Qo'shilgan sana</span>
-                            <span class="details">{{product.created_at}}</span>
+                        <li>
+                            <span>Omborda qoldiq</span>
+                            <span>{{ product.count }} ta</span>
                         </li>
-                        <li class="meta-attribute__item">
-                            <span class="name">Kategoriya</span>
-                            <span class="details">{{product.category.name}}</span>
-                        </li>
-
-
                     </ul>
-                    <!-- Meta Attribute List End -->
+
+                    <!-- Share -->
+                    <div class="mt-4 pt-4 border-top">
+                        <p class="font-14 text-body fw-500 m-0">Do'stlar bilan ulashish:</p>
+                        <div class="share-btn-wrap">
+                            <a href="https://t.me/share/url?url={{ request.build_absolute_uri }}&text={{ product.name|urlencode }}" target="_blank" class="share-btn share-telegram">
+                                <i class="fab fa-telegram-plane"></i>
+                            </a>
+                            <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" target="_blank" class="share-btn share-facebook">
+                                <i class="fab fa-facebook-f"></i>
+                            </a>
+                            <a href="https://twitter.com/intent/tweet?url={{ request.build_absolute_uri }}&text={{ product.name|urlencode }}" target="_blank" class="share-btn share-twitter">
+                                <i class="fab fa-twitter"></i>
+                            </a>
+                        </div>
+                    </div>
+
                 </div>
-                <!-- ======================= Product Sidebar End ========================= -->
             </div>
         </div>
     </div>
 </div>
-<!-- ======================= Product Details Section End ==================== -->
+<!-- ── PRODUCT DETAILS END ── -->
 
-<!-- ======================== Delete Confirmation Modal ========================= -->
-<div class="modal fade" id="deleteCartModal" tabindex="-1" aria-labelledby="deleteCartLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="deleteCartLabel">Mahsulotni o'chirish</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<!-- ── RELATED PRODUCTS ── -->
+{% if related_products %}
+<section class="py-5 bg-light mt-4">
+    <div class="container container-two">
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <h3 class="fw-800 text-heading m-0">O'xshash mahsulotlar</h3>
+            <a href="{% url 'index_by_category' product.category.id %}" class="btn btn-outline-main pill font-14 fw-600 px-4">Barchasi <i class="fas fa-arrow-right ms-1"></i></a>
+        </div>
+        <div class="row gy-4 row-cols-xl-5 row-cols-lg-4 row-cols-md-3 row-cols-sm-2 row-cols-1">
+            {% for item in related_products|slice:":5" %}
+            <div class="col">
+                {% include 'front/partials/product_card.html' with product=item %}
             </div>
-            <div class="modal-body">
-                <p>Bu mahsulotni savatdan o'chirmoqchimisiz?</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Bekor qilish</button>
-                <form method="post" id="removeCartForm" class="m-0">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-danger" id="confirmRemoveCartBtn">Ha, o'chirish</button>
-                </form>
-            </div>
+            {% endfor %}
         </div>
     </div>
-</div>
-<!-- ======================== Brand Section Start ========================= -->
-<div class="brand ">
-    <div class="container container">
-        <div class="brand-slider">
-            <div class="brand-item d-flex align-items-center justify-content-center">
-                <img src="{% static 'assets/images/thumbs/brand-img1.png' %}" alt="">
-            </div>
-            <div class="brand-item d-flex align-items-center justify-content-center">
-                <img src="{% static 'assets/images/thumbs/brand-img2.png' %}" alt="">
-            </div>
-            <div class="brand-item d-flex align-items-center justify-content-center">
-                <img src="{% static 'assets/images/thumbs/brand-img3.png' %}" alt="">
-            </div>
-            <div class="brand-item d-flex align-items-center justify-content-center">
-                <img src="{% static 'assets/images/thumbs/brand-img4.png' %}" alt="">
-            </div>
-            <div class="brand-item d-flex align-items-center justify-content-center">
-                <img src="{% static 'assets/images/thumbs/brand-img5.png' %}" alt="">
-            </div>
-            <div class="brand-item d-flex align-items-center justify-content-center">
-                <img src="{% static 'assets/images/thumbs/brand-img3.png' %}" alt="">
-            </div>
-        </div>
-    </div>
-</div>
-<!-- ======================== Brand Section End ========================= -->
-
+</section>
+{% endif %}
 
 {% endblock %}
 
 {% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    var qtyInput = document.querySelector('.qty-input');
-    var hiddenInput = document.querySelector('.hidden-quantity');
-    var decreaseBtn = document.querySelector('[data-action="decrease"]');
-    var increaseBtn = document.querySelector('[data-action="increase"]');
-    var cartForm = document.querySelector('.add-cart-form');
-
-    function syncQuantity() {
-        if (hiddenInput) hiddenInput.value = qtyInput.value;
-    }
-
-    if (decreaseBtn) {
-        decreaseBtn.addEventListener('click', function() {
-            var val = parseInt(qtyInput.value) || 1;
-            if (val > 1) {
-                qtyInput.value = val - 1;
-                syncQuantity();
-            }
-        });
-    }
-
-    if (increaseBtn) {
-        increaseBtn.addEventListener('click', function() {
-            var val = parseInt(qtyInput.value) || 1;
-            if (val < 999) {
-                qtyInput.value = val + 1;
-                syncQuantity();
-            }
-        });
-    }
-
-    if (qtyInput) {
-        qtyInput.addEventListener('change', syncQuantity);
-    }
-
-    syncQuantity();
-
-    // Remove from cart with confirmation
-    var deleteModal = new bootstrap.Modal(document.getElementById('deleteCartModal'));
-    var removeBtn = document.querySelector('.remove-cart-btn');
-    var removeForm = document.getElementById('removeCartForm');
-
-    if (removeBtn && removeForm) {
-        removeBtn.addEventListener('click', function() {
-            var productCode = this.dataset.productCode;
-            removeForm.action = "{% url 'remove_from_cart' 'PRODUCT_CODE' %}".replace('PRODUCT_CODE', productCode);
-            deleteModal.show();
-        });
-    }
-});
-</script>
 {% endblock %}
