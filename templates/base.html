@@ -1339,14 +1339,16 @@
                     form.action = form.action.replace('/add-wishlist/', '/delete-wishlist/');
                     if (btn) {
                         btn.classList.add('active');
-                        btn.innerHTML = '<i class="fas fa-heart text-danger"></i>';
+                        let icon = btn.querySelector('i');
+                        if (icon) icon.className = 'fas fa-heart text-danger';
                     }
                     updateBadge('.wishlist-count-badge', 1);
                 } else if (isWishDelete) {
                     form.action = form.action.replace('/delete-wishlist/', '/add-wishlist/');
                     if (btn) {
                         btn.classList.remove('active');
-                        btn.innerHTML = '<i class="far fa-heart"></i>';
+                        let icon = btn.querySelector('i');
+                        if (icon) icon.className = 'far fa-heart';
                     }
                     updateBadge('.wishlist-count-badge', -1);
                 }
@@ -1370,7 +1372,11 @@
                             updateBadge('.cart-count-badge', -1);
                         } else if (isWishAdd) {
                             form.action = form.action.replace('/delete-wishlist/', '/add-wishlist/');
-                            if (btn) { btn.classList.remove('active'); btn.innerHTML = '<i class="far fa-heart"></i>'; }
+                            if (btn) { 
+                                btn.classList.remove('active'); 
+                                let icon = btn.querySelector('i');
+                                if (icon) icon.className = 'far fa-heart'; 
+                            }
                             updateBadge('.wishlist-count-badge', -1);
                         }
                         window.showToast('Iltimos, avval tizimga kiring!');
