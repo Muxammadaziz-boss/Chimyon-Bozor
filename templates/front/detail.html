@@ -61,13 +61,30 @@
     .share-facebook { background: #1877F2; box-shadow: 0 4px 12px rgba(24, 119, 242, 0.3); }
     .share-twitter { background: #1DA1F2; box-shadow: 0 4px 12px rgba(29, 161, 242, 0.3); }
 
-    /* ── Action Buttons ── */
     .btn-action-lg {
         height: 56px;
         border-radius: 16px;
         font-weight: 700;
         font-size: 16px;
         transition: all 0.2s ease;
+    }
+    .btn-wishlist-outline {
+        border: 2px solid #ef4444;
+        color: #ef4444 !important;
+        background: transparent;
+    }
+    .btn-wishlist-outline:hover {
+        background: #ef4444;
+        color: #ffffff !important;
+    }
+    .btn-wishlist-solid {
+        background: #ef4444;
+        border: none;
+        color: #ffffff !important;
+    }
+    .btn-wishlist-solid:hover {
+        background: #dc2626;
+        color: #ffffff !important;
     }
     
     /* Meta items */
@@ -312,14 +329,14 @@
                         {% if product.id in wishlist_ids %}
                         <form method="post" action="{% url 'delete_wishlist' product.code %}">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-danger w-100 btn-action-lg d-flex align-items-center justify-content-center gap-2" style="background:#ef4444;border:none;">
+                            <button type="submit" class="btn btn-wishlist-solid w-100 btn-action-lg d-flex align-items-center justify-content-center gap-2">
                                 <i class="fas fa-heart"></i> Saralanganlardan olish
                             </button>
                         </form>
                         {% else %}
                         <form method="post" action="{% url 'add_wishlist' product.code %}">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-outline-danger w-100 btn-action-lg d-flex align-items-center justify-content-center gap-2" style="border-width:2px; color: #ef4444; border-color: #ef4444;">
+                            <button type="submit" class="btn btn-wishlist-outline w-100 btn-action-lg d-flex align-items-center justify-content-center gap-2">
                                 <i class="far fa-heart"></i> Saralanganlarga qo'shish
                             </button>
                         </form>
