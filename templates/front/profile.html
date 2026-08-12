@@ -2,210 +2,546 @@
 {% load static shop_extras %}
 
 {% block content %}
-<section class="breadcrumb-three section-bg position-relative z-index-1 overflow-hidden">
+<style>
+    /* =========================================
+       PREMIUM PROFILE STYLES
+       ========================================= */
+    .profile-hero {
+        position: relative;
+        padding-top: 180px;
+        background: linear-gradient(135deg, #7C3AED 0%, #4F46E5 100%);
+        border-radius: 0 0 40px 40px;
+        margin-bottom: 80px;
+        overflow: hidden;
+    }
+    
+    .profile-hero::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: url('{% static "assets/images/gradients/breadcrumb-gradient-bg.png" %}') center/cover;
+        opacity: 0.3;
+        mix-blend-mode: overlay;
+    }
 
-<!--    <img src="{% static 'assets/images/gradients/breadcrumb-gradient-bg.png' %}" alt="1" class="bg&#45;&#45;gradient">-->
+    .profile-header-card {
+        position: relative;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 30px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.06);
+        margin-top: -120px;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        gap: 30px;
+    }
 
-<!--    <img src="{% static 'assets/images/shapes/element-moon3.png' %}" alt="2" class="element one">-->
-<!--    <img src="{% static 'assets/images/shapes/element-moon1.png' %}" alt="3" class="element three">-->
+    .profile-avatar-wrap {
+        position: relative;
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        padding: 6px;
+        background: linear-gradient(135deg, #7C3AED, #F472B6);
+        flex-shrink: 0;
+        box-shadow: 0 10px 25px rgba(124, 58, 237, 0.3);
+    }
 
-    <div class="container container-two">
-        <div class="breadcrumb-three-content border-bottom border-color">
-            <div class="breadcrumb-three-content__inner">
-                <div class="breadcrumb-three-content__left">
-                    <div class="flx-between align-items-end gap-3">
-                        <div class="author-profile d-flex gap-2 flex-column">
-                            <div class="author-profile__thumb flex-shrink-0">
-                                {% if user.photo %}
-                                <img src="{{user.photo.url}}" alt="" style="border-radius: 50%;">
-                                {% else %}
-                                <img src="{% static 'assets/images/thumbs/author-profile.png' %}" alt="">
-                                {% endif %}
-                            </div>
-                            <div class="author-profile__info">
-                                <h5 class="author-profile__name mb-2">{{user.username}}</h5>
-                                <span class="author-profile__membership font-14">{{user.first_name}} {{user.last_name}}</span>
-                            </div>
-                        </div>
-                        <div class="breadcrumb-three-content__right flex-shrink-0  d-flex align-items-center gap-4 gap-lg-5">
-                            <div class="sales">
-                                <span class="sales__text mb-1 text-heading fw-500">{{user.phone}}</span>
-                                <p class="sales__amount mb-0">{{user.address}}</p>
-                            </div>
-                        </div>
-                    </div>
+    .profile-avatar {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid #fff;
+        background: #fff;
+    }
 
-                </div>
-            </div>
-<ul class="nav nav-bordered nav-pills mt-4 gap-3" id="pills-tab" role="tablist">
-    <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="pills-Settingss-tab" data-bs-toggle="pill" data-bs-target="#pills-Settingss" type="button" role="tab">Sozlamalar</button>
-    </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" id="pills-Orders-tab" data-bs-toggle="pill" data-bs-target="#pills-Orders" type="button" role="tab">Buyurtmalar</button>
-    </li>
-    {% if show_dashboard_link %}
-    <li class="nav-item" role="presentation">
-        <a class="nav-link" href="{% url 'd_index' %}">Dashboard</a>
-    </li>
-    {% endif %}
-</ul>
-        </div>
-    </div>
+    .profile-info h3 {
+        font-weight: 800;
+        font-size: 32px;
+        color: #111827;
+        margin-bottom: 5px;
+        letter-spacing: -0.02em;
+    }
 
-</section>
-<!-- ======================== Breadcrumb Three Section End ===================== -->
+    .profile-info p {
+        color: #6B7280;
+        font-size: 16px;
+        margin: 0;
+        font-weight: 500;
+    }
+
+    .profile-contact {
+        margin-left: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        text-align: right;
+    }
+
+    .contact-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        justify-content: flex-end;
+        color: #4B5563;
+        font-weight: 500;
+    }
+
+    .contact-item i {
+        color: #7C3AED;
+        background: #F3F4F6;
+        width: 32px; height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+    }
+
+    /* TABS */
+    .profile-tabs {
+        border-bottom: 0;
+        gap: 15px;
+        margin-bottom: 40px;
+        justify-content: center;
+    }
+
+    .profile-tabs .nav-link {
+        border: 0;
+        background: #F3F4F6;
+        color: #4B5563;
+        font-weight: 600;
+        padding: 14px 32px;
+        border-radius: 100px;
+        font-size: 15px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .profile-tabs .nav-link:hover {
+        background: #E5E7EB;
+        transform: translateY(-2px);
+    }
+
+    .profile-tabs .nav-link.active {
+        background: #7C3AED;
+        color: #fff;
+        box-shadow: 0 10px 20px rgba(124, 58, 237, 0.2);
+    }
+
+    /* CARDS */
+    .premium-card {
+        background: #fff;
+        border: 1px solid #F3F4F6;
+        border-radius: 24px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+        padding: 40px;
+        overflow: hidden;
+    }
+
+    .premium-card-title {
+        font-size: 24px;
+        font-weight: 800;
+        color: #111827;
+        margin-bottom: 30px;
+        letter-spacing: -0.01em;
+    }
+
+    /* FORM STYLES */
+    .form-floating-custom {
+        position: relative;
+        margin-bottom: 24px;
+    }
+
+    .form-floating-custom .form-control {
+        height: 64px;
+        border-radius: 16px;
+        border: 2px solid #E5E7EB;
+        padding: 24px 20px 8px 56px;
+        font-weight: 600;
+        color: #111827;
+        background: #F9FAFB;
+        transition: all 0.3s ease;
+    }
+
+    .form-floating-custom .form-control:focus {
+        border-color: #7C3AED;
+        background: #fff;
+        box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+    }
+
+    .form-floating-custom label {
+        position: absolute;
+        top: 22px;
+        left: 56px;
+        color: #6B7280;
+        font-size: 15px;
+        font-weight: 500;
+        pointer-events: none;
+        transition: all 0.2s ease;
+        transform-origin: 0 0;
+    }
+
+    .form-floating-custom .form-control:focus ~ label,
+    .form-floating-custom .form-control:not(:placeholder-shown) ~ label {
+        transform: translateY(-12px) scale(0.85);
+        color: #7C3AED;
+    }
+
+    .form-floating-custom .input-icon {
+        position: absolute;
+        top: 50%;
+        left: 20px;
+        transform: translateY(-50%);
+        color: #9CA3AF;
+        font-size: 20px;
+        transition: color 0.3s ease;
+    }
+
+    .form-floating-custom .form-control:focus ~ .input-icon {
+        color: #7C3AED;
+    }
+
+    /* CUSTOM FILE UPLOAD */
+    .file-upload-wrapper {
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        border: 2px dashed #D1D5DB;
+        border-radius: 16px;
+        padding: 20px;
+        cursor: pointer;
+        background: #F9FAFB;
+        transition: all 0.3s ease;
+    }
+    
+    .file-upload-wrapper:hover {
+        border-color: #7C3AED;
+        background: #F3F0FF;
+        color: #7C3AED;
+    }
+
+    .file-upload-wrapper input[type="file"] {
+        position: absolute;
+        left: 0; top: 0; right: 0; bottom: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    /* BUTTONS */
+    .btn-gradient {
+        background: linear-gradient(135deg, #7C3AED 0%, #4F46E5 100%);
+        color: #fff;
+        border: 0;
+        font-weight: 700;
+        font-size: 16px;
+        padding: 18px 40px;
+        border-radius: 16px;
+        box-shadow: 0 10px 20px rgba(124, 58, 237, 0.3);
+        transition: all 0.3s ease;
+    }
+
+    .btn-gradient:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 25px rgba(124, 58, 237, 0.4);
+        color: #fff;
+    }
+
+    /* ORDERS TABLE */
+    .orders-table th {
+        background: #F9FAFB;
+        color: #4B5563;
+        font-weight: 600;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border: 0;
+        padding: 16px 20px;
+    }
+
+    .orders-table th:first-child { border-radius: 12px 0 0 12px; }
+    .orders-table th:last-child { border-radius: 0 12px 12px 0; }
+
+    .orders-table td {
+        vertical-align: middle;
+        padding: 20px;
+        border-bottom: 1px solid #F3F4F6;
+        color: #111827;
+        font-weight: 500;
+        transition: background 0.3s ease;
+    }
+
+    .orders-table tr:hover td {
+        background: #F9FAFB;
+    }
+
+    .status-badge {
+        padding: 8px 16px;
+        border-radius: 100px;
+        font-size: 13px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    @media (max-width: 991px) {
+        .profile-header-card {
+            flex-direction: column;
+            text-align: center;
+            padding: 30px 20px;
+        }
+        .profile-contact {
+            text-align: center;
+            margin: 0 auto;
+            justify-content: center;
+        }
+        .contact-item {
+            justify-content: center;
+        }
+        .profile-hero {
+            padding-top: 120px;
+        }
+    }
+</style>
+
+<!-- ======================== Hero Section ===================== -->
+<section class="profile-hero"></section>
 
 <!-- ===================== Profile Section Start ============================== -->
-<section class="profile pt-5 padding-b-120">
+<section class="profile-content pb-5">
     <div class="container container-two">
-<div class="tab-content" id="pills-tabContent">
-            <div class="tab-pane fade show active" id="pills-Settingss" role="tabpanel" aria-labelledby="pills-Settingss-tab" tabindex="0">
-
-<!-- ================== Setting Section Start ====================== -->
-            <div class="row gy-4">
-
-
-    <div class="col-lg-8 mx-auto">
-        <!-- <form action="#"> -->
-            <div class="setting-content d-flex flex-column gap-4" data-bs-spy="scroll" data-bs-target="#sidebar-scroll-spy">
-                <div class="card common-card border border-gray-five overflow-hidden"  id="personalInfo">
-                    <div class="card-header">
-                        <h6 class="title">Shaxsiy ma'lumotlar</h6>
-                    </div>
-            <form method="post" enctype="multipart/form-data">{% csrf_token %}
-                        <div class="card-body">
-                        <div class="row gy-3">
-                            <div class="col-sm-6 col-xs-6">
-                                <label for="fName" class="form-label">Ism</label>
-                                <input type="text"  name="first_name" value="{{user.first_name}}" class="common-input common-input--md border--color-dark bg--white" id="fName">
-                            </div>
-                            <div class="col-sm-6 col-xs-6">
-                                <label for="lName" class="form-label">Familiya</label>
-                                <input type="text"  name="last_name" value="{{user.last_name}}" class="common-input common-input--md border--color-dark bg--white" id="lName">
-                            </div>
-                            <div class="col-sm-6 col-xs-6">
-                                <label for="country" class="form-label">Telefon</label>
-                                <input type="text" name="phone" value="{{user.phone}}" class="common-input common-input--md border--color-dark bg--white" id="country">
-                            </div>
-                            <div class="col-sm-6 col-xs-6">
-                                <label for="address" class="form-label">Manzil</label>
-                                <input type="text" name="address" value="{{user.address}}" class="common-input common-input--md border--color-dark bg--white" id="address">
-                            </div>
-                            <div class="col-sm-6 col-xs-6">
-                                <label for="city" class="form-label">Foydalanuvchi nomi</label>
-                                <input type="text" name="username" value="{{user.username}}" class="common-input common-input--md border--color-dark bg--white" id="city">
-                            </div>
-                            <div class="col-sm-6 col-xs-6">
-                                <div class="col-sm-6 col-xs-6">
-                                    <label for="fileUpload" class="form-label">Rasm yuklash</label>
-                                    <input type="file" name="photo" class="common-input common-input--md border--color-dark bg--white" id="fileUpload">
-                                </div>
-
-                            </div>
-                            <button type="submit" class="btn w-100 btn-main btn-md">Ma'lumotlarni saqlash</button>
-
-                        </div>
-                    </div>
-
-</form>
+        
+        <!-- Header Card -->
+        <div class="profile-header-card mb-5">
+            <div class="profile-avatar-wrap">
+                {% if user.photo %}
+                <img src="{{user.photo.url}}" alt="Avatar" class="profile-avatar">
+                {% else %}
+                <img src="{% static 'assets/images/thumbs/author-profile.png' %}" alt="Avatar" class="profile-avatar">
+                {% endif %}
+            </div>
+            <div class="profile-info">
+                <h3>{{user.username}}</h3>
+                <p>{{user.first_name}} {{user.last_name}}</p>
+            </div>
+            <div class="profile-contact">
+                <div class="contact-item">
+                    <i class="fas fa-phone-alt"></i>
+                    <span>{{user.phone|default:"Kiritilmagan"}}</span>
+                </div>
+                <div class="contact-item">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>{{user.address|default:"Kiritilmagan"}}</span>
                 </div>
             </div>
-        <!-- </form> -->
-    </div>
-</div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <ul class="nav nav-pills profile-tabs" id="pills-tab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="pills-settings-tab" data-bs-toggle="pill" data-bs-target="#pills-settings" type="button" role="tab">
+                    <i class="fas fa-cog"></i> Sozlamalar
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pills-orders-tab" data-bs-toggle="pill" data-bs-target="#pills-orders" type="button" role="tab">
+                    <i class="fas fa-box-open"></i> Buyurtmalar
+                </button>
+            </li>
+            {% if show_dashboard_link %}
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" href="{% url 'd_index' %}">
+                    <i class="fas fa-chart-line"></i> Dashboard
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="pills-tabContent">
+            
+            <!-- SETTINGS TAB -->
+            <div class="tab-pane fade show active" id="pills-settings" role="tabpanel" tabindex="0">
+                <div class="row justify-content-center">
+                    <div class="col-lg-10">
+                        <div class="premium-card">
+                            <h4 class="premium-card-title">Shaxsiy ma'lumotlar</h4>
+                            
+                            <form method="post" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <div class="row gy-4">
+                                    <div class="col-md-6">
+                                        <div class="form-floating-custom">
+                                            <input type="text" name="first_name" value="{{user.first_name}}" class="form-control" id="fName" placeholder=" ">
+                                            <i class="fas fa-user input-icon"></i>
+                                            <label for="fName">Ism</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="form-floating-custom">
+                                            <input type="text" name="last_name" value="{{user.last_name}}" class="form-control" id="lName" placeholder=" ">
+                                            <i class="fas fa-user-tag input-icon"></i>
+                                            <label for="lName">Familiya</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="form-floating-custom">
+                                            <input type="text" name="phone" value="{{user.phone}}" class="form-control" id="phone" placeholder=" ">
+                                            <i class="fas fa-phone input-icon"></i>
+                                            <label for="phone">Telefon raqam</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="form-floating-custom">
+                                            <input type="text" name="username" value="{{user.username}}" class="form-control" id="username" placeholder=" ">
+                                            <i class="fas fa-at input-icon"></i>
+                                            <label for="username">Foydalanuvchi nomi</label>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-12">
+                                        <div class="form-floating-custom">
+                                            <input type="text" name="address" value="{{user.address}}" class="form-control" id="address" placeholder=" ">
+                                            <i class="fas fa-map-marker-alt input-icon"></i>
+                                            <label for="address">Manzil</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-12">
+                                        <div class="file-upload-wrapper">
+                                            <i class="fas fa-cloud-upload-alt font-24"></i>
+                                            <span class="fw-600">Yangi rasm yuklash</span>
+                                            <input type="file" name="photo" id="fileUpload" accept="image/*">
+                                        </div>
+                                        <div class="text-muted font-12 mt-2 text-center" id="fileNameDisplay">Hali hech qanday fayl tanlanmagan</div>
+                                    </div>
+
+                                    <div class="col-12 text-center mt-4">
+                                        <button type="submit" class="btn-gradient w-100">
+                                            O'zgarishlarni saqlash <i class="fas fa-check ms-2"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Orders Tab -->
-            <div class="tab-pane fade" id="pills-Orders" role="tabpanel" aria-labelledby="pills-Orders-tab" tabindex="0">
-                <div class="row gy-4">
+            <!-- ORDERS TAB -->
+            <div class="tab-pane fade" id="pills-orders" role="tabpanel" tabindex="0">
+                <div class="row justify-content-center">
                     <div class="col-12">
                         {% if orders %}
-                        <div class="card common-card border border-gray-five overflow-hidden">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h6 class="title mb-0">Mening buyurtmalarim</h6>
-                                <span class="badge bg-main text-white pill px-3 py-2">{{ orders|length }} ta buyurtma</span>
+                        <div class="premium-card p-0">
+                            <div class="p-4 d-flex justify-content-between align-items-center border-bottom">
+                                <h4 class="premium-card-title mb-0">Mening buyurtmalarim</h4>
+                                <span class="badge bg-main text-white rounded-pill px-4 py-2 font-14">{{ orders|length }} ta buyurtma</span>
                             </div>
-                            <div class="card-body p-0">
-                                <div class="table-responsive">
-                                    <table class="table style-two align-middle mb-0 border-0 rounded-0">
-                                        <thead>
-                                            <tr>
-                                                <th class="ps-4">Kod</th>
-                                                <th>Holat</th>
-                                                <th>Sana</th>
-                                                <th>Mahsulotlar</th>
-                                                <th>Jami</th>
-                                                <th class="pe-4 text-end">Amal</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for order in orders %}
-                                            <tr>
-                                                <td class="ps-4 font-14">
-                                                    <span class="fw-bold text-heading" title="{{ order.code }}">
-                                                        #{{ order.code|slice:":8" }}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    {% if order.status == 2 %}
-                                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 rounded-pill">Qabul qilindi</span>
-                                                    {% elif order.status == 3 %}
-                                                        <span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-2 rounded-pill">Yo'lda</span>
-                                                    {% elif order.status == 4 %}
-                                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">Yetkazilgan</span>
-                                                    {% elif order.status == 5 %}
-                                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 rounded-pill">Qaytarilgan</span>
-                                                    {% else %}
-                                                        <span class="badge bg-main-100 text-main px-3 py-2 rounded-pill">{{ order.get_status_display }}</span>
-                                                    {% endif %}
-                                                </td>
-                                                <td class="font-14 text-heading">{{ order.date|date:"d.m.Y H:i" }}</td>
-                                                <td class="font-14 text-heading">{{ order.count_product }} ta</td>
-                                                <td class="fw-bold text-main font-16">{{ order.total_price|uz_price }}</td>
-                                                <td class="pe-4 text-end">
-                                                    <a href="{% url 'order_detail' order.code %}" class="btn btn-main btn-sm pill px-4">Ko'rish</a>
-                                                </td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
+                            
+                            <div class="table-responsive">
+                                <table class="table orders-table mb-0 align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th class="ps-4">Kod</th>
+                                            <th>Holat</th>
+                                            <th>Sana</th>
+                                            <th>Mahsulotlar</th>
+                                            <th>Jami summa</th>
+                                            <th class="pe-4 text-end">Amal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for order in orders %}
+                                        <tr>
+                                            <td class="ps-4">
+                                                <span class="fw-bold" style="color:#7C3AED;">#{{ order.code|slice:":8" }}</span>
+                                            </td>
+                                            <td>
+                                                {% if order.status == 2 %}
+                                                    <span class="status-badge bg-warning-subtle text-warning"><i class="fas fa-clock"></i> Qabul qilindi</span>
+                                                {% elif order.status == 3 %}
+                                                    <span class="status-badge bg-info-subtle text-info"><i class="fas fa-truck"></i> Yo'lda</span>
+                                                {% elif order.status == 4 %}
+                                                    <span class="status-badge bg-success-subtle text-success"><i class="fas fa-check-circle"></i> Yetkazilgan</span>
+                                                {% elif order.status == 5 %}
+                                                    <span class="status-badge bg-danger-subtle text-danger"><i class="fas fa-times-circle"></i> Qaytarilgan</span>
+                                                {% else %}
+                                                    <span class="status-badge bg-light text-body">{{ order.get_status_display }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-muted">{{ order.date|date:"d.m.Y, H:i" }}</td>
+                                            <td>{{ order.count_product }} ta</td>
+                                            <td class="fw-bold text-dark font-16">{{ order.total_price|uz_price }}</td>
+                                            <td class="pe-4 text-end">
+                                                <a href="{% url 'order_detail' order.code %}" class="btn btn-outline-main rounded-pill px-4 btn-sm fw-600">Ko'rish <i class="fas fa-chevron-right ms-1 font-12"></i></a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                         {% else %}
-                        <div class="card common-card border border-gray-five p-5 text-center">
-                            <h5 class="mb-3">Hali buyurtma yo'q</h5>
-                            <p class="text-body mb-4">Mahsulot tanlang va checkout qiling.</p>
-                            <div>
-                                <a href="{% url 'all_products' %}" class="btn btn-main pill px-4 py-2">Mahsulotlarni ko'rish</a>
+                        <div class="premium-card text-center py-5">
+                            <div class="mb-4 d-inline-flex align-items-center justify-content-center" style="width:100px;height:100px;background:#F3F0FF;border-radius:50%;color:#7C3AED;font-size:40px;">
+                                <i class="fas fa-box-open"></i>
                             </div>
+                            <h4 class="fw-800 mb-3">Hali buyurtma yo'q</h4>
+                            <p class="text-muted mb-4 font-16">O'zingizga yoqqan mahsulotlarni tanlang va xaridni amalga oshiring.</p>
+                            <a href="{% url 'all_products' %}" class="btn-gradient d-inline-block">Mahsulotlarni ko'rish</a>
                         </div>
                         {% endif %}
                     </div>
                 </div>
             </div>
 
-</div>
+        </div>
     </div>
 </section>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Keep tab selected via URL param or hash
     const urlParams = new URLSearchParams(window.location.search);
     const tabParam = urlParams.get('tab');
-    if (tabParam === 'orders' || window.location.hash === '#orders' || window.location.hash === '#pills-Orders') {
-        const ordersTab = document.getElementById('pills-Orders-tab');
+    if (tabParam === 'orders' || window.location.hash === '#orders' || window.location.hash === '#pills-orders') {
+        const ordersTab = document.getElementById('pills-orders-tab');
         if (ordersTab) {
-            if (typeof bootstrap !== 'undefined' && bootstrap.Tab) {
-                const bsTab = new bootstrap.Tab(ordersTab);
-                bsTab.show();
-            } else {
-                ordersTab.click();
-            }
+            const bsTab = new bootstrap.Tab(ordersTab);
+            bsTab.show();
         }
+    }
+
+    // File upload text change
+    const fileInput = document.getElementById('fileUpload');
+    const fileNameDisplay = document.getElementById('fileNameDisplay');
+    if (fileInput && fileNameDisplay) {
+        fileInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                fileNameDisplay.textContent = 'Tanlandi: ' + this.files[0].name;
+                fileNameDisplay.style.color = '#7C3AED';
+                fileNameDisplay.style.fontWeight = '600';
+            } else {
+                fileNameDisplay.textContent = 'Hali hech qanday fayl tanlanmagan';
+                fileNameDisplay.style.color = '';
+                fileNameDisplay.style.fontWeight = '';
+            }
+        });
     }
 });
 </script>
 {% endblock %}
-
