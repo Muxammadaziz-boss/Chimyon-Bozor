@@ -9,21 +9,31 @@
 <head>
 
     <meta charset="UTF-8">
-
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>{% block title %}{{ site_settings.site_name|default:"Chimyon-bozor" }}{% endblock %}</title>
+    <title>{% block title %}{{ site_settings.site_name|default:"Chimyon-bozor — Sifatli va hamyonbop mahsulotlar bozori" }}{% endblock %}</title>
 
-    {% if site_settings.favicon %}
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="{{ site_settings.tagline|default:'Chimyon-bozor — sifatli mahsulotlarni qulay narxlarda xarid qiling. Tez yetkazib berish va 100% kafolat.' }}">
+    <meta name="keywords" content="Chimyon bozor, onlayn bozor, sifatli mahsulotlar, arzon narxlar, yetkazib berish, internet do'kon">
+    <meta name="author" content="Chimyon-bozor">
 
-    <link rel="shortcut icon" href="{{ site_settings.favicon.url }}">
-
+    <!-- Open Graph / Facebook / Telegram -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{% block og_title %}{{ site_settings.site_name|default:'Chimyon-bozor' }}{% endblock %}">
+    <meta property="og:description" content="{{ site_settings.tagline|default:'Sifatli mahsulotlarni qulay narxlarda xarid qiling. Tez yetkazib berish va ishonchli xizmat.' }}">
+    {% if site_settings.logo %}
+    <meta property="og:image" content="{{ site_settings.logo.url }}">
     {% else %}
+    <meta property="og:image" content="{% static 'assets/images/logo/logo.png' %}?v=2">
+    {% endif %}
 
+    <!-- Favicon -->
+    {% if site_settings.favicon %}
+    <link rel="shortcut icon" href="{{ site_settings.favicon.url }}">
+    {% else %}
     <link rel="shortcut icon" href="{% static 'assets/images/logo/favicon-two.png' %}?v=2">
-
     {% endif %}
 
 

@@ -92,7 +92,7 @@ Sayt brauzerda `http://127.0.0.1:8000/` manzili bo'yicha ochiladi. Admin panel e
 ## 📁 Loyiha Strukturasi
 
 ```text
-To'garak shop/
+Chimyon-bozor/
 ├── config/                  # Django proyekt sozlamalari (settings.py, urls.py)
 ├── main/                    # Asosiy ilova (models, views, urls, admin, tests)
 │   ├── migrations/          # Ma'lumotlar bazasi migratsiyalari
