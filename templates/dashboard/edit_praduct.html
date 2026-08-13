@@ -23,7 +23,7 @@
                   </div>
                   <div class="form-group col-md-4">
                     <label class="font-weight-bold">Kategoriya <span class="text-danger">*</span></label>
-                    <select name="category" class="form-control selectric" required>
+                    <select name="category" class="form-control" required>
                       {% for category in categories %}
                         <option value="{{ category.id }}" {% if category.id == product.category.id %}selected{% endif %}>
                           {{ category.name }}
