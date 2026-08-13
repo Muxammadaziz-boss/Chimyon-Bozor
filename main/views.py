@@ -331,6 +331,18 @@ def verify_otp(request):
                 'error': "SMS kodining amal qilish muddati tugagan (5 minut). Kodni qayta yuboring."
             })
 
+        # Rate limit attempts (Max 5 attempts)
+        attempts = request.session.get('otp_attempts', 0) + 1
+        request.session['otp_attempts'] = attempts
+
+        if attempts > 5:
+            models.OTPCode.objects.filter(user=user, is_used=False).update(is_used=True)
+            request.session.pop('otp_attempts', None)
+            return render(request, 'front/verify_otp.html', {
+                'phone': phone,
+                'error': "5 marta noto'g'ri kod kiritildi. Xavfsizlik yuzasidan kod bekor qilindi. Iltimos, 'Kodni qayta yuborish' tugmasini bosing."
+            })
+
         if otp_obj.code == entered_code:
             # Mark OTP used
             otp_obj.is_used = True
@@ -344,15 +356,17 @@ def verify_otp(request):
             # Clean session
             request.session.pop('otp_user_id', None)
             request.session.pop('otp_phone', None)
+            request.session.pop('otp_attempts', None)
 
             # Log user in
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             messages.success(request, "Telefon raqamingiz muvaffaqiyatli tasdiqlandi va akkauntingiz faollashtirildi! 🎉")
             return redirect('index')
         else:
+            remaining = max(0, 5 - attempts)
             return render(request, 'front/verify_otp.html', {
                 'phone': phone,
-                'error': "Kiritilgan SMS kod noto'g'ri. Qayta urinib ko'ring."
+                'error': f"Kiritilgan SMS kod noto'g'ri. Qolgan urinishlar: {remaining}"
             })
 
     latest_otp = models.OTPCode.objects.filter(user=user, is_used=False).order_by('-created_at').first()
@@ -514,15 +528,13 @@ def add_to_cart(request, product_code):
     return redirect_back(request, 'product_detail', code=product.code)
 
 
+@require_POST
 def remove_from_cart(request, product_code):
     is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('ajax') == '1'
     if not request.user.is_authenticated:
         if is_ajax:
             return JsonResponse({'status': 'login_required', 'message': 'Iltimos, avval tizimga kiring', 'redirect': '/login/'}, status=401)
         return redirect('login')
-
-    if request.method != 'POST':
-        return redirect_back(request, 'index')
 
     product = get_object_or_404(models.Product, code=product_code)
     models.CartProduct.objects.filter(
@@ -539,54 +551,52 @@ def remove_from_cart(request, product_code):
     return redirect_back(request, 'product_detail', code=product.code)
 
 
+@require_POST
 def update_cart_quantity(request, product_code):
-    if request.method == 'POST':
-        if not request.user.is_authenticated:
-            return JsonResponse({'status': 'login_required', 'redirect': '/login/'}, status=401)
-        product = get_object_or_404(models.Product, code=product_code)
-        cart = get_object_or_404(models.Cart, user=request.user, status=1)
-        cart_product = get_object_or_404(models.CartProduct, cart=cart, product=product)
+    if not request.user.is_authenticated:
+        return JsonResponse({'status': 'login_required', 'redirect': '/login/'}, status=401)
+    product = get_object_or_404(models.Product, code=product_code)
+    cart = get_object_or_404(models.Cart, user=request.user, status=1)
+    cart_product = get_object_or_404(models.CartProduct, cart=cart, product=product)
 
-        try:
+    try:
+        if request.content_type == 'application/json':
+            data = json.loads(request.body)
+            quantity = int(data.get('quantity', 0))
+        else:
+            quantity = int(request.POST.get('quantity', 0))
+        quantity = min(quantity, product.count)
+
+        if quantity <= 0:
+            cart_product.delete()
             if request.content_type == 'application/json':
-                data = json.loads(request.body)
-                quantity = int(data.get('quantity', 0))
-            else:
-                quantity = int(request.POST.get('quantity', 0))
-            quantity = min(quantity, product.count)
+                return JsonResponse({'status': 'deleted'})
+            messages.success(request, f'"{product.name}" savatdan olib tashlandi')
+            return redirect('cart')
 
-            if quantity <= 0:
-                cart_product.delete()
-                if request.content_type == 'application/json':
-                    return JsonResponse({'status': 'deleted'})
-                messages.success(request, f'"{product.name}" savatdan olib tashlandi')
-                return redirect('cart')
-
-            cart_product.count = quantity
-            cart_product.save()
-            if request.content_type == 'application/json':
-                return JsonResponse({
-                    'status': 'updated',
-                    'total_price': float(cart_product.total_price),
-                    'count': cart_product.count
-                })
-            messages.success(request, 'Savat yangilandi')
-            return redirect_back(request, 'product_detail', code=product.code)
-        except (ValueError, TypeError):
-            if request.content_type == 'application/json':
-                return JsonResponse({'status': 'error'}, status=400)
-            return redirect_back(request, 'product_detail', code=product.code)
+        cart_product.count = quantity
+        cart_product.save()
+        if request.content_type == 'application/json':
+            return JsonResponse({
+                'status': 'updated',
+                'total_price': float(cart_product.total_price),
+                'count': cart_product.count
+            })
+        messages.success(request, 'Savat yangilandi')
+        return redirect_back(request, 'product_detail', code=product.code)
+    except (ValueError, TypeError):
+        if request.content_type == 'application/json':
+            return JsonResponse({'status': 'error'}, status=400)
+        return redirect_back(request, 'product_detail', code=product.code)
 
 
+@require_POST
 def add_wishlist(request, product_code):
     is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('ajax') == '1'
     if not request.user.is_authenticated:
         if is_ajax:
             return JsonResponse({'status': 'login_required', 'message': 'Iltimos, avval tizimga kiring', 'redirect': '/login/'}, status=401)
         return redirect('login')
-
-    if request.method != 'POST':
-        return redirect_back(request, 'index')
 
     product = get_object_or_404(models.Product, code=product_code)
     if not models.WishList.objects.filter(product=product, user=request.user).exists():
@@ -603,15 +613,13 @@ def add_wishlist(request, product_code):
     return redirect_back(request)
 
 
+@require_POST
 def delete_wishlist(request, product_code):
     is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('ajax') == '1'
     if not request.user.is_authenticated:
         if is_ajax:
             return JsonResponse({'status': 'login_required', 'message': 'Iltimos, avval tizimga kiring', 'redirect': '/login/'}, status=401)
         return redirect('login')
-
-    if request.method != 'POST':
-        return redirect_back(request, 'index')
 
     product = get_object_or_404(models.Product, code=product_code)
     models.WishList.objects.filter(product=product, user=request.user).delete()

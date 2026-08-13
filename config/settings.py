@@ -172,6 +172,8 @@ else:
 
 AUTH_USER_MODEL = 'main.User'
 
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 # Jazzmin settings
 JAZZMIN_SETTINGS = {
     'site_title': "Chimyon-bozor Admin",

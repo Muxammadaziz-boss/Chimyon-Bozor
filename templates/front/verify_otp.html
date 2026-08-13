@@ -39,30 +39,39 @@
         box-shadow: 0 8px 20px rgba(124, 58, 237, 0.15);
     }
 
-    .otp-input-group {
-        position: relative;
+    /* Segmented 6-digit input boxes */
+    .otp-boxes-group {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
         margin: 28px 0;
     }
 
-    .otp-control {
-        font-size: 32px;
+    .otp-digit-box {
+        width: 52px;
+        height: 64px;
+        font-size: 26px;
         font-weight: 700;
-        letter-spacing: 14px;
         text-align: center;
-        height: 70px;
-        border-radius: 16px;
+        border-radius: 14px;
         border: 2px solid #E5E7EB;
         background: #F9FAFB;
         color: #1F2937;
-        transition: all 0.25s ease;
-        padding-left: 20px;
+        transition: all 0.2s ease;
+        outline: none;
     }
 
-    .otp-control:focus {
+    .otp-digit-box:focus {
         border-color: #7C3AED;
         background: #ffffff;
         box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.15);
-        outline: none;
+        transform: translateY(-2px);
+    }
+
+    .otp-digit-box.filled {
+        border-color: #A855F7;
+        background: #FAF5FF;
+        color: #6B21A8;
     }
 
     .btn-verify {
@@ -134,18 +143,25 @@
         </p>
 
         {% if error %}
-        <div class="alert alert-danger border-0 rounded-12 mt-3 font-14">
+        <div class="alert alert-danger border-0 rounded-12 mt-3 font-14 text-start">
             <i class="fas fa-exclamation-circle me-2"></i>{{ error }}
         </div>
         {% endif %}
 
         <form method="POST" action="{% url 'verify_otp' %}" id="otpForm">
             {% csrf_token %}
-            <div class="otp-input-group">
-                <input type="text" name="otp_code" id="otpInput" maxlength="6" pattern="[0-9]{6}" autocomplete="one-time-code" autofocus required placeholder="• • • • • •" class="form-control otp-control">
+            <input type="hidden" name="otp_code" id="hiddenOtpCode">
+
+            <div class="otp-boxes-group">
+                <input type="text" class="otp-digit-box" maxlength="1" inputmode="numeric" pattern="[0-9]" data-index="0" autofocus autocomplete="off">
+                <input type="text" class="otp-digit-box" maxlength="1" inputmode="numeric" pattern="[0-9]" data-index="1" autocomplete="off">
+                <input type="text" class="otp-digit-box" maxlength="1" inputmode="numeric" pattern="[0-9]" data-index="2" autocomplete="off">
+                <input type="text" class="otp-digit-box" maxlength="1" inputmode="numeric" pattern="[0-9]" data-index="3" autocomplete="off">
+                <input type="text" class="otp-digit-box" maxlength="1" inputmode="numeric" pattern="[0-9]" data-index="4" autocomplete="off">
+                <input type="text" class="otp-digit-box" maxlength="1" inputmode="numeric" pattern="[0-9]" data-index="5" autocomplete="off">
             </div>
 
-            <button type="submit" class="btn btn-verify">
+            <button type="submit" class="btn btn-verify" id="submitBtn">
                 <i class="fas fa-check-circle me-2"></i> Tasdiqlash va Faollashtirish
             </button>
         </form>
@@ -170,17 +186,76 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const otpInput = document.getElementById('otpInput');
+    const boxes = Array.from(document.querySelectorAll('.otp-digit-box'));
+    const hiddenOtp = document.getElementById('hiddenOtpCode');
+    const otpForm = document.getElementById('otpForm');
     const countdownTimer = document.getElementById('countdownTimer');
     const resendBtn = document.getElementById('resendBtn');
     const timerBadge = document.getElementById('timerBadge');
 
-    // Filter non-digit characters
-    if (otpInput) {
-        otpInput.addEventListener('input', function() {
-            this.value = this.value.replace(/[^0-9]/g, '');
-        });
+    function syncHiddenCode() {
+        const fullCode = boxes.map(b => b.value).join('');
+        hiddenOtp.value = fullCode;
+        return fullCode;
     }
+
+    boxes.forEach((box, idx) => {
+        box.addEventListener('input', function(e) {
+            const val = this.value.replace(/[^0-9]/g, '');
+            this.value = val ? val.slice(-1) : '';
+
+            if (this.value) {
+                this.classList.add('filled');
+                if (idx < boxes.length - 1) {
+                    boxes[idx + 1].focus();
+                }
+            } else {
+                this.classList.remove('filled');
+            }
+
+            const code = syncHiddenCode();
+            if (code.length === 6) {
+                // Auto submit when all 6 digits entered
+                setTimeout(() => otpForm.submit(), 150);
+            }
+        });
+
+        box.addEventListener('keydown', function(e) {
+            if (e.key === 'Backspace' && !this.value && idx > 0) {
+                boxes[idx - 1].focus();
+            }
+        });
+
+        box.addEventListener('paste', function(e) {
+            e.preventDefault();
+            const pasted = (e.clipboardData || window.clipboardData).getData('text');
+            const digits = pasted.replace(/[^0-9]/g, '').slice(0, 6);
+            if (digits) {
+                digits.split('').forEach((d, i) => {
+                    if (boxes[i]) {
+                        boxes[i].value = d;
+                        boxes[i].classList.add('filled');
+                    }
+                });
+                const nextIdx = Math.min(digits.length, boxes.length - 1);
+                boxes[nextIdx].focus();
+                const code = syncHiddenCode();
+                if (code.length === 6) {
+                    setTimeout(() => otpForm.submit(), 150);
+                }
+            }
+        });
+    });
+
+    otpForm.addEventListener('submit', function(e) {
+        const code = syncHiddenCode();
+        if (code.length < 6) {
+            e.preventDefault();
+            alert("Iltimos, 6 xonali SMS kodni to'liq kiriting.");
+            const firstEmpty = boxes.find(b => !b.value);
+            if (firstEmpty) firstEmpty.focus();
+        }
+    });
 
     // 2-minute countdown timer (120 seconds)
     let timeLeft = 120;

@@ -1,18 +1,19 @@
-from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import user_passes_test, login_required
-from django.shortcuts import render, redirect
-from django.views.decorators.http import require_POST
-from main import models
-from django.contrib import messages
-from openpyxl import Workbook
-from django.http import HttpResponse
 from collections import defaultdict
+from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import user_passes_test
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from django.utils.timezone import now
+from django.views.decorators.http import require_POST
+from openpyxl import Workbook
+
+from main import models
 
 
 @user_passes_test(lambda u: u.is_superuser, login_url='d_login')
 def index(request):
-    from django.utils.timezone import now
-
     delivered_products = models.CartProduct.objects.filter(
         cart__status=4,
         product__isnull=False,
@@ -37,16 +38,16 @@ def index(request):
 def create_category(request):
     if request.method == 'POST':
         try:
-            name = request.POST.get('name')
+            name = request.POST.get('name', '').strip()
             logo = request.FILES.get('logo')
             if not name or not logo:
-                messages.warning(request, 'Barcha maydonlarni toldirish shart')
+                messages.warning(request, 'Barcha maydonlarni to\'ldirish shart')
                 return redirect('d_create_category')
-            category = models.Category.objects.create(name=name, logo=logo)
-            messages.success(request, 'Categorya yaratildi')
+            models.Category.objects.create(name=name, logo=logo)
+            messages.success(request, 'Kategoriya muvaffaqiyatli yaratildi')
             return redirect('d_index')
         except Exception as e:
-            messages.error(request, 'Xatolik')
+            messages.error(request, f'Xatolik: {e}')
             return redirect('d_create_category')
     return render(request, 'dashboard/create_category.html')
 
@@ -62,19 +63,17 @@ def list_category(request):
 
 @user_passes_test(lambda u: u.is_superuser, login_url='d_login')
 def edit_category(request, id):
-    category = models.Category.objects.get(id=id)
+    category = get_object_or_404(models.Category, id=id)
     if request.method == 'POST':
-        category.name = request.POST.get('name')
+        category.name = request.POST.get('name', category.name)
         status = request.POST.get('is_active')
-        if status:
-            category.is_active = True
-        else:
-            category.is_active = False
+        category.is_active = bool(status)
 
         logo = request.FILES.get('logo')
         if logo:
             category.logo = logo
         category.save()
+        messages.success(request, 'Kategoriya yangilandi')
         return redirect('d_list_category')
 
     context = {'category': category}
@@ -83,8 +82,9 @@ def edit_category(request, id):
 
 @user_passes_test(lambda u: u.is_superuser, login_url='d_login')
 def delete_category(request, id):
-    category = models.Category.objects.get(id=id)
+    category = get_object_or_404(models.Category, id=id)
     category.delete()
+    messages.success(request, 'Kategoriya o\'chirildi')
     return redirect('d_list_category')
 
 
@@ -93,9 +93,9 @@ def create_product(request):
     categories = models.Category.objects.all()
     if request.method == 'POST':
         try:
-            name = request.POST.get('name')
+            name = request.POST.get('name', '').strip()
             category_id = request.POST.get('category')
-            description = request.POST.get('description')
+            description = request.POST.get('description', '').strip()
             price = request.POST.get('price')
             discount_price = request.POST.get('discount_price')
             image = request.FILES.get('image')
@@ -103,11 +103,11 @@ def create_product(request):
             count = request.POST.get('count')
 
             if not name or not category_id or not description or not price or not image:
-                messages.warning(request, 'Barcha majburiy maydonlarni toldirish shart')
+                messages.warning(request, 'Barcha majburiy maydonlarni to\'ldirish shart')
                 return render(request, 'dashboard/create_praduct.html', {'categories': categories})
 
-            category = models.Category.objects.get(id=category_id)
-            product = models.Product.objects.create(
+            category = get_object_or_404(models.Category, id=category_id)
+            models.Product.objects.create(
                 name=name,
                 category=category,
                 description=description,
@@ -137,15 +137,16 @@ def list_product(request):
 
 @user_passes_test(lambda u: u.is_superuser, login_url='d_login')
 def edit_product(request, code):
-    product = models.Product.objects.get(code=code)
+    product = get_object_or_404(models.Product, code=code)
     categories = models.Category.objects.all()
     if request.method == 'POST':
         try:
-            product.name = request.POST.get('name')
+            product.name = request.POST.get('name', product.name)
             category_id = request.POST.get('category')
-            product.category = models.Category.objects.get(id=category_id)
-            product.description = request.POST.get('description')
-            product.price = request.POST.get('price')
+            if category_id:
+                product.category = get_object_or_404(models.Category, id=category_id)
+            product.description = request.POST.get('description', product.description)
+            product.price = request.POST.get('price', product.price)
             discount_price = request.POST.get('discount_price')
             product.discount_price = discount_price if discount_price else None
             product.discount_status = bool(request.POST.get('discount_status'))
@@ -164,8 +165,9 @@ def edit_product(request, code):
 
 @user_passes_test(lambda u: u.is_superuser, login_url='d_login')
 def delete_product(request, code):
-    product = models.Product.objects.get(code=code)
+    product = get_object_or_404(models.Product, code=code)
     product.delete()
+    messages.success(request, 'Mahsulot o\'chirildi')
     return redirect('d_list_product')
 
 
@@ -179,13 +181,9 @@ def orders(request):
     return render(request, 'dashboard/order_list.html', {'orders': order, "query": query})
 
 
-# ______________________________EXEl Export________________________________
-from django.utils import timezone  # <-- Vaqt mintaqasi bilan ishlash uchun import qilamiz
-
-
 @user_passes_test(lambda u: u.is_superuser, login_url='d_login')
 def export_orders(request):
-    orders = models.Cart.objects.exclude(status=1).order_by('id')
+    orders_qs = models.Cart.objects.exclude(status=1).order_by('id')
     wb = Workbook()
     ws = wb.active
     ws.title = "Buyurtmalar"
@@ -193,13 +191,9 @@ def export_orders(request):
         ["TR", "Code", "User", "Status", "Date", "Total price", "Discount", "Total after discount", "Count product"])
 
     n = 0
-    for i in orders:
+    for i in orders_qs:
         n += 1
-
-        # 1. Sanani o'zgaruvchiga olamiz
         order_date = i.date
-
-        # 2. Agar sanada vaqt mintaqasi bo'lsa, uni Excel tushunadigan sodda ko'rinishga keltiramiz
         if order_date and timezone.is_aware(order_date):
             order_date = timezone.make_naive(order_date)
 
@@ -212,7 +206,7 @@ def export_orders(request):
         ws.append([
             n,
             i.code,
-            i.user.username,
+            i.user.username if i.user else 'Anonim',
             i.status,
             order_date,
             total_price,
@@ -224,39 +218,39 @@ def export_orders(request):
     response = HttpResponse(
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-    response["Content-Disposition"] = f'attachment; filename="orders{request.user.username}.xlsx"'
+    response["Content-Disposition"] = f'attachment; filename="orders_{request.user.username}.xlsx"'
     wb.save(response)
     return response
 
 
 @user_passes_test(lambda u: u.is_superuser, login_url='d_login')
 def status_update(request, code):
-    order = models.Cart.objects.get(code=code)
+    order = get_object_or_404(models.Cart, code=code)
     if order.status in (2, 3):
         order.status = order.status + 1
         order.save()
-        messages.success(request, 'Status o`zgartirildi')
+        messages.success(request, 'Status o\'zgartirildi')
         return redirect('d_orders')
-    messages.error(request, 'Xatolik')
+    messages.error(request, 'Statusni o\'zgartirib bo\'lmaydi')
     return redirect('d_orders')
 
 
 @user_passes_test(lambda u: u.is_superuser, login_url='d_login')
 def reject_cart(request, code):
-    order = models.Cart.objects.filter(code=code).first()
-    if order and order.status in (2, 3, 4):
+    order = get_object_or_404(models.Cart, code=code)
+    if order.status in (2, 3, 4):
         order.status = 5
         order.save()
-        messages.success(request, 'Qaytarildi')
+        messages.success(request, 'Buyurtma bekor qilindi (Qaytarildi)')
         return redirect('d_orders')
-    messages.error(request, 'Xatolik')
+    messages.error(request, 'Ushbu buyurtmani bekor qilib bo\'lmaydi')
     return redirect('d_orders')
 
 
 @user_passes_test(lambda u: u.is_superuser, login_url='d_login')
 def cart_detail(request, code):
-    order = models.Cart.objects.exclude(status=1).get(code=code)
-    cart_products = models.CartProduct.objects.filter(cart=order)
+    order = get_object_or_404(models.Cart.objects.exclude(status=1), code=code)
+    cart_products = models.CartProduct.objects.filter(cart=order).select_related('product')
 
     context = {
         'order': order,
@@ -265,16 +259,15 @@ def cart_detail(request, code):
     return render(request, 'dashboard/orders_detail.html', context=context)
 
 
-# --------------------------AUTH-----------------------------------
 def log_in(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
-        user = authenticate(username=username, password=password, is_staff=True)
-        if user is not None and user.is_staff:
+        user = authenticate(username=username, password=password)
+        if user is not None and (user.is_staff or user.is_superuser):
             login(request, user)
             return redirect('d_index')
-        messages.error(request, 'Xatolik')
+        messages.error(request, 'Foydalanuvchi nomi yoki parol noto\'g\'ri yoxud ruxsat yo\'q')
         return redirect('d_login')
 
     return render(request, 'dashboard/login.html')
@@ -286,10 +279,6 @@ def log_out(request):
     return redirect('d_login')
 
 
-from django.utils.timezone import now
-from django.http import JsonResponse
-
-
 @user_passes_test(lambda u: u.is_superuser, login_url='d_login')
 def revenue_chart_data(request):
     monthly = defaultdict(lambda: {'total': 0.0, 'discount': 0.0})
@@ -299,9 +288,10 @@ def revenue_chart_data(request):
     ).select_related('product', 'cart')
 
     for item in sales:
-        month = item.cart.date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        monthly[month]['total'] += float(item.total_price)
-        monthly[month]['discount'] += float((item.product.price - item.product.active_price) * item.count)
+        if item.cart and item.cart.date:
+            month = item.cart.date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            monthly[month]['total'] += float(item.total_price)
+            monthly[month]['discount'] += float((item.product.price - item.product.active_price) * item.count)
 
     ordered_months = sorted(monthly.keys())
     labels = [month.strftime('%B') for month in ordered_months]
