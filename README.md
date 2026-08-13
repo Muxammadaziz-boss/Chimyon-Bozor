@@ -53,7 +53,7 @@
 ### 1. Repozitoriyani klonlash:
 ```bash
 git clone https://github.com/Muxammadaziz-boss/Dpmarket.git
-cd Dpmarket
+cd Chimyon-bozor
 ```
 
 ### 2. Virtual muhitni yaratish va faollashtirish:
@@ -121,4 +121,4 @@ python manage.py test main
 
 ---
 
-© 2026 **DpMarket**. Barcha huquqlar himoyalangan.
+© 2026 **Chimyon-bozor**. Barcha huquqlar himoyalangan.
