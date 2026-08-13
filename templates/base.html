@@ -814,11 +814,7 @@
     </style>
 </head>
 
-
-
 <body>
-
-
 
     <div class="overlay"></div>
 
@@ -1010,13 +1006,7 @@
 
                             <div class="dropdown">
                                 <a href="javascript:void(0)" class="user-profile-pill" id="userProfileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                    {% if user.photo %}
-                                    <img src="{{ user.photo.url }}" class="user-avatar-circle" alt="{{ user.username }}">
-                                    {% else %}
-                                    <div class="user-avatar-circle">
-                                        {{ user.first_name|default:user.username|slice:":1"|upper }}
-                                    </div>
-                                    {% endif %}
+                                    <img src="{{ user.get_avatar_url }}" class="user-avatar-circle" alt="{{ user.username }}">
                                     <span class="user-name-text">{{ user.first_name|default:user.username }}</span>
                                     <i class="fas fa-angle-down font-12 text-muted ms-1"></i>
                                 </a>

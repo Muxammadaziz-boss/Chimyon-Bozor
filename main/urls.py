@@ -23,5 +23,7 @@ urlpatterns = [
     path('api/live-search/', views.live_search, name='live_search'),
     path('api/category-products/<int:category_id>/', views.category_products_api, name='category_products_api'),
     path('api/related-products/<str:code>/', views.load_more_related_products, name='load_more_related_products'),
+    path('api/check-username/', views.check_username_api, name='check_username_api'),
+    path('api/check-phone/', views.check_phone_api, name='check_phone_api'),
     path('product-detail/<str:product_code>/add-review/', views.add_review, name='add_review'),
 ]

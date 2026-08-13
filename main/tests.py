@@ -91,16 +91,38 @@ class AuthAndCartFlowTestCase(TestCase):
             count=5,
         )
 
-    def test_register_duplicate_username_shows_error(self):
+    def test_register_short_username_shows_error(self):
         response = self.client.post(reverse('register'), {
-            'username': self.user.username,
-            'phone': '+998901234567',
+            'username': 'abc',
+            'phone': '901234567',
             'password': 'secret123',
             'confirm_password': 'secret123',
         })
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Bu foydalanuvchi nomi band')
+        self.assertContains(response, 'kamida 4 ta belgidan iborat bo\'lishi kerak')
+
+    def test_register_duplicate_username_shows_error(self):
+        response = self.client.post(reverse('register'), {
+            'username': self.user.username,
+            'phone': '901234567',
+            'password': 'secret123',
+            'confirm_password': 'secret123',
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'foydalanuvchi nomi allaqachon band')
+
+    def test_register_duplicate_phone_shows_error(self):
+        response = self.client.post(reverse('register'), {
+            'username': 'newuser123',
+            'phone': self.user.phone,
+            'password': 'secret123',
+            'confirm_password': 'secret123',
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'telefon raqami allaqachon ro\'yxatdan o\'tgan')
 
     def test_login_invalid_credentials_shows_error(self):
         response = self.client.post(reverse('login'), {

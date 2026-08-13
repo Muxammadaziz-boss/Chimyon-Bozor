@@ -230,22 +230,42 @@ def all_products(request):
 
 def register(request):
     if request.method == "POST":
-        username = request.POST['username'].strip()
-        phone = request.POST['phone'].strip().replace(' ', '').replace('-', '')
-        password = request.POST['password']
-        confirm_password = request.POST['confirm_password']
+        username = request.POST.get('username', '').strip()
+        raw_phone = request.POST.get('phone', '').strip().replace(' ', '').replace('-', '').replace('+', '')
+        password = request.POST.get('password', '')
+        confirm_password = request.POST.get('confirm_password', '')
+
+        # Normalize phone: ensure +998 prefix
+        if raw_phone.startswith('998'):
+            phone = '+' + raw_phone
+        else:
+            phone = '+998' + raw_phone
+
+        reg_data = {
+            'is_register_page': True,
+            'reg_username': username,
+            'reg_phone': request.POST.get('phone', '')
+        }
+
+        if len(username) < 4:
+            reg_data['reg_error'] = "Foydalanuvchi nomi kamida 4 ta belgidan iborat bo'lishi kerak."
+            return render(request, 'front/login.html', reg_data)
 
         if password != confirm_password:
-            return render(request, 'front/login.html', {'reg_error': 'Parollar mos kelmadi', 'is_register_page': True})
+            reg_data['reg_error'] = 'Parollar mos kelmadi'
+            return render(request, 'front/login.html', reg_data)
 
         if not PHONE_RE.match(phone):
-            return render(request, 'front/login.html', {
-                'reg_error': "Telefon raqam noto'g'ri. Masalan: +998901234567",
-                'is_register_page': True
-            })
+            reg_data['reg_error'] = "Telefon raqam noto'g'ri formatda. 9 ta raqam kiriting (masalan: 917914881)."
+            return render(request, 'front/login.html', reg_data)
 
-        if models.User.objects.filter(username=username).exists():
-            return render(request, 'front/login.html', {'reg_error': 'Bu foydalanuvchi nomi band', 'is_register_page': True})
+        if models.User.objects.filter(username__iexact=username).exists():
+            reg_data['reg_error'] = "Ushbu foydalanuvchi nomi allaqachon band. Boshqa nom tanlang."
+            return render(request, 'front/login.html', reg_data)
+
+        if models.User.objects.filter(phone=phone).exists():
+            reg_data['reg_error'] = "Ushbu telefon raqami allaqachon ro'yxatdan o'tgan."
+            return render(request, 'front/login.html', reg_data)
 
         models.User.objects.create_user(username=username, password=password, phone=phone)
         user = authenticate(username=username, password=password)
@@ -306,9 +326,12 @@ def profile(request):
         status__gt=1,
     ).order_by('-date')
 
+    addresses = models.Address.objects.filter(is_active=True).order_by('name')
+
     context = {
         'show_dashboard_link': request.user.is_staff,
         'orders': orders,
+        'addresses': addresses,
     }
     return render(request, 'front/profile.html', context)
 
@@ -615,9 +638,41 @@ def category_products_api(request, category_id):
         html_items.append(item_html)
 
     return JsonResponse({
-        'status': 'success',
+        'html': ''.join(html_items),
         'has_more': has_more,
         'next_offset': offset + len(products),
-        'items': html_items,
-        'total': total_count
+        'total_count': total_count
     })
+
+
+def check_username_api(request):
+    username = request.GET.get('username', '').strip()
+    if not username:
+        return JsonResponse({'valid': False, 'message': 'Foydalanuvchi nomi kiritilmadi'})
+    if len(username) < 4:
+        return JsonResponse({'valid': False, 'message': "Kamida 4 ta belgidan iborat bo'lishi kerak"})
+
+    is_taken = models.User.objects.filter(username__iexact=username).exists()
+    if is_taken:
+        return JsonResponse({'valid': False, 'available': False, 'message': 'Ushbu nom allaqachon band!'})
+
+    return JsonResponse({'valid': True, 'available': True, 'message': "Ushbu nom bo'sh (ishlatishingiz mumkin)"})
+
+
+def check_phone_api(request):
+    raw_phone = request.GET.get('phone', '').strip().replace(' ', '').replace('-', '').replace('+', '')
+    if raw_phone.startswith('998'):
+        phone = '+' + raw_phone
+        digits = raw_phone[3:]
+    else:
+        phone = '+998' + raw_phone
+        digits = raw_phone
+
+    if len(digits) != 9 or not digits.isdigit():
+        return JsonResponse({'valid': False, 'message': "9 ta raqam bo'lishi kerak"})
+
+    is_taken = models.User.objects.filter(phone=phone).exists()
+    if is_taken:
+        return JsonResponse({'valid': False, 'available': False, 'message': "Ushbu telefon raqami allaqachon ro'yxatdan o'tgan!"})
+
+    return JsonResponse({'valid': True, 'available': True, 'message': "Ushbu telefon raqami bo'sh"})

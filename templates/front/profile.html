@@ -6,16 +6,24 @@
     /* =========================================
        PREMIUM PROFILE STYLES
        ========================================= */
-    .profile-hero {
+    
+    /* Override main.css global .profile-content { width: 68% } — no sidebar here */
+    .profile-content {
+        width: 100% !important;
+        max-width: none !important;
+    }
+
+    .profile-hero-banner {
         position: relative;
-        padding-top: 180px;
+        width: 100%;
+        height: 220px;
         background: linear-gradient(135deg, #7C3AED 0%, #4F46E5 100%);
-        border-radius: 0 0 40px 40px;
-        margin-bottom: 80px;
+        border-radius: 30px;
+        margin-top: 40px;
         overflow: hidden;
     }
     
-    .profile-hero::before {
+    .profile-hero-banner::before {
         content: '';
         position: absolute;
         top: 0; left: 0; right: 0; bottom: 0;
@@ -26,13 +34,14 @@
 
     .profile-header-card {
         position: relative;
+        width: 100%;
         background: rgba(255, 255, 255, 0.95);
         backdrop-filter: blur(20px);
         border: 1px solid rgba(255, 255, 255, 0.4);
         border-radius: 30px;
         padding: 40px;
         box-shadow: 0 20px 40px rgba(0,0,0,0.06);
-        margin-top: -120px;
+        margin-top: -100px;
         z-index: 10;
         display: flex;
         align-items: center;
@@ -106,7 +115,8 @@
     .profile-tabs {
         border-bottom: 0;
         gap: 15px;
-        margin-bottom: 40px;
+        margin-top: 30px;
+        margin-bottom: 30px;
         justify-content: center;
     }
 
@@ -137,6 +147,7 @@
 
     /* CARDS */
     .premium-card {
+        width: 100%;
         background: #fff;
         border: 1px solid #F3F4F6;
         border-radius: 24px;
@@ -189,7 +200,8 @@
     }
 
     .form-floating-custom .form-control:focus ~ label,
-    .form-floating-custom .form-control:not(:placeholder-shown) ~ label {
+    .form-floating-custom .form-control:not(:placeholder-shown) ~ label,
+    .form-floating-custom select.form-control ~ label {
         transform: translateY(-12px) scale(0.85);
         color: #7C3AED;
     }
@@ -232,9 +244,284 @@
 
     .file-upload-wrapper input[type="file"] {
         position: absolute;
-        left: 0; top: 0; right: 0; bottom: 0;
-        opacity: 0;
+        top: 0; left: 0; width: 100%; height: 100%;
+        opacity: 0 !important;
         cursor: pointer;
+        z-index: 10;
+    }
+
+    /* LOCKED FORM STYLES */
+    .form-control:disabled, 
+    .form-control[disabled],
+    .form-control[readonly] {
+        background-color: #f8fafc !important;
+        color: #334155 !important;
+        border-color: #e2e8f0 !important;
+        cursor: not-allowed;
+        opacity: 0.9;
+    }
+
+    .form-floating-custom.locked label {
+        color: #94a3b8 !important;
+    }
+
+    .form-floating-custom.locked .input-icon {
+        color: #cbd5e1 !important;
+    }
+
+    .file-upload-wrapper.locked {
+        opacity: 0.5;
+        pointer-events: none;
+        background: #f1f5f9;
+        cursor: not-allowed;
+    }
+
+    .edit-mode-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        padding: 5px 14px;
+        border-radius: 20px;
+        background: #f1f5f9;
+        color: #64748b;
+        transition: all 0.3s ease;
+    }
+
+    .edit-mode-badge.active {
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+    /* HIGH CONTRAST EDIT TOGGLE BUTTON */
+    .btn-edit-toggle {
+        background-color: #7C3AED !important;
+        color: #ffffff !important;
+        border: 1.5px solid #7C3AED !important;
+        font-weight: 700 !important;
+        font-size: 14px !important;
+        transition: all 0.25s ease !important;
+        box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25) !important;
+    }
+
+    .btn-edit-toggle:hover {
+        background-color: #6D28D9 !important;
+        border-color: #6D28D9 !important;
+        color: #ffffff !important;
+        box-shadow: 0 6px 16px rgba(124, 58, 237, 0.35) !important;
+        transform: translateY(-1px);
+    }
+
+    .btn-edit-toggle.editing-active {
+        background-color: #dc2626 !important;
+        border-color: #dc2626 !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25) !important;
+    }
+
+    .btn-edit-toggle.editing-active:hover {
+        background-color: #b91c1c !important;
+        border-color: #b91c1c !important;
+        color: #ffffff !important;
+        box-shadow: 0 6px 16px rgba(220, 38, 38, 0.35) !important;
+    }
+
+    /* PREMIUM CUSTOM SELECT DROPDOWN */
+    .custom-select-wrapper {
+        position: relative;
+        user-select: none;
+        width: 100%;
+    }
+
+    .custom-select-trigger {
+        position: relative;
+        display: flex;
+        align-items: center;
+        height: 64px;
+        padding: 0 45px 0 56px;
+        background: #F9FAFB;
+        border: 1.5px solid #E5E7EB;
+        border-radius: 16px;
+        cursor: pointer;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .custom-select-trigger:hover {
+        border-color: #7C3AED;
+        background: #ffffff;
+    }
+
+    .custom-select-wrapper.open .custom-select-trigger {
+        border-color: #7C3AED;
+        background: #ffffff;
+        box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.12);
+        border-bottom-left-radius: 6px;
+        border-bottom-right-radius: 6px;
+    }
+
+    .select-label-wrap {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .select-floating-label {
+        font-size: 11.5px;
+        font-weight: 700;
+        color: #7C3AED;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+    }
+
+    .select-current-value {
+        font-size: 15px;
+        font-weight: 600;
+        color: #1F2937;
+        margin-top: 1px;
+    }
+
+    .select-address-icon {
+        position: absolute !important;
+        left: 20px !important;
+        right: auto !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        color: #9CA3AF !important;
+        font-size: 20px !important;
+        display: inline-block !important;
+        line-height: 1 !important;
+        z-index: 10 !important;
+        pointer-events: none !important;
+    }
+
+    .custom-select-wrapper.open .select-address-icon {
+        color: #7C3AED !important;
+    }
+
+    .custom-select-wrapper.locked .select-address-icon {
+        color: #cbd5e1 !important;
+    }
+
+    .select-chevron {
+        position: absolute !important;
+        right: 20px !important;
+        left: auto !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        color: #9CA3AF !important;
+        font-size: 13px !important;
+        transition: transform 0.3s ease, color 0.3s ease !important;
+        z-index: 10 !important;
+        pointer-events: none !important;
+    }
+
+    .custom-select-wrapper.open .select-chevron {
+        transform: translateY(-50%) rotate(180deg) !important;
+        color: #7C3AED !important;
+    }
+
+    /* DROPDOWN OPTIONS LIST */
+    .custom-select-options {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        right: 0;
+        background: #ffffff;
+        border: 1.5px solid #E5E7EB;
+        border-radius: 16px;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12), 0 4px 10px rgba(124, 58, 237, 0.06);
+        z-index: 1000;
+        max-height: 220px;
+        overflow-y: auto;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-8px);
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        padding: 6px;
+    }
+
+    /* CUSTOM SCROLLBAR FOR OPTIONS */
+    .custom-select-options::-webkit-scrollbar {
+        width: 6px;
+    }
+    .custom-select-options::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 10px;
+    }
+    .custom-select-options::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+    }
+    .custom-select-options::-webkit-scrollbar-thumb:hover {
+        background: #7C3AED;
+    }
+
+    .custom-select-wrapper.open .custom-select-options {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+
+    .custom-option {
+        padding: 12px 16px;
+        font-size: 14.5px;
+        font-weight: 500;
+        color: #374151;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.18s ease;
+        margin-bottom: 2px;
+    }
+
+    .custom-option:hover {
+        background: #F3F0FF;
+        color: #7C3AED;
+        font-weight: 600;
+    }
+
+    .custom-option.selected {
+        background: linear-gradient(135deg, #7C3AED 0%, #4F46E5 100%);
+        color: #ffffff;
+        font-weight: 700;
+    }
+
+    .custom-option .check-mark {
+        display: none;
+        font-size: 12px;
+    }
+
+    .custom-option.selected .check-mark {
+        display: block;
+        color: #ffffff;
+    }
+
+    .custom-option.selected .text-main {
+        color: #ffffff !important;
+    }
+
+    /* LOCKED CUSTOM SELECT STYLES */
+    .custom-select-wrapper.locked {
+        pointer-events: none;
+    }
+
+    .custom-select-wrapper.locked .custom-select-trigger {
+        background: #f8fafc !important;
+        border-color: #e2e8f0 !important;
+        cursor: not-allowed;
+    }
+
+    .custom-select-wrapper.locked .select-current-value {
+        color: #334155 !important;
+    }
+
+    .custom-select-wrapper.locked .select-floating-label {
+        color: #94a3b8 !important;
+    }
+
+    .custom-select-wrapper.locked .input-icon,
+    .custom-select-wrapper.locked .select-chevron {
+        color: #cbd5e1 !important;
     }
 
     /* BUTTONS */
@@ -314,122 +601,155 @@
     }
 </style>
 
-<!-- ======================== Hero Section ===================== -->
-<section class="profile-hero"></section>
-
 <!-- ===================== Profile Section Start ============================== -->
-<section class="profile-content pb-5">
+<section class="profile-content py-4">
     <div class="container container-two">
         
-        <!-- Header Card -->
-        <div class="profile-header-card mb-5">
-            <div class="profile-avatar-wrap">
-                {% if user.photo %}
-                <img src="{{user.photo.url}}" alt="Avatar" class="profile-avatar">
-                {% else %}
-                <img src="{% static 'assets/images/thumbs/author-profile.png' %}" alt="Avatar" class="profile-avatar">
-                {% endif %}
-            </div>
-            <div class="profile-info">
-                <h3>{{user.username}}</h3>
-                <p>{{user.first_name}} {{user.last_name}}</p>
-            </div>
-            <div class="profile-contact">
-                <div class="contact-item">
-                    <i class="fas fa-phone-alt"></i>
-                    <span>{{user.phone|default:"Kiritilmagan"}}</span>
-                </div>
-                <div class="contact-item">
-                    <i class="fas fa-map-marker-alt"></i>
-                    <span>{{user.address|default:"Kiritilmagan"}}</span>
-                </div>
-            </div>
-        </div>
+        <!-- Hero Banner inside container for perfect alignment -->
+        <div class="profile-hero-banner"></div>
 
-        <!-- Navigation Tabs -->
-        <ul class="nav nav-pills profile-tabs" id="pills-tab" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="pills-settings-tab" data-bs-toggle="pill" data-bs-target="#pills-settings" type="button" role="tab">
-                    <i class="fas fa-cog"></i> Sozlamalar
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="pills-orders-tab" data-bs-toggle="pill" data-bs-target="#pills-orders" type="button" role="tab">
-                    <i class="fas fa-box-open"></i> Buyurtmalar
-                </button>
-            </li>
-            {% if show_dashboard_link %}
-            <li class="nav-item" role="presentation">
-                <a class="nav-link" href="{% url 'd_index' %}">
-                    <i class="fas fa-chart-line"></i> Dashboard
-                </a>
-            </li>
-            {% endif %}
-        </ul>
+            <!-- Header Card -->
+            <div class="profile-header-card">
+                <div class="profile-avatar-wrap">
+                    <img src="{{ user.get_avatar_url }}" class="profile-avatar" alt="{{ user.username }}">
+                </div>
+                
+                <div class="profile-info">
+                    <h3>{{ user.first_name }} {{ user.last_name }}</h3>
+                    <p>@{{ user.username }}</p>
+                </div>
 
-        <!-- Tab Content -->
-        <div class="tab-content" id="pills-tabContent">
-            
-            <!-- SETTINGS TAB -->
-            <div class="tab-pane fade show active" id="pills-settings" role="tabpanel" tabindex="0">
-                <div class="row justify-content-center">
-                    <div class="col-lg-10">
-                        <div class="premium-card">
-                            <h4 class="premium-card-title">Shaxsiy ma'lumotlar</h4>
-                            
-                            <form method="post" enctype="multipart/form-data">
+                <div class="profile-contact">
+                    {% if user.email %}
+                    <div class="contact-item">
+                        <span>{{ user.email }}</span>
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    {% endif %}
+                    {% if user.phone %}
+                    <div class="contact-item">
+                        <span>{{ user.phone }}</span>
+                        <i class="fas fa-phone-alt"></i>
+                    </div>
+                    {% endif %}
+                    {% if user.address %}
+                    <div class="contact-item">
+                        <span>{{ user.address }}</span>
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <ul class="nav nav-pills profile-tabs" id="pills-tab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="pills-settings-tab" data-bs-toggle="pill" data-bs-target="#pills-settings" type="button" role="tab" aria-selected="true">
+                        <i class="fas fa-user-cog"></i>
+                        Shaxsiy ma'lumotlar
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="pills-orders-tab" data-bs-toggle="pill" data-bs-target="#pills-orders" type="button" role="tab" aria-selected="false">
+                        <i class="fas fa-box-open"></i>
+                        Buyurtmalar tarixi
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="pills-tabContent">
+                
+                <!-- SETTINGS TAB -->
+                <div class="tab-pane fade show active" id="pills-settings" role="tabpanel" aria-labelledby="pills-settings-tab">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="premium-card">
+                                <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom flex-wrap gap-3">
+                                    <div>
+                                        <h4 class="mb-1" style="font-weight: 800; color: #111827;">Ma'lumotlarni tahrirlash</h4>
+                                        <span class="edit-mode-badge" id="editStatusBadge">
+                                            <i class="fas fa-lock"></i> Qulflangan (Tahrirlash uchun knopkani bosing)
+                                        </span>
+                                    </div>
+                                    <button type="button" class="btn btn-edit-toggle rounded-pill px-4 py-2" id="toggleEditBtn">
+                                        <i class="fas fa-edit me-2"></i> Tahrirlash
+                                    </button>
+                                </div>
+                                
+                                <form method="post" enctype="multipart/form-data" id="profileForm">
                                 {% csrf_token %}
                                 <div class="row gy-4">
                                     <div class="col-md-6">
-                                        <div class="form-floating-custom">
-                                            <input type="text" name="first_name" value="{{user.first_name}}" class="form-control" id="fName" placeholder=" ">
+                                        <div class="form-floating-custom locked">
+                                            <input type="text" name="first_name" value="{{ user.first_name|default:'' }}" class="form-control" id="fName" placeholder=" " disabled>
                                             <i class="fas fa-user input-icon"></i>
                                             <label for="fName">Ism</label>
                                         </div>
                                     </div>
                                     
                                     <div class="col-md-6">
-                                        <div class="form-floating-custom">
-                                            <input type="text" name="last_name" value="{{user.last_name}}" class="form-control" id="lName" placeholder=" ">
+                                        <div class="form-floating-custom locked">
+                                            <input type="text" name="last_name" value="{{ user.last_name|default:'' }}" class="form-control" id="lName" placeholder=" " disabled>
                                             <i class="fas fa-user-tag input-icon"></i>
                                             <label for="lName">Familiya</label>
                                         </div>
                                     </div>
                                     
                                     <div class="col-md-6">
-                                        <div class="form-floating-custom">
-                                            <input type="text" name="phone" value="{{user.phone}}" class="form-control" id="phone" placeholder=" ">
+                                        <div class="form-floating-custom locked">
+                                            <input type="text" name="phone" value="{{ user.phone|default:'' }}" class="form-control" id="phone" placeholder=" " disabled>
                                             <i class="fas fa-phone input-icon"></i>
                                             <label for="phone">Telefon raqam</label>
                                         </div>
                                     </div>
                                     
                                     <div class="col-md-6">
-                                        <div class="form-floating-custom">
-                                            <input type="text" name="username" value="{{user.username}}" class="form-control" id="username" placeholder=" ">
+                                        <div class="form-floating-custom locked">
+                                            <input type="text" name="username" value="{{ user.username|default:'' }}" class="form-control" id="username" placeholder=" " disabled>
                                             <i class="fas fa-at input-icon"></i>
                                             <label for="username">Foydalanuvchi nomi</label>
                                         </div>
                                     </div>
 
                                     <div class="col-md-12">
-                                        <div class="form-floating-custom">
-                                            <input type="text" name="address" value="{{user.address}}" class="form-control" id="address" placeholder=" ">
-                                            <i class="fas fa-map-marker-alt input-icon"></i>
-                                            <label for="address">Manzil</label>
+                                        <div class="custom-select-wrapper locked" id="customAddressDropdown">
+                                            <input type="hidden" name="address" id="addressInput" value="{% if user.address %}{{ user.address }}{% else %}Chimyon{% endif %}">
+                                            
+                                            <div class="custom-select-trigger" id="selectTrigger">
+                                                <i class="fas fa-map-marker-alt select-address-icon"></i>
+                                                <div class="select-label-wrap">
+                                                    <span class="select-floating-label">Manzil</span>
+                                                    <span class="select-current-value" id="selectValue">
+                                                        {% if user.address %}{{ user.address }}{% else %}Chimyon{% endif %}
+                                                    </span>
+                                                </div>
+                                                <i class="fas fa-chevron-down select-chevron"></i>
+                                            </div>
+                                            
+                                            <div class="custom-select-options" id="selectOptions">
+                                                {% for addr in addresses %}
+                                                <div class="custom-option {% if user.address == addr.name or not user.address and addr.name == 'Chimyon' %}selected{% endif %}" data-value="{{ addr.name }}">
+                                                    <div class="d-flex align-items-center justify-content-between w-100">
+                                                        <span><i class="fas fa-map-pin me-2 text-main font-12"></i>{{ addr.name }}</span>
+                                                        <i class="fas fa-check check-mark"></i>
+                                                    </div>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
                                         </div>
                                     </div>
                                     
                                     <div class="col-md-12">
-                                        <div class="file-upload-wrapper">
+                                        <div class="file-upload-wrapper locked" id="fileUploadWrap">
                                             <i class="fas fa-cloud-upload-alt font-24"></i>
                                             <span class="fw-600">Yangi rasm yuklash</span>
-                                            <input type="file" name="photo" id="fileUpload" accept="image/*">
+                                            <input type="file" name="photo" id="fileUpload" accept="image/*" disabled>
                                         </div>
                                         <div class="text-muted font-12 mt-2 text-center" id="fileNameDisplay">Hali hech qanday fayl tanlanmagan</div>
                                     </div>
 
-                                    <div class="col-12 text-center mt-4">
+                                    <div class="col-12 text-center mt-4" id="saveBtnContainer" style="display: none;">
                                         <button type="submit" class="btn-gradient w-100">
                                             O'zgarishlarni saqlash <i class="fas fa-check ms-2"></i>
                                         </button>
@@ -524,6 +844,87 @@ document.addEventListener('DOMContentLoaded', function() {
             const bsTab = new bootstrap.Tab(ordersTab);
             bsTab.show();
         }
+    }
+
+    // Toggle edit lock state
+    const toggleEditBtn = document.getElementById('toggleEditBtn');
+    const editStatusBadge = document.getElementById('editStatusBadge');
+    const profileInputs = document.querySelectorAll('#profileForm input');
+    const fileUploadWrap = document.getElementById('fileUploadWrap');
+    const customAddressDropdown = document.getElementById('customAddressDropdown');
+    const saveBtnContainer = document.getElementById('saveBtnContainer');
+    let isEditing = false;
+
+    if (toggleEditBtn) {
+        toggleEditBtn.addEventListener('click', function() {
+            isEditing = !isEditing;
+
+            if (isEditing) {
+                profileInputs.forEach(input => input.removeAttribute('disabled'));
+                if (fileUploadWrap) fileUploadWrap.classList.remove('locked');
+                if (customAddressDropdown) customAddressDropdown.classList.remove('locked');
+                document.querySelectorAll('.form-floating-custom').forEach(el => el.classList.remove('locked'));
+
+                toggleEditBtn.className = 'btn btn-edit-toggle editing-active rounded-pill px-4 py-2';
+                toggleEditBtn.innerHTML = '<i class="fas fa-lock me-2"></i> Qulflash / Bekor qilish';
+
+                editStatusBadge.className = 'edit-mode-badge active';
+                editStatusBadge.innerHTML = '<i class="fas fa-unlock text-success"></i> Tahrirlash rejimi (Aktiv)';
+
+                if (saveBtnContainer) saveBtnContainer.style.display = 'block';
+
+                const fNameInput = document.getElementById('fName');
+                if (fNameInput) fNameInput.focus();
+            } else {
+                profileInputs.forEach(input => input.setAttribute('disabled', 'disabled'));
+                if (fileUploadWrap) fileUploadWrap.classList.add('locked');
+                if (customAddressDropdown) {
+                    customAddressDropdown.classList.add('locked');
+                    customAddressDropdown.classList.remove('open');
+                }
+                document.querySelectorAll('.form-floating-custom').forEach(el => el.classList.add('locked'));
+
+                toggleEditBtn.className = 'btn btn-edit-toggle rounded-pill px-4 py-2';
+                toggleEditBtn.innerHTML = '<i class="fas fa-edit me-2"></i> Tahrirlash';
+
+                editStatusBadge.className = 'edit-mode-badge';
+                editStatusBadge.innerHTML = '<i class="fas fa-lock"></i> Qulflangan (Tahrirlash uchun knopkani bosing)';
+
+                if (saveBtnContainer) saveBtnContainer.style.display = 'none';
+            }
+        });
+    }
+
+    // Custom Address Dropdown Controller
+    const selectTrigger = document.getElementById('selectTrigger');
+    const selectValue = document.getElementById('selectValue');
+    const addressInput = document.getElementById('addressInput');
+    const customOptions = document.querySelectorAll('.custom-option');
+
+    if (selectTrigger && customAddressDropdown) {
+        selectTrigger.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (!isEditing) return;
+            customAddressDropdown.classList.toggle('open');
+        });
+
+        customOptions.forEach(option => {
+            option.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const val = this.getAttribute('data-value');
+                if (addressInput) addressInput.value = val;
+                if (selectValue) selectValue.textContent = val;
+
+                customOptions.forEach(opt => opt.classList.remove('selected'));
+                this.classList.add('selected');
+
+                customAddressDropdown.classList.remove('open');
+            });
+        });
+
+        document.addEventListener('click', function() {
+            customAddressDropdown.classList.remove('open');
+        });
     }
 
     // File upload text change

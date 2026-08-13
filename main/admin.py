@@ -59,3 +59,10 @@ class WishListAdmin(admin.ModelAdmin):
 @admin.register(models.SiteSettings)
 class SiteSettingsAdmin(admin.ModelAdmin):
     list_display = ('site_name', 'phone', 'email')
+
+
+@admin.register(models.Address)
+class AddressAdmin(admin.ModelAdmin):
+    list_display = ('name', 'is_active')
+    list_filter = ('is_active',)
+    search_fields = ('name',)

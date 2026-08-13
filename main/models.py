@@ -11,6 +11,15 @@ class User(AbstractUser):
     photo = models.ImageField(upload_to='users', null=True, blank=True)
 
     @property
+    def get_avatar_url(self):
+        if self.photo and hasattr(self.photo, 'url') and self.photo.name:
+            return self.photo.url
+        avatar_styles = ['adventurer', 'avataaars', 'bottts', 'fun-emoji', 'lorelei', 'miniavs', 'open-peeps', 'personas']
+        seed_hash = sum(ord(c) for c in (self.username or 'user'))
+        style = avatar_styles[seed_hash % len(avatar_styles)]
+        return f"https://api.dicebear.com/7.x/{style}/svg?seed={self.username}"
+
+    @property
     def cart_items_count(self):
         return CartProduct.objects.filter(cart__user=self, cart__status=1).aggregate(total=Sum('count'))['total'] or 0
 
@@ -193,5 +202,17 @@ class SiteSettings(models.Model):
     class Meta:
         verbose_name = "Sayt sozlamalari"
         verbose_name_plural = "Sayt sozlamalari"
+
+
+class Address(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Manzil"
+        verbose_name_plural = "Manzillar"
 
 

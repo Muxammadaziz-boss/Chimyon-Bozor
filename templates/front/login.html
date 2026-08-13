@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 {% load static %}
 <html lang="uz">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -14,7 +15,13 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
         body {
             min-height: 100vh;
@@ -32,19 +39,24 @@
         body::before {
             content: '';
             position: fixed;
-            width: 500px; height: 500px;
+            width: 500px;
+            height: 500px;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(124,58,237,0.08) 0%, transparent 70%);
-            top: -150px; left: -150px;
+            background: radial-gradient(circle, rgba(124, 58, 237, 0.08) 0%, transparent 70%);
+            top: -150px;
+            left: -150px;
             pointer-events: none;
         }
+
         body::after {
             content: '';
             position: fixed;
-            width: 400px; height: 400px;
+            width: 400px;
+            height: 400px;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(99,102,241,0.07) 0%, transparent 70%);
-            bottom: -100px; right: -100px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.07) 0%, transparent 70%);
+            bottom: -100px;
+            right: -100px;
             pointer-events: none;
         }
 
@@ -73,13 +85,14 @@
             background: #fff;
             border-radius: 24px;
             padding: 44px 40px 36px;
-            box-shadow: 0 24px 64px rgba(16,24,40,0.10), 0 4px 16px rgba(124,58,237,0.06);
-            border: 1px solid rgba(124,58,237,0.08);
+            box-shadow: 0 24px 64px rgba(16, 24, 40, 0.10), 0 4px 16px rgba(124, 58, 237, 0.06);
+            border: 1px solid rgba(124, 58, 237, 0.08);
         }
 
         .flip-face--back {
             position: absolute;
-            top: 0; left: 0;
+            top: 0;
+            left: 0;
             transform: rotateY(180deg);
         }
 
@@ -89,7 +102,10 @@
             text-align: center;
             margin-bottom: 28px;
         }
-        .auth-logo img { max-height: 42px; }
+
+        .auth-logo img {
+            max-height: 42px;
+        }
 
         /* ── Tab Toggle ── */
         .auth-tabs {
@@ -100,6 +116,7 @@
             padding: 5px;
             margin-bottom: 32px;
         }
+
         .auth-tab-btn {
             flex: 1;
             border: none;
@@ -112,10 +129,11 @@
             cursor: pointer;
             transition: all 0.25s ease;
         }
+
         .auth-tab-btn.active {
             background: #fff;
             color: #7C3AED;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
 
         /* ── Heading ── */
@@ -126,6 +144,7 @@
             margin-bottom: 4px;
             letter-spacing: -0.03em;
         }
+
         .auth-subtitle {
             font-size: 13.5px;
             color: #9ca3af;
@@ -140,6 +159,7 @@
             margin-bottom: 7px;
             display: block;
         }
+
         .form-control {
             width: 100%;
             height: 48px;
@@ -152,26 +172,43 @@
             transition: all 0.2s ease;
             outline: none;
         }
+
         .form-control:focus {
             border-color: #7C3AED;
             background: #fff;
-            box-shadow: 0 0 0 3.5px rgba(124,58,237,0.12);
+            box-shadow: 0 0 0 3.5px rgba(124, 58, 237, 0.12);
         }
-        .mb-form { margin-bottom: 18px; }
+
+        .mb-form {
+            margin-bottom: 18px;
+        }
 
         /* Password toggle */
-        .pw-wrap { position: relative; }
+        .pw-wrap {
+            position: relative;
+        }
+
         .pw-eye {
             position: absolute;
-            right: 14px; top: 50%;
+            right: 14px;
+            top: 50%;
             transform: translateY(-50%);
-            border: 0; background: transparent;
-            color: #9ca3af; font-size: 18px;
-            cursor: pointer; line-height: 1;
+            border: 0;
+            background: transparent;
+            color: #9ca3af;
+            font-size: 18px;
+            cursor: pointer;
+            line-height: 1;
             transition: color 0.2s;
         }
-        .pw-eye:hover { color: #7C3AED; }
-        .pw-input { padding-right: 46px; }
+
+        .pw-eye:hover {
+            color: #7C3AED;
+        }
+
+        .pw-input {
+            padding-right: 46px;
+        }
 
         /* Submit button */
         .btn-auth {
@@ -186,14 +223,18 @@
             letter-spacing: 0.01em;
             cursor: pointer;
             transition: all 0.25s ease;
-            box-shadow: 0 4px 16px rgba(124,58,237,0.3);
+            box-shadow: 0 4px 16px rgba(124, 58, 237, 0.3);
             margin-top: 6px;
         }
+
         .btn-auth:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(124,58,237,0.38);
+            box-shadow: 0 8px 24px rgba(124, 58, 237, 0.38);
         }
-        .btn-auth:active { transform: translateY(0); }
+
+        .btn-auth:active {
+            transform: translateY(0);
+        }
 
         /* Footer link */
         .auth-foot {
@@ -202,13 +243,21 @@
             font-size: 13.5px;
             color: #9ca3af;
         }
+
         .auth-foot button {
-            background: none; border: none;
-            color: #7C3AED; font-weight: 700;
-            cursor: pointer; font-size: 13.5px;
-            padding: 0; text-decoration: none;
+            background: none;
+            border: none;
+            color: #7C3AED;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 13.5px;
+            padding: 0;
+            text-decoration: none;
         }
-        .auth-foot button:hover { text-decoration: underline; }
+
+        .auth-foot button:hover {
+            text-decoration: underline;
+        }
 
         /* Error */
         .error-msg {
@@ -233,6 +282,7 @@
             color: #d1d5db;
             font-size: 13px;
         }
+
         .auth-divider::before,
         .auth-divider::after {
             content: '';
@@ -241,180 +291,579 @@
             background: #e5e7eb;
         }
 
+        /* Password Strength Meter */
+        .pw-strength-meter {
+            margin-top: 10px;
+            padding: 12px 14px;
+            background: #f8fafc;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .pw-strength-bar {
+            height: 6px;
+            width: 100%;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 8px;
+            position: relative;
+        }
+
+        .pw-strength-progress {
+            height: 100%;
+            width: 0%;
+            border-radius: 10px;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), background 0.4s ease, box-shadow 0.4s ease;
+        }
+
+        .pw-strength-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12.5px;
+            font-weight: 600;
+        }
+
+        .pw-strength-text {
+            transition: color 0.3s ease;
+        }
+
+        .pw-strength-score {
+            color: #94a3b8;
+            font-size: 11.5px;
+            font-weight: 700;
+        }
+
+        .pw-requirements {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 12px;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px dashed #e2e8f0;
+        }
+
+        .pw-req {
+            font-size: 11.5px;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.25s ease;
+        }
+
+        .pw-req i {
+            font-size: 6px;
+            transition: all 0.25s ease;
+        }
+
+        .pw-req.valid {
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .pw-req.valid i {
+            font-size: 10px;
+            color: #10b981;
+        }
+
+        /* Username Live Feedback Indicator */
+        .username-feedback {
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+        .username-feedback.invalid { color: #ef4444; }
+        .username-feedback.valid { color: #10b981; }
+        .username-feedback.checking { color: #3b82f6; }
+
+        /* Phone Live Feedback Indicator */
+        .phone-feedback {
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+        .phone-feedback.invalid { color: #ef4444; }
+        .phone-feedback.valid { color: #10b981; }
+        .phone-feedback.checking { color: #3b82f6; }
+
+        /* Phone Input Group with +998 Prefix */
+        .phone-input-group {
+            display: flex;
+            align-items: center;
+            background: #fafafa;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+            overflow: hidden;
+        }
+
+        .phone-input-group:focus-within {
+            border-color: #7C3AED;
+            background: #fff;
+            box-shadow: 0 0 0 3.5px rgba(124, 58, 237, 0.12);
+        }
+
+        .phone-prefix {
+            background: #f3f4f6;
+            color: #4b5563;
+            font-weight: 700;
+            font-size: 14.5px;
+            padding: 0 14px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-right: 1.5px solid #e5e7eb;
+            user-select: none;
+            flex-shrink: 0;
+        }
+
+        .phone-input-group .phone-input {
+            border: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            height: 48px;
+            border-radius: 0 !important;
+            padding: 0 14px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+
         /* Responsive */
         @media (max-width: 500px) {
-            .flip-face { padding: 32px 22px 28px; }
-            .auth-title { font-size: 20px; }
+            .flip-face {
+                padding: 32px 22px 28px;
+            }
+
+            .auth-title {
+                font-size: 20px;
+            }
         }
     </style>
 </head>
+
 <body>
 
-<div class="flip-scene">
-    <div class="flip-card" id="flipCard">
+    <div class="flip-scene">
+        <div class="flip-card" id="flipCard">
 
-        <!-- ══ FRONT: LOGIN ══ -->
-        <div class="flip-face flip-face--front">
-            <a href="{% url 'index' %}" class="auth-logo">
-                <img src="{% static 'assets/images/logo/logo.png' %}" alt="DpMarket">
-            </a>
+            <!-- ══ FRONT: LOGIN ══ -->
+            <div class="flip-face flip-face--front">
+                <a href="{% url 'index' %}" class="auth-logo">
+                    <img src="{% static 'assets/images/logo/logo.png' %}" alt="DpMarket">
+                </a>
 
-            <!-- Tabs -->
-            <div class="auth-tabs">
-                <button class="auth-tab-btn active" onclick="return false;">Kirish</button>
-                <button class="auth-tab-btn" onclick="flipToRegister()">Ro'yxatdan o'tish</button>
+                <!-- Tabs -->
+                <div class="auth-tabs">
+                    <button class="auth-tab-btn active" onclick="return false;">Kirish</button>
+                    <button class="auth-tab-btn" onclick="flipToRegister()">Ro'yxatdan o'tish</button>
+                </div>
+
+                <h1 class="auth-title">Xush kelibsiz! 👋</h1>
+                <p class="auth-subtitle">Hisobingizga kiring va xaridni davom eting</p>
+
+                {% if error %}
+                <div class="error-msg"><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
+                {% endif %}
+
+                <form method="POST" action="{% url 'login' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ next }}">
+
+                    <div class="mb-form">
+                        <label for="login-username" class="form-label">Foydalanuvchi nomi</label>
+                        <input type="text" class="form-control" id="login-username" name="username"
+                            placeholder="Username kiriting" required autocomplete="username">
+                    </div>
+
+                    <div class="mb-form">
+                        <label for="login-password" class="form-label">Parol</label>
+                        <div class="pw-wrap">
+                            <input type="password" class="form-control pw-input" id="login-password" name="password"
+                                placeholder="Parolingiz" required autocomplete="current-password">
+                            <button type="button" class="pw-eye toggle-pw" data-target="login-password">
+                                <i class="las la-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-auth">
+                        <i class="fas fa-sign-in-alt me-2"></i>Kirish
+                    </button>
+                </form>
             </div>
 
-            <h1 class="auth-title">Xush kelibsiz! 👋</h1>
-            <p class="auth-subtitle">Hisobingizga kiring va xaridni davom eting</p>
+            <!-- ══ BACK: REGISTER ══ -->
+            <div class="flip-face flip-face--back">
+                <a href="{% url 'index' %}" class="auth-logo">
+                    <img src="{% static 'assets/images/logo/logo.png' %}" alt="DpMarket">
+                </a>
 
-            {% if error %}
-            <div class="error-msg"><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
-            {% endif %}
-
-            <form method="POST" action="{% url 'login' %}">
-                {% csrf_token %}
-                <input type="hidden" name="next" value="{{ next }}">
-
-                <div class="mb-form">
-                    <label for="login-username" class="form-label">Foydalanuvchi nomi</label>
-                    <input type="text" class="form-control" id="login-username" name="username"
-                           placeholder="Username kiriting" required autocomplete="username">
+                <!-- Tabs -->
+                <div class="auth-tabs">
+                    <button class="auth-tab-btn" onclick="flipToLogin()">Kirish</button>
+                    <button class="auth-tab-btn active" onclick="return false;">Ro'yxatdan o'tish</button>
                 </div>
 
-                <div class="mb-form">
-                    <label for="login-password" class="form-label">Parol</label>
-                    <div class="pw-wrap">
-                        <input type="password" class="form-control pw-input" id="login-password"
-                               name="password" placeholder="Parolingiz" required autocomplete="current-password">
-                        <button type="button" class="pw-eye toggle-pw" data-target="login-password">
-                            <i class="las la-eye"></i>
-                        </button>
+                <h1 class="auth-title">Akkaunt yarating 🚀</h1>
+                <p class="auth-subtitle">Bepul ro'yxatdan o'ting va xarid qilishni boshlang</p>
+
+                {% if reg_error %}
+                <div class="error-msg"><i class="fas fa-exclamation-circle"></i> {{ reg_error }}</div>
+                {% endif %}
+
+                <form method="POST" action="{% url 'register' %}">
+                    {% csrf_token %}
+
+                    <div class="mb-form">
+                        <label for="reg-username" class="form-label">Foydalanuvchi nomi (kamida 4 ta belgi)</label>
+                        <input type="text" class="form-control" id="reg-username" name="username"
+                            value="{{ reg_username|default:'' }}" minlength="4" placeholder="Kamida 4 ta belgi" required
+                            autocomplete="username">
+                        <div class="username-feedback" id="usernameFeedback" style="display: none;"></div>
                     </div>
-                </div>
 
-                <button type="submit" class="btn-auth">
-                    <i class="fas fa-sign-in-alt me-2"></i>Kirish
-                </button>
-            </form>
+                    <div class="mb-form">
+                        <label for="reg-phone" class="form-label">Telefon raqam</label>
+                        <div class="phone-input-group">
+                            <span class="phone-prefix">+998</span>
+                            <input type="tel" class="form-control phone-input" id="reg-phone" name="phone"
+                                value="{{ reg_phone|default:'' }}" placeholder="91 234 56 78" maxlength="12" required
+                                autocomplete="tel">
+                        </div>
+                        <div class="phone-feedback" id="phoneFeedback" style="display: none;"></div>
+                    </div>
 
-            <p class="auth-foot">
-                Akkaunt yo'qmi?
-                <button onclick="flipToRegister()">Ro'yxatdan o'tish</button>
-            </p>
-        </div>
+                    <div class="mb-form">
+                        <label for="reg-password" class="form-label">Parol</label>
+                        <div class="pw-wrap">
+                            <input type="password" class="form-control pw-input" id="reg-password" name="password"
+                                placeholder="Kamida 6 ta belgi" required autocomplete="new-password">
+                            <button type="button" class="pw-eye toggle-pw" data-target="reg-password">
+                                <i class="las la-eye"></i>
+                            </button>
+                        </div>
 
-        <!-- ══ BACK: REGISTER ══ -->
-        <div class="flip-face flip-face--back">
-            <a href="{% url 'index' %}" class="auth-logo">
-                <img src="{% static 'assets/images/logo/logo.png' %}" alt="DpMarket">
-            </a>
+                        <!-- Animated Password Strength Meter -->
+                        <div class="pw-strength-meter" id="pwStrengthWrap" style="display: none;">
+                            <div class="pw-strength-bar">
+                                <div class="pw-strength-progress" id="pwStrengthProgress"></div>
+                            </div>
+                            <div class="pw-strength-header">
+                                <span class="pw-strength-text" id="pwStrengthText">Parol kiritilmadi</span>
+                                <span class="pw-strength-score" id="pwStrengthScore">0%</span>
+                            </div>
+                            <div class="pw-requirements">
+                                <span class="pw-req" id="reqLength"><i class="fas fa-circle"></i> Kamida 6 belgi</span>
+                                <span class="pw-req" id="reqLetter"><i class="fas fa-circle"></i> Harf</span>
+                                <span class="pw-req" id="reqNumber"><i class="fas fa-circle"></i> Raqam</span>
+                                <span class="pw-req" id="reqSpecial"><i class="fas fa-circle"></i> Katta harf /
+                                    belgi</span>
+                            </div>
+                        </div>
+                    </div>
 
-            <!-- Tabs -->
-            <div class="auth-tabs">
-                <button class="auth-tab-btn" onclick="flipToLogin()">Kirish</button>
-                <button class="auth-tab-btn active" onclick="return false;">Ro'yxatdan o'tish</button>
+                    <div class="mb-form">
+                        <label for="reg-confirm" class="form-label">Parolni tasdiqlash</label>
+                        <div class="pw-wrap">
+                            <input type="password" class="form-control pw-input" id="reg-confirm"
+                                name="confirm_password" placeholder="Parolni qaytaring" required
+                                autocomplete="new-password">
+                            <button type="button" class="pw-eye toggle-pw" data-target="reg-confirm">
+                                <i class="las la-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-auth">
+                        <i class="fas fa-user-plus me-2"></i>Ro'yxatdan o'tish
+                    </button>
+                </form>
             </div>
 
-            <h1 class="auth-title">Akkaunt yarating 🚀</h1>
-            <p class="auth-subtitle">Bepul ro'yxatdan o'ting va xarid qilishni boshlang</p>
+        </div><!-- /flip-card -->
+    </div><!-- /flip-scene -->
 
-            {% if reg_error %}
-            <div class="error-msg"><i class="fas fa-exclamation-circle"></i> {{ reg_error }}</div>
-            {% endif %}
+    <script src="{% static 'assets/js/jquery-3.7.1.min.js' %}"></script>
+    <script src="{% static 'assets/js/bootstrap.bundle.min.js' %}"></script>
+    <script>
+        const card = document.getElementById('flipCard');
 
-            <form method="POST" action="{% url 'register' %}">
-                {% csrf_token %}
+        function flipToRegister() {
+            card.classList.add('is-flipped');
+            document.title = "Ro'yxatdan o'tish | DpMarket";
+        }
 
-                <div class="mb-form">
-                    <label for="reg-username" class="form-label">Foydalanuvchi nomi</label>
-                    <input type="text" class="form-control" id="reg-username" name="username"
-                           placeholder="Username kiriting" required autocomplete="username">
-                </div>
+        function flipToLogin() {
+            card.classList.remove('is-flipped');
+            document.title = "Kirish | DpMarket";
+        }
 
-                <div class="mb-form">
-                    <label for="reg-phone" class="form-label">Telefon raqam</label>
-                    <input type="text" class="form-control" id="reg-phone" name="phone"
-                           placeholder="+998901234567" required autocomplete="tel">
-                </div>
-
-                <div class="mb-form">
-                    <label for="reg-password" class="form-label">Parol</label>
-                    <div class="pw-wrap">
-                        <input type="password" class="form-control pw-input" id="reg-password"
-                               name="password" placeholder="Kamida 6 ta belgi" required autocomplete="new-password">
-                        <button type="button" class="pw-eye toggle-pw" data-target="reg-password">
-                            <i class="las la-eye"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="mb-form">
-                    <label for="reg-confirm" class="form-label">Parolni tasdiqlash</label>
-                    <div class="pw-wrap">
-                        <input type="password" class="form-control pw-input" id="reg-confirm"
-                               name="confirm_password" placeholder="Parolni qaytaring" required autocomplete="new-password">
-                        <button type="button" class="pw-eye toggle-pw" data-target="reg-confirm">
-                            <i class="las la-eye"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <button type="submit" class="btn-auth">
-                    <i class="fas fa-user-plus me-2"></i>Ro'yxatdan o'tish
-                </button>
-            </form>
-
-            <p class="auth-foot">
-                Akkauntingiz bormi?
-                <button onclick="flipToLogin()">Kirish</button>
-            </p>
-        </div>
-
-    </div><!-- /flip-card -->
-</div><!-- /flip-scene -->
-
-<script src="{% static 'assets/js/jquery-3.7.1.min.js' %}"></script>
-<script src="{% static 'assets/js/bootstrap.bundle.min.js' %}"></script>
-<script>
-    const card = document.getElementById('flipCard');
-
-    function flipToRegister() {
-        card.classList.add('is-flipped');
-        document.title = "Ro'yxatdan o'tish | DpMarket";
-    }
-
-    function flipToLogin() {
-        card.classList.remove('is-flipped');
-        document.title = "Kirish | DpMarket";
-    }
-
-    // Password toggle
-    document.querySelectorAll('.toggle-pw').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var input = document.getElementById(this.dataset.target);
-            if (!input) return;
-            var isPass = input.type === 'password';
-            input.type = isPass ? 'text' : 'password';
-            this.querySelector('i').classList.toggle('la-eye', !isPass);
-            this.querySelector('i').classList.toggle('la-eye-slash', isPass);
+        // Password toggle
+        document.querySelectorAll('.toggle-pw').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var input = document.getElementById(this.dataset.target);
+                if (!input) return;
+                var isPass = input.type === 'password';
+                input.type = isPass ? 'text' : 'password';
+                this.querySelector('i').classList.toggle('la-eye', !isPass);
+                this.querySelector('i').classList.toggle('la-eye-slash', isPass);
+            });
         });
-    });
 
-    // If server returned reg_error or page is register, auto-flip to register side
-    {% if reg_error or is_register_page %}
-    flipToRegister();
-    {% endif %}
+        // If server returned reg_error or page is register, auto-flip to register side
+        {% if reg_error or is_register_page %}
+        flipToRegister();
+        {% endif %}
 
-    // Flip card height sync — back face needs height of its content
-    function syncHeight() {
-        const front = document.querySelector('.flip-face--front');
-        const back  = document.querySelector('.flip-face--back');
-        const h = Math.max(front.scrollHeight, back.scrollHeight);
-        card.style.height = h + 'px';
-    }
-    syncHeight();
-    window.addEventListener('resize', syncHeight);
-</script>
+        // Flip card height sync — back face needs height of its content
+        function syncHeight() {
+            const front = document.querySelector('.flip-face--front');
+            const back = document.querySelector('.flip-face--back');
+            const h = Math.max(front.scrollHeight, back.scrollHeight);
+            card.style.height = h + 'px';
+        }
+        syncHeight();
+        window.addEventListener('resize', syncHeight);
+
+        // Password Strength Meter Listener
+        const regPasswordInput = document.getElementById('reg-password');
+        const pwStrengthWrap = document.getElementById('pwStrengthWrap');
+        const pwStrengthProgress = document.getElementById('pwStrengthProgress');
+        const pwStrengthText = document.getElementById('pwStrengthText');
+        const pwStrengthScore = document.getElementById('pwStrengthScore');
+        const reqLength = document.getElementById('reqLength');
+        const reqLetter = document.getElementById('reqLetter');
+        const reqNumber = document.getElementById('reqNumber');
+        const reqSpecial = document.getElementById('reqSpecial');
+
+        if (regPasswordInput && pwStrengthWrap) {
+            regPasswordInput.addEventListener('input', function () {
+                const val = this.value;
+                if (!val) {
+                    pwStrengthWrap.style.display = 'none';
+                    syncHeight();
+                    return;
+                }
+                pwStrengthWrap.style.display = 'block';
+
+                let score = 0;
+                const isLength = val.length >= 6;
+                const hasLetter = /[a-zA-Z]/.test(val);
+                const hasNumber = /[0-9]/.test(val);
+                const hasSpecialOrUpper = /[A-Z!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(val);
+
+                function toggleReq(el, isValid) {
+                    if (!el) return;
+                    if (isValid) {
+                        el.classList.add('valid');
+                        el.querySelector('i').className = 'fas fa-check-circle';
+                    } else {
+                        el.classList.remove('valid');
+                        el.querySelector('i').className = 'fas fa-circle';
+                    }
+                }
+
+                toggleReq(reqLength, isLength);
+                toggleReq(reqLetter, hasLetter);
+                toggleReq(reqNumber, hasNumber);
+                toggleReq(reqSpecial, hasSpecialOrUpper);
+
+                if (isLength) score += 25;
+                if (val.length >= 10) score += 15;
+                if (hasLetter) score += 20;
+                if (hasNumber) score += 20;
+                if (hasSpecialOrUpper) score += 20;
+
+                score = Math.min(100, score);
+                pwStrengthProgress.style.width = score + '%';
+                pwStrengthScore.innerText = score + '%';
+
+                let statusText = '';
+                let statusColor = '';
+                let barBg = '';
+                let shadow = 'none';
+
+                if (score < 30) {
+                    statusText = 'Juda zaif ⚠️';
+                    statusColor = '#ef4444';
+                    barBg = 'linear-gradient(90deg, #f87171, #ef4444)';
+                } else if (score < 55) {
+                    statusText = 'Zaif ⚡';
+                    statusColor = '#f59e0b';
+                    barBg = 'linear-gradient(90deg, #fbbf24, #f59e0b)';
+                } else if (score < 80) {
+                    statusText = "O'rtacha 👍";
+                    statusColor = '#3b82f6';
+                    barBg = 'linear-gradient(90deg, #60a5fa, #3b82f6)';
+                } else if (score < 95) {
+                    statusText = 'Kuchli 💪';
+                    statusColor = '#10b981';
+                    barBg = 'linear-gradient(90deg, #34d399, #10b981)';
+                } else {
+                    statusText = 'Juda kuchli! 🔥';
+                    statusColor = '#7c3aed';
+                    barBg = 'linear-gradient(90deg, #a78bfa, #7c3aed)';
+                    shadow = '0 0 12px rgba(124, 58, 237, 0.45)';
+                }
+
+                pwStrengthProgress.style.background = barBg;
+                pwStrengthProgress.style.boxShadow = shadow;
+                pwStrengthText.innerText = statusText;
+                pwStrengthText.style.color = statusColor;
+
+                syncHeight();
+            });
+        }
+
+        // Phone input restriction, auto-formatter and real-time live check
+        const phoneInput = document.getElementById('reg-phone');
+        const phoneFeedback = document.getElementById('phoneFeedback');
+        let phoneTimer;
+
+        if (phoneInput) {
+            function formatPhoneInput(el) {
+                let val = el.value.replace(/\D/g, ''); // Digits only
+                if (val.startsWith('998')) {
+                    val = val.substring(3);
+                }
+                val = val.substring(0, 9); // Max 9 digits
+
+                let formatted = '';
+                if (val.length > 0) formatted += val.substring(0, 2);
+                if (val.length > 2) formatted += ' ' + val.substring(2, 5);
+                if (val.length > 5) formatted += ' ' + val.substring(5, 7);
+                if (val.length > 7) formatted += ' ' + val.substring(7, 9);
+
+                el.value = formatted;
+            }
+
+            phoneInput.addEventListener('input', function () {
+                clearTimeout(phoneTimer);
+                formatPhoneInput(this);
+
+                if (!phoneFeedback) return;
+
+                let digits = this.value.replace(/\D/g, '');
+                if (digits.startsWith('998')) {
+                    digits = digits.substring(3);
+                }
+
+                if (!digits) {
+                    phoneFeedback.style.display = 'none';
+                    syncHeight();
+                    return;
+                }
+
+                phoneFeedback.style.display = 'flex';
+
+                if (digits.length < 9) {
+                    const needed = 9 - digits.length;
+                    phoneFeedback.className = 'phone-feedback invalid';
+                    phoneFeedback.innerHTML = '<i class="fas fa-times-circle"></i> 9 ta raqam bo\'lishi kerak (yana ' + needed + ' ta raqam)';
+                    syncHeight();
+                    return;
+                }
+
+                phoneFeedback.className = 'phone-feedback checking';
+                phoneFeedback.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Tekshirilmoqda...';
+                syncHeight();
+
+                phoneTimer = setTimeout(() => {
+                    fetch('/api/check-phone/?phone=' + encodeURIComponent(digits))
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.available) {
+                                phoneFeedback.className = 'phone-feedback valid';
+                                phoneFeedback.innerHTML = '<i class="fas fa-check-circle"></i> Ushbu telefon raqami bo\'sh (ishlatishingiz mumkin)';
+                            } else {
+                                phoneFeedback.className = 'phone-feedback invalid';
+                                phoneFeedback.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (data.message || 'Ushbu telefon raqami ro\'yxatdan o\'tgan!');
+                            }
+                            syncHeight();
+                        })
+                        .catch(err => {
+                            console.error('Phone check error:', err);
+                        });
+                }, 250);
+            });
+
+            if (phoneInput.value) {
+                formatPhoneInput(phoneInput);
+            }
+        }
+
+        // Dismiss top error message on input typing
+        document.querySelectorAll('.flip-face--back input').forEach(function(input) {
+            input.addEventListener('input', function() {
+                const errBox = document.querySelector('.flip-face--back .error-msg');
+                if (errBox) {
+                    errBox.style.display = 'none';
+                    syncHeight();
+                }
+            });
+        });
+
+        // Real-time Username Validator & Availability Check
+        const regUsernameInput = document.getElementById('reg-username');
+        const usernameFeedback = document.getElementById('usernameFeedback');
+        let usernameTimer;
+
+        if (regUsernameInput && usernameFeedback) {
+            regUsernameInput.addEventListener('input', function() {
+                clearTimeout(usernameTimer);
+                const val = this.value.trim();
+
+                if (!val) {
+                    usernameFeedback.style.display = 'none';
+                    syncHeight();
+                    return;
+                }
+
+                usernameFeedback.style.display = 'flex';
+
+                if (val.length < 4) {
+                    usernameFeedback.className = 'username-feedback invalid';
+                    usernameFeedback.innerHTML = '<i class="fas fa-times-circle"></i> Kamida 4 ta belgi bo\'lishi kerak';
+                    syncHeight();
+                    return;
+                }
+
+                usernameFeedback.className = 'username-feedback checking';
+                usernameFeedback.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Tekshirilmoqda...';
+                syncHeight();
+
+                usernameTimer = setTimeout(() => {
+                    fetch('/api/check-username/?username=' + encodeURIComponent(val))
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.available) {
+                                usernameFeedback.className = 'username-feedback valid';
+                                usernameFeedback.innerHTML = '<i class="fas fa-check-circle"></i> Ushbu nom bo\'sh (ishlatishingiz mumkin)';
+                            } else {
+                                usernameFeedback.className = 'username-feedback invalid';
+                                usernameFeedback.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (data.message || 'Ushbu nom band!');
+                            }
+                            syncHeight();
+                        })
+                        .catch(err => {
+                            console.error('Username check error:', err);
+                        });
+                }, 250);
+            });
+        }
+    </script>
 </body>
+
 </html>
