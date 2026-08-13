@@ -14,21 +14,12 @@ from django.views.decorators.http import require_POST
 
 from . import models
 from .utils import paginate_queryset
+from .sms_service import send_sms_code
 from django.contrib.auth import authenticate, login, logout
 
 logger = logging.getLogger(__name__)
 PHONE_RE = re.compile(r'^\+?998[0-9]{9}$')
-
-
-def send_otp_sms(phone, code):
-    """
-    Queue and send OTP SMS to the phone number via SMS Provider/Gateway.
-    In development & logs, prints SMS payload and queue message.
-    """
-    sms_message = f"[DpMarket] Ro'yxatdan o'tish uchun OTP tasdiqlash kodingiz: {code}"
-    print(f"=== [SMS QUEUE] Sending OTP to {phone}: '{sms_message}' ===")
-    logger.info(f"SMS Queued to {phone}: {sms_message}")
-    return True
+send_otp_sms = send_sms_code
 
 
 def redirect_back(request, fallback='index', **fallback_kwargs):
@@ -301,12 +292,11 @@ def register(request):
 
         # Dispatch OTP via SMS queue
         send_otp_sms(phone, otp_code)
-
         # Store pending user ID in session
         request.session['otp_user_id'] = user.id
         request.session['otp_phone'] = phone
 
-        messages.info(request, f"Telefoningizga ({phone}) 6 xonali OTP kod yuborildi. Kodni kiriting.")
+        messages.info(request, f"Telefoningizga ({phone}) 6 xonali SMS kod yuborildi. Kodni kiriting.")
         return redirect('verify_otp')
 
 
@@ -315,7 +305,7 @@ def verify_otp(request):
     phone = request.session.get('otp_phone', '')
     
     if not user_id:
-        messages.error(request, "OTP tasdiqlash seans topshiriqlari topilmadi. Qayta ro'yxatdan o'ting.")
+        messages.error(request, "SMS tasdiqlash seans topshiriqlari topilmadi. Qayta ro'yxatdan o'ting.")
         return redirect('login')
 
     user = models.User.objects.filter(pk=user_id).first()
@@ -332,13 +322,13 @@ def verify_otp(request):
         if not otp_obj:
             return render(request, 'front/verify_otp.html', {
                 'phone': phone,
-                'error': "OTP kodi topilmadi yoki foydalanib bo'lingan."
+                'error': "SMS kodi topilmadi yoki foydalanib bo'lingan."
             })
 
         if not otp_obj.is_valid():
             return render(request, 'front/verify_otp.html', {
                 'phone': phone,
-                'error': "OTP kodining amal qilish muddati tugagan (5 minut). Kodni qayta yuboring."
+                'error': "SMS kodining amal qilish muddati tugagan (5 minut). Kodni qayta yuboring."
             })
 
         if otp_obj.code == entered_code:
@@ -362,7 +352,7 @@ def verify_otp(request):
         else:
             return render(request, 'front/verify_otp.html', {
                 'phone': phone,
-                'error': "Kiritilgan OTP kod noto'g'ri. Qayta urinib ko'ring."
+                'error': "Kiritilgan SMS kod noto'g'ri. Qayta urinib ko'ring."
             })
 
     latest_otp = models.OTPCode.objects.filter(user=user, is_used=False).order_by('-created_at').first()
@@ -396,7 +386,7 @@ def resend_otp(request):
         )
 
         send_otp_sms(phone, new_code)
-        messages.success(request, f"Yangi OTP kod {phone} raqamiga yuborildi.")
+        messages.success(request, f"Yangi SMS kod {phone} raqamiga yuborildi.")
 
     return redirect('verify_otp')
 
@@ -422,7 +412,7 @@ def log_in(request):
                 models.OTPCode.objects.create(user=existing_user, phone=existing_user.phone or '', code=otp_code)
                 send_otp_sms(existing_user.phone, otp_code)
 
-                messages.warning(request, "Telefon raqamingiz hali tasdiqlanmagan. Kodingiz yuborildi.")
+                messages.warning(request, "Telefon raqamingiz hali tasdiqlanmagan. SMS kodingiz yuborildi.")
                 return redirect('verify_otp')
 
         user = authenticate(username=username, password=password)
