@@ -182,3 +182,43 @@ class AuthAndCartFlowTestCase(TestCase):
 
         self.assertEqual(response.status_code, 404)
 
+    def test_register_otp_flow_and_activation(self):
+        # 1. Register new user
+        response = self.client.post(reverse('register'), {
+            'username': 'newbuyer',
+            'phone': '917914881',
+            'password': 'secretPassword123',
+            'confirm_password': 'secretPassword123',
+        })
+
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse('verify_otp'))
+
+        # Verify user created but inactive and phone_verified=False
+        new_user = User.objects.get(username='newbuyer')
+        self.assertFalse(new_user.is_active)
+        self.assertFalse(new_user.phone_verified)
+
+        # Verify OTP code created in database
+        otp_obj = new_user.otp_codes.latest('created_at')
+        self.assertIsNotNone(otp_obj)
+        self.assertEqual(len(otp_obj.code), 6)
+
+        # 2. Verify invalid OTP code fails
+        fail_resp = self.client.post(reverse('verify_otp'), {
+            'otp_code': '000000',
+        })
+        self.assertEqual(fail_resp.status_code, 200)
+        self.assertContains(fail_resp, 'Kiritilgan OTP kod noto')
+
+        # 3. Verify valid OTP code activates user and logs in
+        success_resp = self.client.post(reverse('verify_otp'), {
+            'otp_code': otp_obj.code,
+        })
+        self.assertEqual(success_resp.status_code, 302)
+        self.assertRedirects(success_resp, reverse('index'))
+
+        new_user.refresh_from_db()
+        self.assertTrue(new_user.is_active)
+        self.assertTrue(new_user.phone_verified)
+

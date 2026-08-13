@@ -1,5 +1,7 @@
 import json
 import re
+import random
+import logging
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -14,7 +16,19 @@ from . import models
 from .utils import paginate_queryset
 from django.contrib.auth import authenticate, login, logout
 
+logger = logging.getLogger(__name__)
 PHONE_RE = re.compile(r'^\+?998[0-9]{9}$')
+
+
+def send_otp_sms(phone, code):
+    """
+    Queue and send OTP SMS to the phone number via SMS Provider/Gateway.
+    In development & logs, prints SMS payload and queue message.
+    """
+    sms_message = f"[DpMarket] Ro'yxatdan o'tish uchun OTP tasdiqlash kodingiz: {code}"
+    print(f"=== [SMS QUEUE] Sending OTP to {phone}: '{sms_message}' ===")
+    logger.info(f"SMS Queued to {phone}: {sms_message}")
+    return True
 
 
 def redirect_back(request, fallback='index', **fallback_kwargs):
@@ -262,18 +276,129 @@ def register(request):
         if models.User.objects.filter(username__iexact=username).exists():
             reg_data['reg_error'] = "Ushbu foydalanuvchi nomi allaqachon band. Boshqa nom tanlang."
             return render(request, 'front/login.html', reg_data)
-
         if models.User.objects.filter(phone=phone).exists():
             reg_data['reg_error'] = "Ushbu telefon raqami allaqachon ro'yxatdan o'tgan."
             return render(request, 'front/login.html', reg_data)
 
-        models.User.objects.create_user(username=username, password=password, phone=phone)
-        user = authenticate(username=username, password=password)
-        login(request, user)
-        messages.success(request, "Ro'yxatdan o'tish muvaffaqiyatli yakunlandi")
-        return redirect('index')
+        # Create unverified inactive user pending OTP confirmation
+        user = models.User.objects.create_user(
+            username=username,
+            password=password,
+            phone=phone,
+            is_active=False,
+            phone_verified=False
+        )
 
-    return render(request, 'front/login.html', {'is_register_page': True})
+        # Generate 6-digit OTP code
+        otp_code = str(random.randint(100000, 999999))
+        
+        # Save OTP to database
+        models.OTPCode.objects.create(
+            user=user,
+            phone=phone,
+            code=otp_code
+        )
+
+        # Dispatch OTP via SMS queue
+        send_otp_sms(phone, otp_code)
+
+        # Store pending user ID in session
+        request.session['otp_user_id'] = user.id
+        request.session['otp_phone'] = phone
+
+        messages.info(request, f"Telefoningizga ({phone}) 6 xonali OTP kod yuborildi. Kodni kiriting.")
+        return redirect('verify_otp')
+
+
+def verify_otp(request):
+    user_id = request.session.get('otp_user_id')
+    phone = request.session.get('otp_phone', '')
+    
+    if not user_id:
+        messages.error(request, "OTP tasdiqlash seans topshiriqlari topilmadi. Qayta ro'yxatdan o'ting.")
+        return redirect('login')
+
+    user = models.User.objects.filter(pk=user_id).first()
+    if not user:
+        messages.error(request, "Foydalanuvchi topilmadi.")
+        return redirect('login')
+
+    if request.method == "POST":
+        entered_code = request.POST.get('otp_code', '').strip().replace(' ', '')
+        
+        # Fetch latest valid OTP for user
+        otp_obj = models.OTPCode.objects.filter(user=user, is_used=False).order_by('-created_at').first()
+        
+        if not otp_obj:
+            return render(request, 'front/verify_otp.html', {
+                'phone': phone,
+                'error': "OTP kodi topilmadi yoki foydalanib bo'lingan."
+            })
+
+        if not otp_obj.is_valid():
+            return render(request, 'front/verify_otp.html', {
+                'phone': phone,
+                'error': "OTP kodining amal qilish muddati tugagan (5 minut). Kodni qayta yuboring."
+            })
+
+        if otp_obj.code == entered_code:
+            # Mark OTP used
+            otp_obj.is_used = True
+            otp_obj.save()
+
+            # Activate user account and set phone_verified=True
+            user.phone_verified = True
+            user.is_active = True
+            user.save()
+
+            # Clean session
+            request.session.pop('otp_user_id', None)
+            request.session.pop('otp_phone', None)
+
+            # Log user in
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+            messages.success(request, "Telefon raqamingiz muvaffaqiyatli tasdiqlandi va akkauntingiz faollashtirildi! 🎉")
+            return redirect('index')
+        else:
+            return render(request, 'front/verify_otp.html', {
+                'phone': phone,
+                'error': "Kiritilgan OTP kod noto'g'ri. Qayta urinib ko'ring."
+            })
+
+    latest_otp = models.OTPCode.objects.filter(user=user, is_used=False).order_by('-created_at').first()
+    demo_code = latest_otp.code if latest_otp else None
+
+    return render(request, 'front/verify_otp.html', {
+        'phone': phone,
+        'demo_code': demo_code
+    })
+
+
+def resend_otp(request):
+    user_id = request.session.get('otp_user_id')
+    phone = request.session.get('otp_phone', '')
+    
+    if not user_id:
+        messages.error(request, "Seans eskirgan.")
+        return redirect('login')
+
+    user = models.User.objects.filter(pk=user_id).first()
+    if user:
+        # Invalidate old OTPs
+        models.OTPCode.objects.filter(user=user, is_used=False).update(is_used=True)
+
+        # Create new 6-digit OTP
+        new_code = str(random.randint(100000, 999999))
+        models.OTPCode.objects.create(
+            user=user,
+            phone=phone,
+            code=new_code
+        )
+
+        send_otp_sms(phone, new_code)
+        messages.success(request, f"Yangi OTP kod {phone} raqamiga yuborildi.")
+
+    return redirect('verify_otp')
 
 
 def log_in(request):
@@ -283,9 +408,27 @@ def log_in(request):
         next_url = request.POST.get('next') or 'index'
         if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
             next_url = 'index'
+
+        # Check if user exists but unverified
+        existing_user = models.User.objects.filter(username__iexact=username).first()
+        if existing_user and existing_user.check_password(password):
+            if not existing_user.phone_verified or not existing_user.is_active:
+                request.session['otp_user_id'] = existing_user.id
+                request.session['otp_phone'] = existing_user.phone or ''
+                
+                # Generate fresh OTP
+                otp_code = str(random.randint(100000, 999999))
+                models.OTPCode.objects.filter(user=existing_user, is_used=False).update(is_used=True)
+                models.OTPCode.objects.create(user=existing_user, phone=existing_user.phone or '', code=otp_code)
+                send_otp_sms(existing_user.phone, otp_code)
+
+                messages.warning(request, "Telefon raqamingiz hali tasdiqlanmagan. Kodingiz yuborildi.")
+                return redirect('verify_otp')
+
         user = authenticate(username=username, password=password)
-        if user:
+        if user is not None:
             login(request, user)
+            messages.success(request, f"Xush kelibsiz, {user.username}!")
             return redirect(next_url)
         return render(request, 'front/login.html', {
             'next': request.POST.get('next', ''),

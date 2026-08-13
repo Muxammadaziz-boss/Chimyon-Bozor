@@ -9,6 +9,7 @@ class User(AbstractUser):
     phone = models.CharField(max_length=150, null= True, blank=True)
     address = models.TextField(null=True, blank=True)
     photo = models.ImageField(upload_to='users', null=True, blank=True)
+    phone_verified = models.BooleanField(default=False)
 
     @property
     def get_avatar_url(self):
@@ -29,6 +30,27 @@ class User(AbstractUser):
 
     class Meta(AbstractUser.Meta):
         swappable = "AUTH_USER_MODEL"
+
+
+class OTPCode(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='otp_codes')
+    phone = models.CharField(max_length=50)
+    code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)
+
+    def is_valid(self):
+        if self.is_used:
+            return False
+        from django.utils import timezone
+        return (timezone.now() - self.created_at).total_seconds() <= 300
+
+    def __str__(self):
+        return f"{self.phone} -> {self.code}"
+
+    class Meta:
+        verbose_name = "OTP Kod"
+        verbose_name_plural = "OTP Kodlar"
 
 
 

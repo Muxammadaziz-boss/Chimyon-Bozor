@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}OTP Kodni Tasdiqlash | DpMarket{% endblock %}
+
+{% block content %}
+<style>
+    .otp-card-container {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 15px;
+        background: linear-gradient(135deg, #F9FAFB 0%, #F3F4F6 100%);
+    }
+
+    .otp-card {
+        background: #ffffff;
+        border-radius: 24px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(124, 58, 237, 0.05);
+        border: 1.5px solid #E5E7EB;
+        padding: 40px 32px;
+        width: 100%;
+        max-width: 480px;
+        text-align: center;
+    }
+
+    .otp-icon-wrap {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #F3F0FF 0%, #E9D5FF 100%);
+        color: #7C3AED;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 36px;
+        margin-bottom: 24px;
+        box-shadow: 0 8px 20px rgba(124, 58, 237, 0.15);
+    }
+
+    .otp-input-group {
+        position: relative;
+        margin: 28px 0;
+    }
+
+    .otp-control {
+        font-size: 32px;
+        font-weight: 700;
+        letter-spacing: 14px;
+        text-align: center;
+        height: 70px;
+        border-radius: 16px;
+        border: 2px solid #E5E7EB;
+        background: #F9FAFB;
+        color: #1F2937;
+        transition: all 0.25s ease;
+        padding-left: 20px;
+    }
+
+    .otp-control:focus {
+        border-color: #7C3AED;
+        background: #ffffff;
+        box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.15);
+        outline: none;
+    }
+
+    .btn-verify {
+        background: linear-gradient(135deg, #7C3AED 0%, #4F46E5 100%);
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 16px;
+        height: 56px;
+        border-radius: 14px;
+        border: none;
+        width: 100%;
+        box-shadow: 0 6px 18px rgba(124, 58, 237, 0.3);
+        transition: all 0.25s ease;
+    }
+
+    .btn-verify:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(124, 58, 237, 0.4);
+        color: #ffffff;
+    }
+
+    .timer-badge {
+        font-size: 14px;
+        font-weight: 600;
+        color: #6B7280;
+        margin-top: 20px;
+    }
+
+    .resend-link {
+        color: #7C3AED;
+        font-weight: 700;
+        text-decoration: none;
+        pointer-events: none;
+        opacity: 0.5;
+        transition: all 0.25s ease;
+    }
+
+    .resend-link.active {
+        pointer-events: auto;
+        opacity: 1;
+        cursor: pointer;
+    }
+
+    .resend-link.active:hover {
+        text-decoration: underline;
+    }
+
+    .demo-otp-banner {
+        background: #FEF3C7;
+        border: 1px dashed #F59E0B;
+        color: #92400E;
+        border-radius: 12px;
+        padding: 10px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        margin-top: 20px;
+    }
+</style>
+
+<div class="otp-card-container">
+    <div class="otp-card">
+        <div class="otp-icon-wrap">
+            <i class="fas fa-shield-alt"></i>
+        </div>
+
+        <h3 class="fw-800 text-dark mb-2">OTP Kodni Kiriting</h3>
+        <p class="text-muted font-14 mb-0">
+            Tasdiqlash kodi <strong class="text-dark">{{ phone }}</strong> raqamiga yuborildi.
+        </p>
+
+        {% if error %}
+        <div class="alert alert-danger border-0 rounded-12 mt-3 font-14">
+            <i class="fas fa-exclamation-circle me-2"></i>{{ error }}
+        </div>
+        {% endif %}
+
+        <form method="POST" action="{% url 'verify_otp' %}" id="otpForm">
+            {% csrf_token %}
+            <div class="otp-input-group">
+                <input type="text" name="otp_code" id="otpInput" maxlength="6" pattern="[0-9]{6}" autocomplete="one-time-code" autofocus required placeholder="• • • • • •" class="form-control otp-control">
+            </div>
+
+            <button type="submit" class="btn btn-verify">
+                <i class="fas fa-check-circle me-2"></i> Tasdiqlash va Faollashtirish
+            </button>
+        </form>
+
+        <div class="timer-badge" id="timerBadge">
+            Qayta yuborish: <span id="countdownTimer" class="text-primary fw-700">02:00</span>
+        </div>
+
+        <div class="mt-3">
+            <a href="{% url 'resend_otp' %}" class="resend-link" id="resendBtn">
+                <i class="fas fa-redo-alt me-1"></i> Kodni qayta yuborish
+            </a>
+        </div>
+
+        {% if demo_code %}
+        <div class="demo-otp-banner">
+            <i class="fas fa-info-circle me-1"></i> Test rejimi OTP kodingiz: <span class="badge bg-warning text-dark font-15 ms-1">{{ demo_code }}</span>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const otpInput = document.getElementById('otpInput');
+    const countdownTimer = document.getElementById('countdownTimer');
+    const resendBtn = document.getElementById('resendBtn');
+    const timerBadge = document.getElementById('timerBadge');
+
+    // Filter non-digit characters
+    if (otpInput) {
+        otpInput.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+    }
+
+    // 2-minute countdown timer (120 seconds)
+    let timeLeft = 120;
+    const timerInterval = setInterval(function() {
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            if (countdownTimer) countdownTimer.textContent = '00:00';
+            if (timerBadge) timerBadge.style.display = 'none';
+            if (resendBtn) resendBtn.classList.add('active');
+        } else {
+            timeLeft--;
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            const displayMin = minutes < 10 ? '0' + minutes : minutes;
+            const displaySec = seconds < 10 ? '0' + seconds : seconds;
+            if (countdownTimer) countdownTimer.textContent = `${displayMin}:${displaySec}`;
+        }
+    }, 1000);
+});
+</script>
+{% endblock %}

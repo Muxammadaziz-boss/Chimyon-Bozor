@@ -35,7 +35,8 @@ class BannerAdmin(admin.ModelAdmin):
 
 @admin.register(models.User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('username', 'phone', 'email', 'is_staff', 'is_superuser')
+    list_display = ('username', 'phone', 'phone_verified', 'is_active', 'is_staff', 'is_superuser')
+    list_filter = ('phone_verified', 'is_active', 'is_staff')
     search_fields = ('username', 'phone', 'email')
 
 
@@ -66,3 +67,10 @@ class AddressAdmin(admin.ModelAdmin):
     list_display = ('name', 'is_active')
     list_filter = ('is_active',)
     search_fields = ('name',)
+
+
+@admin.register(models.OTPCode)
+class OTPCodeAdmin(admin.ModelAdmin):
+    list_display = ('user', 'phone', 'code', 'created_at', 'is_used')
+    list_filter = ('is_used', 'created_at')
+    search_fields = ('phone', 'code', 'user__username')
