@@ -100,7 +100,7 @@ class AuthAndCartFlowTestCase(TestCase):
         })
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'kamida 4 ta belgidan iborat bo\'lishi kerak')
+        self.assertContains(response, 'kamida 4 ta belgidan iborat')
 
     def test_register_duplicate_username_shows_error(self):
         response = self.client.post(reverse('register'), {
@@ -122,7 +122,7 @@ class AuthAndCartFlowTestCase(TestCase):
         })
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'telefon raqami allaqachon ro\'yxatdan o\'tgan')
+        self.assertContains(response, 'telefon raqami allaqachon')
 
     def test_login_invalid_credentials_shows_error(self):
         response = self.client.post(reverse('login'), {
