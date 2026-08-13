@@ -1,6 +1,14 @@
-venv
-.venv
-__pycache__
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 .env
 .idea/
 *.iml
+db.sqlite3
+media/
+DpMarket/
+otika-bootstrap-admin-template/
+*.log
