@@ -842,18 +842,13 @@
 
         <div class="mobile-menu__inner">
 
-            <a href="{% url 'index' %}" class="mobile-menu__logo">
-
+            <a href="{% url 'index' %}" class="mobile-menu__logo d-flex align-items-center gap-2" style="text-decoration:none;">
                 {% if site_settings.logo %}
-
-                <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}">
-
+                <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" style="height: 38px; width: auto;">
                 {% else %}
-
-                <img src="{% static 'assets/images/logo/logo.png' %}" alt="{{ site_settings.site_name|default:'Logo' }}">
-
+                <img src="{% static 'assets/images/logo/logo.png' %}" alt="Chimyon-bozor" style="height: 38px; width: auto;">
                 {% endif %}
-
+                <span class="fw-800 font-20" style="background: linear-gradient(135deg, #7C3AED 0%, #EC4899 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Chimyon-bozor</span>
             </a>
 
             <nav class="mobile-menu__menu">
@@ -923,12 +918,13 @@
                     <!-- Left: Logo & Katalog Button -->
                     <div class="d-flex align-items-center gap-3">
                         <div class="logo">
-                            <a href="{% url 'index' %}" class="link">
+                            <a href="{% url 'index' %}" class="link d-flex align-items-center gap-2" style="text-decoration:none;">
                                 {% if site_settings.logo %}
-                                <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}">
+                                <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" style="height: 44px; width: auto; object-fit: contain;">
                                 {% else %}
-                                <img src="{% static 'assets/images/logo/logo-two.png' %}" alt="{{ site_settings.site_name|default:'Logo' }}">
+                                <img src="{% static 'assets/images/logo/logo-two.png' %}" alt="Chimyon-bozor" style="height: 44px; width: auto; object-fit: contain;">
                                 {% endif %}
+                                <span class="fw-800 font-22" style="background: linear-gradient(135deg, #7C3AED 0%, #EC4899 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -0.5px;">Chimyon-bozor</span>
                             </a>
                         </div>
 
@@ -1144,7 +1140,7 @@
                             <p>Yangi mahsulotlar, aksiyalar va maxsus takliflarni birinchi bo'lib bilib oling — Telegram orqali!</p>
                         </div>
                         <div class="col-lg-5 d-flex justify-content-lg-end">
-                            <a href="{{ site_settings.telegram|default:'https://t.me/dpmarket_uz' }}"
+                            <a href="{{ site_settings.telegram|default:'https://t.me/chimyon_bozor' }}"
                                target="_blank" rel="noopener"
                                class="tg-subscribe-btn">
                                 <i class="fab fa-telegram-plane"></i>
@@ -1161,8 +1157,9 @@
 
                         <!-- Column 1: Brand + Contact -->
                         <div class="col-lg-4 col-md-6">
-                            <a href="{% url 'index' %}" style="display: inline-block; margin-bottom: 6px;">
-                                <img src="{% static 'assets/images/logo/white-logo.png' %}" alt="{{ site_settings.site_name }}" style="max-width: 180px; max-height: 52px; filter: brightness(1.1);">
+                            <a href="{% url 'index' %}" class="d-inline-flex align-items-center gap-2 mb-2" style="text-decoration: none;">
+                                <img src="{% static 'assets/images/logo/white-logo.png' %}" alt="{{ site_settings.site_name }}" style="height: 44px; width: auto; object-fit: contain; filter: brightness(1.15);">
+                                <span class="fw-800 font-24 text-white" style="letter-spacing: -0.5px;">Chimyon-bozor</span>
                             </a>
                             <p class="footer-brand-desc">
                                 {{ site_settings.footer_description|default:"Sifatli mahsulotlarni qulay narxlarda xarid qiling. Tez yetkazib berish va ishonchli xizmat — bizning ustuvorligimiz." }}
