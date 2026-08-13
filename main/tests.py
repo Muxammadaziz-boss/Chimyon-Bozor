@@ -209,7 +209,7 @@ class AuthAndCartFlowTestCase(TestCase):
             'otp_code': '000000',
         })
         self.assertEqual(fail_resp.status_code, 200)
-        self.assertContains(fail_resp, 'Kiritilgan OTP kod noto')
+        self.assertContains(fail_resp, 'Kiritilgan SMS kod')
 
         # 3. Verify valid OTP code activates user and logs in
         success_resp = self.client.post(reverse('verify_otp'), {
