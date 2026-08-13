@@ -2,305 +2,297 @@
 {% load static %}
 
 {% block content %}
-      <div class="main-content">
-        <section class="section">
-          <div class="row ">
-            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 col-xs-12">
-              <div class="card">
-                <div class="card-statistic-4">
-                  <div class="align-items-center justify-content-between">
-                    <div class="row ">
-                      <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 pr-0 pt-3">
-                        <div class="card-content">
-                          <h5 class="font-15">Yangi buyurtmalar</h5>
-                          <h2 class="mb-3 font-18">{{ stats.pending_orders }}</h2>
-                          <p class="mb-0"><span class="col-green">Kutilmoqda</span></p>
-                        </div>
-                      </div>
-                      <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 pl-0">
-                        <div class="banner-img">
-                          <img src="{% static 'assets2/assets/img/banner/1.png' %}" alt="">
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 col-xs-12">
-              <div class="card">
-                <div class="card-statistic-4">
-                  <div class="align-items-center justify-content-between">
-                    <div class="row ">
-                      <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 pr-0 pt-3">
-                        <div class="card-content">
-                          <h5 class="font-15">Jami Mijozlar Soni</h5>
-                          <h2 class="mb-3 font-18">{{ stats.total_customers }}</h2>
-                          <p class="mb-0"><span class="col-green">Jami</span></p>
-                        </div>
-                      </div>
-                      <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 pl-0">
-                        <div class="banner-img">
-                          <img src="{% static 'assets2/assets/img/banner/2.png' %}" alt="">
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 col-xs-12">
-              <div class="card">
-                <div class="card-statistic-4">
-                  <div class="align-items-center justify-content-between">
-                    <div class="row ">
-                      <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 pr-0 pt-3">
-                        <div class="card-content">
-                          <h5 class="font-15">Tugatilgan buyurtmalar</h5>
-                          <h2 class="mb-3 font-18">{{ stats.completed_orders }}</h2>
-                          <p class="mb-0"><span class="col-green">Tugatildi</span></p>
-                        </div>
-                      </div>
-                      <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 pl-0">
-                        <div class="banner-img">
-                          <img src="{% static 'assets2/assets/img/banner/3.png' %}" alt="">
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 col-xs-12">
-              <div class="card">
-                <div class="card-statistic-4">
-                  <div class="align-items-center justify-content-between">
-                    <div class="row ">
-                      <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 pr-0 pt-3">
-                        <div class="card-content">
-                          <h5 class="font-15">Jami<br> Tushumlar</h5>
-                          <h2 class="mb-3 font-18">${{ stats.total_income|floatformat:0 }}</h2>
-                          <p class="mb-0"><span class="col-green">Jami tushum</span></p>
-                        </div>
-                      </div>
-                      <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 pl-0">
-                        <div class="banner-img">
-                          <img src="{% static 'assets2/assets/img/banner/4.png' %}" alt="">
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+<div class="main-content">
+  <section class="section">
+    <!-- Asosiy statistika kartalari -->
+    <div class="row">
+      <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 col-12">
+        <div class="card card-statistic-1 shadow-sm">
+          <div class="card-icon bg-primary">
+            <i class="fas fa-box-open text-white"></i>
           </div>
-          <div class="row">
-            <div class="col-12 col-sm-12 col-lg-12">
-              <div class="card ">
-                <div class="card-header">
-                  <h4>Revenue chart</h4>
-                  <div class="card-header-action">
-                    <div class="dropdown">
-                      <a href="{% url 'd_orders' %}" class="btn btn-warning">Buyurtmalar</a>
-                    </div>
-                    <a href="{% url 'd_export_orders' %}" class="btn btn-primary">Export</a>
-                  </div>
-                </div>
-                <div class="card-body">
-                  <div class="row">
-                    <div class="col-lg-9">
-                      <canvas id="chart1"></canvas>
-                      <div class="row mb-0">
-                        <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
-                          <div class="list-inline text-center">
-                            <div class="list-inline-item p-r-30"><i data-feather="arrow-up-circle"
-                                class="col-green"></i>
-                              <h5 class="m-b-0">{{ stats.pending_orders }}</h5>
-                              <p class="text-muted font-14 m-b-0">Kutilayotgan buyurtmalar</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
-                          <div class="list-inline text-center">
-                            <div class="list-inline-item p-r-30"><i data-feather="arrow-down-circle"
-                                class="col-orange"></i>
-                              <h5 class="m-b-0">{{ stats.total_orders }}</h5>
-                              <p class="text-muted font-14 m-b-0">Jami buyurtmalar</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
-                          <div class="list-inline text-center">
-                            <div class="list-inline-item p-r-30"><i data-feather="arrow-up-circle"
-                                class="col-green"></i>
-                              <h5 class="mb-0 m-b-0">{{ stats.new_customers }}</h5>
-                              <p class="text-muted font-14 m-b-0">Yangi mijozlar</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col-lg-3">
-                      <div class="row mt-5">
-                        <div class="col-7 col-xl-7 mb-3">Jami mijozlar</div>
-                        <div class="col-5 col-xl-5 mb-3">
-                          <span class="text-big">{{ stats.total_customers }}</span>
-                        </div>
-                        <div class="col-7 col-xl-7 mb-3">Jami tushum</div>
-                        <div class="col-5 col-xl-5 mb-3">
-                          <span class="text-big">${{ stats.total_income|floatformat:0 }}</span>
-                        </div>
-                        <div class="col-7 col-xl-7 mb-3">Tugatilgan buyurtmalar</div>
-                        <div class="col-5 col-xl-5 mb-3">
-                          <span class="text-big">{{ stats.completed_orders }}</span>
-                        </div>
-                        <div class="col-7 col-xl-7 mb-3">Jami buyurtmalar</div>
-                        <div class="col-5 col-xl-5 mb-3">
-                          <span class="text-big">{{ stats.total_orders }}</span>
-                        </div>
-                        <div class="col-7 col-xl-7 mb-3">Yangi mijozlar</div>
-                        <div class="col-5 col-xl-5 mb-3">
-                          <span class="text-big">{{ stats.new_customers }}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+          <div class="card-wrap">
+            <div class="card-header">
+              <h4>Jami Mahsulotlar</h4>
             </div>
-          </div>
-
-        </section>
-        <div class="settingSidebar">
-          <a href="javascript:void(0)" class="settingPanelToggle"> <i class="fa fa-spin fa-cog"></i>
-          </a>
-          <div class="settingSidebar-body ps-container ps-theme-default">
-            <div class=" fade show active">
-              <div class="setting-panel-header">Setting Panel
-              </div>
-              <div class="p-15 border-bottom">
-                <h6 class="font-medium m-b-10">Select Layout</h6>
-                <div class="selectgroup layout-color w-50">
-                  <label class="selectgroup-item">
-                    <input type="radio" name="value" value="1" class="selectgroup-input-radio select-layout" checked>
-                    <span class="selectgroup-button">Light</span>
-                  </label>
-                  <label class="selectgroup-item">
-                    <input type="radio" name="value" value="2" class="selectgroup-input-radio select-layout">
-                    <span class="selectgroup-button">Dark</span>
-                  </label>
-                </div>
-              </div>
-              <div class="p-15 border-bottom">
-                <h6 class="font-medium m-b-10">Sidebar Color</h6>
-                <div class="selectgroup selectgroup-pills sidebar-color">
-                  <label class="selectgroup-item">
-                    <input type="radio" name="icon-input" value="1" class="selectgroup-input select-sidebar">
-                    <span class="selectgroup-button selectgroup-button-icon" data-toggle="tooltip"
-                      data-original-title="Light Sidebar"><i class="fas fa-sun"></i></span>
-                  </label>
-                  <label class="selectgroup-item">
-                    <input type="radio" name="icon-input" value="2" class="selectgroup-input select-sidebar" checked>
-                    <span class="selectgroup-button selectgroup-button-icon" data-toggle="tooltip"
-                      data-original-title="Dark Sidebar"><i class="fas fa-moon"></i></span>
-                  </label>
-                </div>
-              </div>
-              <div class="p-15 border-bottom">
-                <h6 class="font-medium m-b-10">Color Theme</h6>
-                <div class="theme-setting-options">
-                  <ul class="choose-theme list-unstyled mb-0">
-                    <li title="white" class="active">
-                      <div class="white"></div>
-                    </li>
-                    <li title="cyan">
-                      <div class="cyan"></div>
-                    </li>
-                    <li title="black">
-                      <div class="black"></div>
-                    </li>
-                    <li title="purple">
-                      <div class="purple"></div>
-                    </li>
-                    <li title="orange">
-                      <div class="orange"></div>
-                    </li>
-                    <li title="green">
-                      <div class="green"></div>
-                    </li>
-                    <li title="red">
-                      <div class="red"></div>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-              <div class="p-15 border-bottom">
-                <div class="theme-setting-options">
-                  <label class="m-b-0">
-                    <input type="checkbox" name="custom-switch-checkbox" class="custom-switch-input"
-                      id="mini_sidebar_setting">
-                    <span class="custom-switch-indicator"></span>
-                    <span class="control-label p-l-10">Mini Sidebar</span>
-                  </label>
-                </div>
-              </div>
-              <div class="p-15 border-bottom">
-                <div class="theme-setting-options">
-                  <label class="m-b-0">
-                    <input type="checkbox" name="custom-switch-checkbox" class="custom-switch-input"
-                      id="sticky_header_setting">
-                    <span class="custom-switch-indicator"></span>
-                    <span class="control-label p-l-10">Sticky Header</span>
-                  </label>
-                </div>
-              </div>
-              <div class="mt-4 mb-4 p-3 align-center rt-sidebar-last-ele">
-                <a href="#" class="btn btn-icon icon-left btn-primary btn-restore-theme">
-                  <i class="fas fa-undo"></i> Restore Default
-                </a>
-              </div>
+            <div class="card-body font-weight-bold">
+              {{ stats.total_products }}
             </div>
           </div>
         </div>
       </div>
 
+      <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 col-12">
+        <div class="card card-statistic-1 shadow-sm">
+          <div class="card-icon bg-info">
+            <i class="fas fa-th-large text-white"></i>
+          </div>
+          <div class="card-wrap">
+            <div class="card-header">
+              <h4>Kategoriyalar</h4>
+            </div>
+            <div class="card-body font-weight-bold">
+              {{ stats.total_categories }}
+            </div>
+          </div>
+        </div>
+      </div>
 
+      <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 col-12">
+        <div class="card card-statistic-1 shadow-sm">
+          <div class="card-icon bg-success">
+            <i class="fas fa-users text-white"></i>
+          </div>
+          <div class="card-wrap">
+            <div class="card-header">
+              <h4>Jami Foydalanuvchilar</h4>
+            </div>
+            <div class="card-body font-weight-bold">
+              {{ stats.total_customers }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 col-12">
+        <div class="card card-statistic-1 shadow-sm">
+          <div class="card-icon bg-warning">
+            <i class="fas fa-coins text-white"></i>
+          </div>
+          <div class="card-wrap">
+            <div class="card-header">
+              <h4>Jami Savdo Tushumi</h4>
+            </div>
+            <div class="card-body font-weight-bold" style="font-size: 1.15rem;">
+              {{ stats.total_income|floatformat:0 }} so'm
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Buyurtmalar statuslari bo'yicha tezkor kartalar -->
+    <div class="row">
+      <div class="col-lg-3 col-md-6 col-sm-6 col-12">
+        <a href="{% url 'd_orders' %}?status=2" class="text-decoration-none">
+          <div class="card border-left-warning shadow-sm">
+            <div class="card-body d-flex align-items-center justify-content-between">
+              <div>
+                <div class="text-muted small">Yangi buyurtmalar</div>
+                <div class="h4 font-weight-bold text-dark mb-0">{{ stats.new_orders }}</div>
+              </div>
+              <span class="badge badge-warning badge-pill">Qabul qilindi</span>
+            </div>
+          </div>
+        </a>
+      </div>
+
+      <div class="col-lg-3 col-md-6 col-sm-6 col-12">
+        <a href="{% url 'd_orders' %}?status=3" class="text-decoration-none">
+          <div class="card border-left-info shadow-sm">
+            <div class="card-body d-flex align-items-center justify-content-between">
+              <div>
+                <div class="text-muted small">Jarayonda / Yo'lda</div>
+                <div class="h4 font-weight-bold text-dark mb-0">{{ stats.processing_orders }}</div>
+              </div>
+              <span class="badge badge-info badge-pill">Yo'lda</span>
+            </div>
+          </div>
+        </a>
+      </div>
+
+      <div class="col-lg-3 col-md-6 col-sm-6 col-12">
+        <a href="{% url 'd_orders' %}?status=4" class="text-decoration-none">
+          <div class="card border-left-success shadow-sm">
+            <div class="card-body d-flex align-items-center justify-content-between">
+              <div>
+                <div class="text-muted small">Yetkazilgan</div>
+                <div class="h4 font-weight-bold text-dark mb-0">{{ stats.completed_orders }}</div>
+              </div>
+              <span class="badge badge-success badge-pill">Tugatildi</span>
+            </div>
+          </div>
+        </a>
+      </div>
+
+      <div class="col-lg-3 col-md-6 col-sm-6 col-12">
+        <a href="{% url 'd_orders' %}?status=5" class="text-decoration-none">
+          <div class="card border-left-danger shadow-sm">
+            <div class="card-body d-flex align-items-center justify-content-between">
+              <div>
+                <div class="text-muted small">Bekor qilingan</div>
+                <div class="h4 font-weight-bold text-dark mb-0">{{ stats.cancelled_orders }}</div>
+              </div>
+              <span class="badge badge-danger badge-pill">Bekor</span>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- Grafik va So'nggi buyurtmalar -->
+    <div class="row">
+      <div class="col-12 col-lg-8">
+        <div class="card shadow-sm">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Savdo dinamikasi grafigi</h4>
+            <div class="card-header-action">
+              <a href="{% url 'd_orders' %}" class="btn btn-sm btn-primary">Barcha buyurtmalar</a>
+              <a href="{% url 'd_export_orders' %}" class="btn btn-sm btn-success ml-1"><i class="fas fa-file-excel mr-1"></i>Excel</a>
+            </div>
+          </div>
+          <div class="card-body">
+            <canvas id="revenueChartCanvas" height="130"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-lg-4">
+        <div class="card shadow-sm">
+          <div class="card-header">
+            <h4>Yangi ro'yxatdan o'tganlar</h4>
+          </div>
+          <div class="card-body p-0">
+            <ul class="list-unstyled list-unstyled-border mb-0">
+              {% for u in recent_users %}
+              <li class="media p-3 border-bottom">
+                <img class="mr-3 rounded-circle" width="45" src="{{ u.get_avatar_url }}" alt="{{ u.username }}">
+                <div class="media-body">
+                  <div class="float-right text-small text-muted">{{ u.date_joined|date:"d.m.Y" }}</div>
+                  <div class="media-title font-weight-bold">{{ u.get_full_name|default:u.username }}</div>
+                  <span class="text-small text-muted"><i class="fas fa-phone mr-1"></i>{{ u.phone|default:"Telefon kiritilmagan" }}</span>
+                </div>
+              </li>
+              {% empty %}
+              <li class="p-3 text-center text-muted">Foydalanuvchilar mavjud emas</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- So'nggi Buyurtmalar Jadvali -->
+    <div class="row">
+      <div class="col-12">
+        <div class="card shadow-sm">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">So'nggi buyurtmalar</h4>
+            <a href="{% url 'd_orders' %}" class="btn btn-outline-primary btn-sm">Barchasini ko'rish &rarr;</a>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-striped table-hover mb-0">
+                <thead>
+                  <tr>
+                    <th>Buyurtma ID</th>
+                    <th>Mijoz</th>
+                    <th>Mahsulotlar</th>
+                    <th>Sana</th>
+                    <th>Summa</th>
+                    <th>Status</th>
+                    <th>Amallar</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for order in recent_orders %}
+                  <tr>
+                    <td class="font-weight-bold">#{{ order.code|slice:":8" }}</td>
+                    <td>
+                      <div><strong>{{ order.user.get_full_name|default:order.user.username }}</strong></div>
+                      <small class="text-muted">{{ order.user.phone|default:"" }}</small>
+                    </td>
+                    <td>{{ order.cartproduct_set.count }} ta turdagi</td>
+                    <td>{{ order.date|date:"d.m.Y H:i" }}</td>
+                    <td class="font-weight-bold text-dark">{{ order.total_price|floatformat:0 }} so'm</td>
+                    <td>
+                      {% if order.status == 2 %}
+                        <span class="badge badge-warning">Qabul qilindi</span>
+                      {% elif order.status == 3 %}
+                        <span class="badge badge-info">Yo'lda / Jarayonda</span>
+                      {% elif order.status == 4 %}
+                        <span class="badge badge-success">Yetkazilgan</span>
+                      {% elif order.status == 5 %}
+                        <span class="badge badge-danger">Bekor qilingan</span>
+                      {% else %}
+                        <span class="badge badge-secondary">Faol savat</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <a href="{% url 'd_detail_orders' order.code %}" class="btn btn-sm btn-info" title="Batafsil">
+                        <i class="fas fa-eye"></i> Batafsil
+                      </a>
+                    </td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">
+                      <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                      Hozircha buyurtmalar mavjud emas.
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
 <script>
-  // chart1 o'rniga shu kodni qo'ying
-fetch('{% url "revenue-chart" %}')
-  .then(r => r.json())
-  .then(data => {
-    new Chart(document.getElementById('chart1'), {
-      type: 'line',
-      data: {
-        labels: data.labels,
-        datasets: [
-          {
-            label: 'Jami sotuv',
-            data: data.totals,
-            borderColor: '#378ADD',
-            backgroundColor: 'rgba(55,138,221,0.08)',
-            borderWidth: 2, tension: 0.4, fill: true
-          },
-          {
-            label: 'Chegirma tejami',
-            data: data.discounts,
-            borderColor: '#1D9E75',
-            backgroundColor: 'rgba(29,158,117,0.06)',
-            borderWidth: 2, tension: 0.4, fill: true,
-            borderDash: [5, 4]
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          y: { ticks: { callback: v => '$' + v.toLocaleString() } }
-        }
-      }
-    });
+  document.addEventListener("DOMContentLoaded", function() {
+    var ctx = document.getElementById('revenueChartCanvas');
+    if (ctx) {
+      fetch('{% url "revenue-chart" %}')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: data.labels.length ? data.labels : ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May'],
+              datasets: [{
+                label: 'Jami Savdo (so\'m)',
+                data: data.totals.length ? data.totals : [0, 0, 0, 0, 0],
+                borderColor: '#6777ef',
+                backgroundColor: 'rgba(103, 119, 239, 0.15)',
+                borderWidth: 2.5,
+                tension: 0.3,
+                fill: true,
+                pointRadius: 4,
+                pointBackgroundColor: '#6777ef'
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: true,
+              scales: {
+                yAxes: [{
+                  ticks: {
+                    beginAtZero: true,
+                    callback: function(value) {
+                      return value.toLocaleString() + " so'm";
+                    }
+                  }
+                }]
+              },
+              tooltips: {
+                callbacks: {
+                  label: function(tooltipItem, data) {
+                    return tooltipItem.yLabel.toLocaleString() + " so'm";
+                  }
+                }
+              }
+            }
+          });
+        })
+        .catch(function(err) {
+          console.log("Chart load error:", err);
+        });
+    }
   });
 </script>
-
-
 {% endblock %}

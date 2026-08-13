@@ -1,0 +1,170 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Foydalanuvchilar Boshqaruvi | Chimyon-bozor{% endblock %}
+
+{% block content %}
+<div class="main-content" style="min-height: 740px;">
+  <section class="section">
+    <div class="section-body">
+      <div class="row">
+        <div class="col-12">
+          <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+              <h4>Foydalanuvchilar Ro'yxati</h4>
+              <div class="card-header-form">
+                <form method="GET" class="form-inline">
+                  {% if role_filter %}
+                    <input type="hidden" name="role" value="{{ role_filter }}">
+                  {% endif %}
+                  <div class="input-group">
+                    <input type="text" name="query" class="form-control" placeholder="Ism, login, telefon..." value="{{ query|default:'' }}">
+                    <div class="input-group-btn">
+                      <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i> Qidirish</button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <!-- Role filter tugmalari -->
+            <div class="card-body pb-0">
+              <ul class="nav nav-pills">
+                <li class="nav-item">
+                  <a class="nav-link {% if not role_filter %}active{% endif %}" href="{% url 'd_list_users' %}{% if query %}?query={{ query }}{% endif %}">
+                    Barchasi
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link {% if role_filter == 'customer' %}active{% endif %}" href="{% url 'd_list_users' %}?role=customer{% if query %}&query={{ query }}{% endif %}">
+                    Mijozlar
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link {% if role_filter == 'staff' %}active{% endif %}" href="{% url 'd_list_users' %}?role=staff{% if query %}&query={{ query }}{% endif %}">
+                    Admin / Xodimlar
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            <div class="card-body p-0 mt-3">
+              <div class="table-responsive">
+                <table class="table table-striped table-hover mb-0">
+                  <thead>
+                    <tr>
+                      <th>Avatar</th>
+                      <th>F.I.SH</th>
+                      <th>Login</th>
+                      <th>Telefon</th>
+                      <th>Buyurtmalar</th>
+                      <th>Ro'yxatdan o'tgan</th>
+                      <th>Roli</th>
+                      <th>Holat</th>
+                      <th>Amal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for u in users %}
+                    <tr>
+                      <td>
+                        <img src="{{ u.get_avatar_url }}" width="40" height="40" class="rounded-circle shadow-sm" alt="{{ u.username }}">
+                      </td>
+                      <td>
+                        <strong>{{ u.get_full_name|default:"—" }}</strong>
+                        {% if u.address %}
+                          <br><small class="text-muted"><i class="fas fa-map-marker-alt mr-1"></i>{{ u.address|truncatechars:30 }}</small>
+                        {% endif %}
+                      </td>
+                      <td><code>{{ u.username }}</code></td>
+                      <td>{{ u.phone|default:"—" }}</td>
+                      <td>
+                        <span class="badge badge-light border">{{ u.order_count }} ta</span>
+                      </td>
+                      <td>{{ u.date_joined|date:"d.m.Y" }}</td>
+                      <td>
+                        {% if u.is_superuser %}
+                          <span class="badge badge-danger">Superadmin</span>
+                        {% elif u.is_staff %}
+                          <span class="badge badge-warning">Xodim</span>
+                        {% else %}
+                          <span class="badge badge-info">Mijoz</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if u.is_active %}
+                          <span class="badge badge-success">Faol</span>
+                        {% else %}
+                          <span class="badge badge-secondary">Nofaol</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if u != request.user %}
+                          <a href="{% url 'd_toggle_user' u.id %}" class="btn btn-sm {% if u.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}" title="{% if u.is_active %}Bloklash{% else %}Faollashtirish{% endif %}">
+                            {% if u.is_active %}
+                              <i class="fas fa-user-slash"></i> Bloklash
+                            {% else %}
+                              <i class="fas fa-user-check"></i> Faollashtirish
+                            {% endif %}
+                          </a>
+                        {% else %}
+                          <span class="text-muted small">Siz (Joriy)</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                      <td colspan="9" class="text-center py-4 text-muted">
+                        <i class="fas fa-users-slash fa-2x mb-2 d-block"></i>
+                        Foydalanuvchilar topilmadi.
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <div class="card-footer d-flex justify-content-center">
+              <nav aria-label="Sahifalar">
+                <ul class="pagination mb-0">
+                  {% if page_obj.has_previous %}
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&query={{ query }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}">
+                        &laquo; Oldingi
+                      </a>
+                    </li>
+                  {% endif %}
+
+                  {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                      <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                      <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if query %}&query={{ query }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}">
+                          {{ num }}
+                        </a>
+                      </li>
+                    {% endif %}
+                  {% endfor %}
+
+                  {% if page_obj.has_next %}
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&query={{ query }}{% endif %}{% if role_filter %}&role={{ role_filter }}{% endif %}">
+                        Keyingi &raquo;
+                      </a>
+                    </li>
+                  {% endif %}
+                </ul>
+              </nav>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

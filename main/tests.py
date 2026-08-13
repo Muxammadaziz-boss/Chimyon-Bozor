@@ -1,3 +1,4 @@
+from unittest.mock import patch
 from django.test import TestCase
 from django.urls import reverse
 from .models import Cart, CartProduct, Category, Product, User
@@ -182,7 +183,8 @@ class AuthAndCartFlowTestCase(TestCase):
 
         self.assertEqual(response.status_code, 404)
 
-    def test_register_otp_flow_and_activation(self):
+    @patch('main.sms_service.send_sms_code', return_value=True)
+    def test_register_otp_flow_and_activation(self, mock_send_sms):
         # 1. Register new user
         response = self.client.post(reverse('register'), {
             'username': 'newbuyer',

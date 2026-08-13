@@ -1,147 +1,51 @@
 {% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Kategoriya Yaratish | Chimyon-bozor{% endblock %}
 
 {% block content %}
-      <!-- Main Content -->
-      <div class="main-content">
-        <section class="section">
-          <div class="section-body">
-            <div class="row">
-              <div class="col-12">
-                <div class="card">
-                  <div class="card-header">
-                    <h4>Categorya yaratish</h4>
-                  </div>
-                    <form method="POST" enctype="multipart/form-data"> {% csrf_token %}
-                        <div class="card-body">
-                    <div class="form-group row mb-4">
-                      <label class="col-form-label text-md-right col-12 col-md-3 col-lg-3">Nomi</label>
-                      <div class="col-sm-12 col-md-7">
-                        <input type="text" name="name" class="form-control" required>
-                      </div>
-                    </div>
-                    <div class="form-group row mb-4">
-                      <label class="col-form-label text-md-right col-12 col-md-3 col-lg-3">Rasm</label>
-                      <div class="col-sm-12 col-md-7">
-                        <div id="image-preview" class="image-preview">
-                          <label for="image-upload" id="image-label">Faylni tanlang</label>
-                          <input type="file" name="logo" id="image-upload" required />
-                        </div>
-                      </div>
-                    </div>
-                    <div class="form-group row mb-4">
-                      <label class="col-form-label text-md-right col-12 col-md-3 col-lg-3">Holat</label>
-                      <div class="col-sm-12 col-md-7">
-                        <div class="pretty p-switch p-fill">
-                          <input type="checkbox" name="is_active">
-                          <div class="state p-success">
-                            <label>Faol</label>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="form-group row mb-4">
-                      <label class="col-form-label text-md-right col-12 col-md-3 col-lg-3"></label>
-                      <div class="col-sm-12 col-md-7">
-                        <button type="submit" class="btn btn-primary">Kategoriya yaratish</button>
-                      </div>
-                    </div>
-                  </div>
-                    </form>
-                </div>
-              </div>
+<div class="main-content" style="min-height: 740px;">
+  <section class="section">
+    <div class="section-body">
+      <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+          <div class="card shadow-sm">
+            <div class="card-header">
+              <h4>Yangi Kategoriya Yaratish</h4>
             </div>
-          </div>
-        </section>
-        <div class="settingSidebar">
-          <a href="javascript:void(0)" class="settingPanelToggle"> <i class="fa fa-spin fa-cog"></i>
-          </a>
-          <div class="settingSidebar-body ps-container ps-theme-default">
-            <div class=" fade show active">
-              <div class="setting-panel-header">Sozlamalar paneli
-              </div>
-              <div class="p-15 border-bottom">
-                <h6 class="font-medium m-b-10">Loyihani tanlang</h6>
-                <div class="selectgroup layout-color w-50">
-                  <label class="selectgroup-item">
-                    <input type="radio" name="value" value="1" class="selectgroup-input-radio select-layout" checked>
-                    <span class="selectgroup-button">Yorug'</span>
-                  </label>
-                  <label class="selectgroup-item">
-                    <input type="radio" name="value" value="2" class="selectgroup-input-radio select-layout">
-                    <span class="selectgroup-button">Qorong'i</span>
-                  </label>
+            <form method="POST" enctype="multipart/form-data">
+              {% csrf_token %}
+              <div class="card-body">
+                <div class="form-group">
+                  <label class="font-weight-bold">Kategoriya Nomi <span class="text-danger">*</span></label>
+                  <input type="text" name="name" class="form-control" placeholder="Masalan: Kiyim-kechak, Elektronika..." required>
                 </div>
-              </div>
-              <div class="p-15 border-bottom">
-                <h6 class="font-medium m-b-10">Yon panel rangi</h6>
-                <div class="selectgroup selectgroup-pills sidebar-color">
-                  <label class="selectgroup-item">
-                    <input type="radio" name="icon-input" value="1" class="selectgroup-input select-sidebar">
-                    <span class="selectgroup-button selectgroup-button-icon" data-toggle="tooltip"
-                      data-original-title="Yorug' yon panel"><i class="fas fa-sun"></i></span>
-                  </label>
-                  <label class="selectgroup-item">
-                    <input type="radio" name="icon-input" value="2" class="selectgroup-input select-sidebar" checked>
-                    <span class="selectgroup-button selectgroup-button-icon" data-toggle="tooltip"
-                      data-original-title="Qorong'i yon panel"><i class="fas fa-moon"></i></span>
-                  </label>
+
+                <div class="form-group">
+                  <label class="font-weight-bold">Logotip / Rasm <span class="text-danger">*</span></label>
+                  <input type="file" name="logo" class="form-control" accept="image/*" required>
+                  <small class="form-text text-muted">PNG, JPG yoki WEBP formatidagi rasm yuklang.</small>
                 </div>
-              </div>
-              <div class="p-15 border-bottom">
-                <h6 class="font-medium m-b-10">Rang mavzusi</h6>
-                <div class="theme-setting-options">
-                  <ul class="choose-theme list-unstyled mb-0">
-                    <li title="white" class="active">
-                      <div class="white"></div>
-                    </li>
-                    <li title="cyan">
-                      <div class="cyan"></div>
-                    </li>
-                    <li title="black">
-                      <div class="black"></div>
-                    </li>
-                    <li title="purple">
-                      <div class="purple"></div>
-                    </li>
-                    <li title="orange">
-                      <div class="orange"></div>
-                    </li>
-                    <li title="green">
-                      <div class="green"></div>
-                    </li>
-                    <li title="red">
-                      <div class="red"></div>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-              <div class="p-15 border-bottom">
-                <div class="theme-setting-options">
-                  <label class="m-b-0">
-                    <input type="checkbox" name="custom-switch-checkbox" class="custom-switch-input"
-                      id="mini_sidebar_setting">
+
+                <div class="form-group">
+                  <div class="control-label font-weight-bold mb-2">Holati</div>
+                  <label class="custom-switch mt-2">
+                    <input type="checkbox" name="is_active" class="custom-switch-input" checked>
                     <span class="custom-switch-indicator"></span>
-                    <span class="control-label p-l-10">Kichik yon panel</span>
+                    <span class="custom-switch-description">Faol (Saytda ko'rinadi)</span>
                   </label>
                 </div>
               </div>
-              <div class="p-15 border-bottom">
-                <div class="theme-setting-options">
-                  <label class="m-b-0">
-                    <input type="checkbox" name="custom-switch-checkbox" class="custom-switch-input"
-                      id="sticky_header_setting">
-                    <span class="custom-switch-indicator"></span>
-                    <span class="control-label p-l-10">Yopishqoq sarlavha</span>
-                  </label>
-                </div>
+
+              <div class="card-footer bg-whitesmoke text-right">
+                <a href="{% url 'd_list_category' %}" class="btn btn-secondary mr-1">Bekor qilish</a>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-1"></i> Saqlash</button>
               </div>
-              <div class="mt-4 mb-4 p-3 align-center rt-sidebar-last-ele">
-                <a href="#" class="btn btn-icon icon-left btn-primary btn-restore-theme">
-                  <i class="fas fa-undo"></i> Asl holatga qaytarish
-                </a>
-              </div>
-            </div>
+            </form>
           </div>
         </div>
       </div>
-{% endblock content %}
+    </div>
+  </section>
+</div>
+{% endblock %}

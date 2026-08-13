@@ -1,34 +1,23 @@
 <!DOCTYPE html>
 {% load static %}
+<html lang="uz">
 
-<html lang="en">
-
-
-<!-- index.html  21 Nov 2019 03:44:50 GMT -->
 <head>
   <meta charset="UTF-8">
   <meta content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" name="viewport">
-  <title>Chimyon-bozor - Boshqaruv Paneli</title>
-  <!-- Css -->
+  <title>{% block title %}Chimyon-bozor - Boshqaruv Paneli{% endblock %}</title>
+
+  <!-- CSS Files -->
   <link rel="stylesheet" href="{% static 'assets2/assets/css/summernote/summernote-bs4.css' %}">
   <link rel="stylesheet" href="{% static 'assets2/assets/css/jquery-selectric/selectric.css' %}">
   <link rel="stylesheet" href="{% static 'assets2/assets/css/bootstrap-tagsinput/bootstrap-tagsinput.css' %}">
-
-  <!-- General CSS Files -->
   <link rel="stylesheet" href="{% static 'assets2/assets/css/app.min.css' %}">
-  <!-- Template CSS -->
   <link rel="stylesheet" href="{% static 'assets2/assets/css/style.css' %}">
   <link rel="stylesheet" href="{% static 'assets2/assets/css/components.css' %}">
-  <!-- Custom style CSS -->
   <link rel="stylesheet" href="{% static 'assets2/assets/css/custom.css' %}">
-  <link rel='shortcut icon' type='image/x-icon' href='{% static 'assets2/assets/img/favicon.ico' %}' />
+  <link rel="shortcut icon" type="image/x-icon" href="{% static 'assets/images/logo/favicon-two.png' %}?v=2" />
   <link rel="stylesheet" href="{% static 'assets2/assets/bundles/izitoast/css/iziToast.min.css' %}">
   <link rel="stylesheet" href="{% static 'assets2/assets/bundles/pretty-checkbox/pretty-checkbox.min.css' %}">
-  <link rel="stylesheet" href="{% static 'assets2/assets/bundles/prism/prism.css' %}">
-  <link rel='shortcut icon' type='image/x-icon' href="{% static 'assets2/assets/img/favicon.ico' %}" />
-  <link rel="stylesheet" href="{% static 'assets2/assets/bundles/summernote/summernote-bs4.css' %}">
-  <link rel="stylesheet" href="{% static 'assets2/assets/bundles/jquery-selectric/selectric.css' %}">
-  <link rel="stylesheet" href="{% static 'assets2/assets/bundles/bootstrap-tagsinput/dist/bootstrap-tagsinput.css' %}">
 </head>
 
 <body>
@@ -39,165 +28,142 @@
       <nav class="navbar navbar-expand-lg main-navbar sticky">
         <div class="form-inline mr-auto">
           <ul class="navbar-nav mr-3">
-            <li><a href="#" data-toggle="sidebar" class="nav-link nav-link-lg
-									collapse-btn"> <i data-feather="align-justify"></i></a></li>
-            <li><a href="#" class="nav-link nav-link-lg fullscreen-btn">
-                <i data-feather="maximize"></i>
-              </a></li>
             <li>
-              <form id="global-search-form" class="form-inline mr-auto" action="{% url 'd_list_product' %}" method="get">
-                <div class="search-element">
-                  <input class="form-control" type="search" name="query" placeholder="Qidirish" aria-label="Qidirish" data-width="200">
-                  <button class="btn" type="submit">
-                    <i class="fas fa-search"></i>
-                  </button>
-                </div>
-              </form>
+              <a href="#" data-toggle="sidebar" class="nav-link nav-link-lg collapse-btn">
+                <i data-feather="align-justify"></i>
+              </a>
+            </li>
+            <li>
+              <a href="#" class="nav-link nav-link-lg fullscreen-btn">
+                <i data-feather="maximize"></i>
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'index' %}" target="_blank" class="nav-link nav-link-lg" title="Asosiy saytga o'tish">
+                <i data-feather="external-link"></i> <span class="d-none d-md-inline ml-1 text-white font-weight-bold">Saytni ko'rish</span>
+              </a>
             </li>
           </ul>
         </div>
         <ul class="navbar-nav navbar-right">
           <li class="dropdown"><a href="#" data-toggle="dropdown"
-              class="nav-link dropdown-toggle nav-link-lg nav-link-user"> <img alt="image" src="{% if request.user.photo %}{{ request.user.photo.url }}{% else %}{% static 'assets2/assets/img/user.png' %}{% endif %}"
+              class="nav-link dropdown-toggle nav-link-lg nav-link-user">
+              <img alt="image" src="{% if request.user.photo %}{{ request.user.photo.url }}{% else %}{% static 'assets2/assets/img/user.png' %}{% endif %}"
                 class="user-img-radious-style"> <span class="d-sm-none d-lg-inline-block"></span></a>
             <div class="dropdown-menu dropdown-menu-right pullDown">
-              <div class="dropdown-title">Salom {{ request.user.username }}</div>
-              <a href="{% url 'profile' %}" class="dropdown-item has-icon"> <i class="far fa-user"></i> Profil
+              <div class="dropdown-title">Salom, {{ request.user.username }}</div>
+              <a href="{% url 'profile' %}" class="dropdown-item has-icon"> <i class="far fa-user"></i> Sayt profili
               </a>
               <div class="dropdown-divider"></div>
-              <form method="post" action="{% url 'logout' %}" class="mb-0">
+              <form method="post" action="{% url 'd_logout' %}" class="mb-0">
                 {% csrf_token %}
-                <button type="submit" class="dropdown-item has-icon text-danger w-100" style="background:none;border:0;"> <i class="fas fa-sign-out-alt"></i>
-                  Chiqish
+                <button type="submit" class="dropdown-item has-icon text-danger w-100 text-left border-0 bg-transparent" style="cursor:pointer;">
+                  <i class="fas fa-sign-out-alt"></i> Chiqish
                 </button>
               </form>
             </div>
           </li>
         </ul>
       </nav>
+
       <div class="main-sidebar sidebar-style-2">
         <aside id="sidebar-wrapper">
           <div class="sidebar-brand">
-            <a href="{% url 'index' %}"> <img alt="image" src="{% static 'assets2/assets/img/logo.png' %}?v=2" class="header-logo" /> <span
-                class="logo-name">Chimyon-bozor</span>
+            <a href="{% url 'd_index' %}">
+              <img alt="image" src="{% static 'assets2/assets/img/logo.png' %}?v=2" class="header-logo" />
+              <span class="logo-name">Chimyon-bozor</span>
             </a>
           </div>
           <ul class="sidebar-menu">
-            <li class="menu-header">Asosiy</li>
-            <li class="dropdown active">
+            <li class="menu-header">Boshqaruv</li>
+            <li class="{% if request.resolver_match.url_name == 'd_index' %}active{% endif %}">
               <a href="{% url 'd_index' %}" class="nav-link"><i data-feather="monitor"></i><span>Boshqaruv paneli</span></a>
             </li>
-            <li class="dropdown">
-              <a href="#" class="menu-toggle nav-link has-dropdown"><i
-                  data-feather="briefcase"></i><span>Kategoriyalar</span></a>
+
+            <li class="dropdown {% if 'category' in request.resolver_match.url_name %}active{% endif %}">
+              <a href="#" class="menu-toggle nav-link has-dropdown"><i data-feather="grid"></i><span>Kategoriyalar</span></a>
               <ul class="dropdown-menu">
+                <li><a class="nav-link" href="{% url 'd_list_category' %}">Barcha kategoriyalar</a></li>
                 <li><a class="nav-link" href="{% url 'd_create_category' %}">Kategoriya yaratish</a></li>
-                <li><a class="nav-link" href="{% url 'd_list_category' %}">Barcha Kategoriyalar</a></li>
               </ul>
             </li>
-            <li class="dropdown">
-              <a href="#" class="menu-toggle nav-link has-dropdown"><i
-                  data-feather="briefcase"></i><span>Maxsulotlar</span></a>
+
+            <li class="dropdown {% if 'product' in request.resolver_match.url_name %}active{% endif %}">
+              <a href="#" class="menu-toggle nav-link has-dropdown"><i data-feather="box"></i><span>Mahsulotlar</span></a>
               <ul class="dropdown-menu">
-                <li><a class="nav-link" href="{% url 'd_create_product' %}">Maxsulot yaratish</a></li>
-                <li><a class="nav-link" href="{% url 'd_list_product' %}">Barcha Maxsulotlar</a></li>
+                <li><a class="nav-link" href="{% url 'd_list_product' %}">Barcha mahsulotlar</a></li>
+                <li><a class="nav-link" href="{% url 'd_create_product' %}">Mahsulot yaratish</a></li>
               </ul>
             </li>
-            <li class="dropdown">
-              <a href="#" class="menu-toggle nav-link has-dropdown"><i
-                  data-feather="briefcase"></i><span>Buyurtmalar</span></a>
+
+            <li class="dropdown {% if 'order' in request.resolver_match.url_name %}active{% endif %}">
+              <a href="#" class="menu-toggle nav-link has-dropdown"><i data-feather="shopping-bag"></i><span>Buyurtmalar</span></a>
               <ul class="dropdown-menu">
-                <li><a class="nav-link" href="{% url 'd_orders' %}">Barcha Buyurtmalar</a></li>
+                <li><a class="nav-link" href="{% url 'd_orders' %}">Barcha buyurtmalar</a></li>
+                <li><a class="nav-link" href="{% url 'd_orders' %}?status=2"><span class="badge badge-warning mr-1">●</span> Yangi</a></li>
+                <li><a class="nav-link" href="{% url 'd_orders' %}?status=3"><span class="badge badge-info mr-1">●</span> Yo'lda</a></li>
+                <li><a class="nav-link" href="{% url 'd_orders' %}?status=4"><span class="badge badge-success mr-1">●</span> Yetkazilgan</a></li>
+                <li><a class="nav-link" href="{% url 'd_orders' %}?status=5"><span class="badge badge-danger mr-1">●</span> Bekor qilingan</a></li>
               </ul>
-              <ul class="dropdown-menu">
-                <li><a class="nav-link" href="{% url 'd_orders' %}">No faol</a></li>
-              </ul>
-              <ul class="dropdown-menu">
-                <li><a class="nav-link" href="{% url 'd_orders' %}">Yig'ilmoqda</a></li>
-              </ul>
-              <ul class="dropdown-menu">
-                <li><a class="nav-link" href="{% url 'd_orders' %}">Yo'lda</a></li>
-              </ul>
-              <ul class="dropdown-menu">
-                <li><a class="nav-link" href="{% url 'd_orders' %}">Yetkazilgan</a></li>
-              </ul>
-              <ul class="dropdown-menu">
-                <li><a class="nav-link" href="{% url 'd_orders' %}">Bekor qilingan</a></li>
-              </ul>
+            </li>
+
+            <li class="{% if request.resolver_match.url_name == 'd_list_users' %}active{% endif %}">
+              <a href="{% url 'd_list_users' %}" class="nav-link"><i data-feather="users"></i><span>Foydalanuvchilar</span></a>
+            </li>
+
+            <li class="menu-header">Tezkor amallar</li>
+            <li>
+              <a href="{% url 'd_export_orders' %}" class="nav-link"><i data-feather="file-text"></i><span>Excel eksport</span></a>
+            </li>
+            <li>
+              <a href="{% url 'index' %}" class="nav-link" target="_blank"><i data-feather="globe"></i><span>Asosiy do'kon</span></a>
             </li>
           </ul>
         </aside>
       </div>
+
       <!-- Main Content -->
-
       {% block content %}
-
-
-
       {% endblock %}
-
 
       <footer class="main-footer">
         <div class="footer-left">
           <span>&copy; 2026 Chimyon-bozor. Barcha huquqlar himoyalangan.</span>
         </div>
         <div class="footer-right">
-          <span>Admin Panel</span>
+          <span>Chimyon-bozor Admin MVP</span>
         </div>
       </footer>
     </div>
   </div>
+
   <!-- General JS Scripts -->
   <script src="{% static 'assets2/assets/js/app.min.js' %}"></script>
-  <!-- JS Libraies -->
   <script src="{% static 'assets2/assets/bundles/apexcharts/apexcharts.min.js' %}"></script>
-  <!-- Page Specific JS File -->
-  <script src="{% static 'assets2/assets/js/page/index.js' %}"></script>
-  <!-- Custom JS File -->
-  <script src="{% static 'assets2/assets/js/custom.js' %}"></script>
-<!-- JS Libraies -->
   <script src="{% static 'assets2/assets/bundles/summernote/summernote-bs4.js' %}"></script>
   <script src="{% static 'assets2/assets/bundles/jquery-selectric/jquery.selectric.min.js' %}"></script>
   <script src="{% static 'assets2/assets/bundles/upload-preview/assets/js/jquery.uploadPreview.min.js' %}"></script>
   <script src="{% static 'assets2/assets/bundles/bootstrap-tagsinput/dist/bootstrap-tagsinput.min.js' %}"></script>
-  <!-- Page Specific JS File -->
-  <script src="{% static 'assets2/assets/js/page/create-post.js' %}?v=2.0"></script>
-  <!-- Template JS File -->
   <script src="{% static 'assets2/assets/js/scripts.js' %}?v=2.0"></script>
-  <!-- Custom JS File -->
   <script src="{% static 'assets2/assets/js/custom.js' %}"></script>
-  <script src="{% static 'assets2/assets/bundles/prism/prism.js' %}"></script>
   <script src="{% static 'assets2/assets/bundles/izitoast/js/iziToast.min.js' %}"></script>
-  <!-- Page Specific JS File -->
-  <script src="{% static 'assets2/assets/js/page/toastr.js' %}"></script>
+
+  {% if messages %}
   <script>
     document.addEventListener("DOMContentLoaded", function() {
-        var searchForm = document.getElementById("global-search-form");
-        if (searchForm) {
-            var path = window.location.pathname;
-            var searchInput = searchForm.querySelector("input[name='query']");
-            
-            // Prefill search input from URL param if available
-            var urlParams = new URLSearchParams(window.location.search);
-            var queryVal = urlParams.get('query');
-            if (queryVal && searchInput) {
-                searchInput.value = queryVal;
-            }
-            
-            // Set dynamic action based on path
-            if (path.indexOf("/dashboard/list-category/") !== -1) {
-                searchForm.action = "{% url 'd_list_category' %}";
-            } else if (path.indexOf("/dashboard/list-product/") !== -1) {
-                searchForm.action = "{% url 'd_list_product' %}";
-            } else if (path.indexOf("/dashboard/list-orders/") !== -1) {
-                searchForm.action = "{% url 'd_orders' %}";
-            } else {
-                searchForm.action = "{% url 'd_list_product' %}";
-            }
-        }
+      {% for message in messages %}
+        iziToast.{{ message.tags|default:'info' }}({
+          title: 'Bildirishnoma',
+          message: '{{ message|escapejs }}',
+          position: 'topRight',
+          timeout: 4000
+        });
+      {% endfor %}
     });
   </script>
-</body>
+  {% endif %}
 
+  {% block extra_js %}{% endblock %}
+</body>
 
 </html>

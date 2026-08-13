@@ -82,25 +82,38 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 
+import sys
+
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASE_URL = config(
-    'DIRECT_URL',
-    default=config('DATABASE_URL', default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
-)
-DATABASES = {
-    'default': dj_database_url.parse(
-        DATABASE_URL,
-        conn_max_age=config('DB_CONN_MAX_AGE', default=600, cast=int),
+if 'test' in sys.argv:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': ':memory:',
+        }
+    }
+    PASSWORD_HASHERS = [
+        'django.contrib.auth.hashers.MD5PasswordHasher',
+    ]
+else:
+    DATABASE_URL = config(
+        'DIRECT_URL',
+        default=config('DATABASE_URL', default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
     )
-}
+    DATABASES = {
+        'default': dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=config('DB_CONN_MAX_AGE', default=600, cast=int),
+        )
+    }
 
-if (
-    DATABASES['default'].get('ENGINE') != 'django.db.backends.sqlite3'
-    and config('DB_SSL_REQUIRE', default=False, cast=bool)
-):
-    DATABASES['default'].setdefault('OPTIONS', {})['sslmode'] = 'require'
+    if (
+        DATABASES['default'].get('ENGINE') != 'django.db.backends.sqlite3'
+        and config('DB_SSL_REQUIRE', default=False, cast=bool)
+    ):
+        DATABASES['default'].setdefault('OPTIONS', {})['sslmode'] = 'require'
 
 
 # Password validation

@@ -1,3 +1,4 @@
+import sys
 import requests
 import logging
 from django.conf import settings
@@ -17,8 +18,11 @@ def send_sms_code(phone: str, code: str) -> bool:
     sms_text = f"[Chimyon-bozor] Ro'yxatdan o'tish uchun SMS kodingiz: {code}"
     
     # Log SMS dispatch payload (Queue simulation)
-    print(f"=== [SMS QUEUE -> otp-docs.web.app] Sending SMS to {phone}: '{sms_text}' ===")
     logger.info(f"SMS Queued to {phone}: {sms_text}")
+
+    # If running unit tests, return True immediately
+    if 'test' in sys.argv or getattr(settings, 'IS_TESTING', False):
+        return True
 
     # Dispatch HTTP POST request to SMS Gateway if configured
     if SMS_GATEWAY_URL:
