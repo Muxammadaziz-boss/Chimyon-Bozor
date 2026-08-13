@@ -12,6 +12,7 @@ from django.views.decorators.http import require_POST
 from openpyxl import Workbook
 
 from main import models
+from main.validators import validate_image_file
 
 
 def staff_required(view_func):
@@ -84,6 +85,7 @@ def create_category(request):
                 messages.warning(request, "Kategoriya nomi va logotipini kiritish majburiy.")
                 return render(request, 'dashboard/create_category.html')
 
+            validate_image_file(logo)
             models.Category.objects.create(name=name, logo=logo, is_active=is_active)
             messages.success(request, f"'{name}' kategoriyasi muvaffaqiyatli yaratildi.")
             return redirect('d_list_category')
@@ -141,6 +143,7 @@ def edit_category(request, id):
 
             logo = request.FILES.get('logo')
             if logo:
+                validate_image_file(logo)
                 category.logo = logo
 
             category.save()
@@ -187,6 +190,7 @@ def create_product(request):
                 messages.warning(request, "Barcha majburiy maydonlarni to'ldiring va rasm yuklang.")
                 return render(request, 'dashboard/create_praduct.html', {'categories': categories})
 
+            validate_image_file(image)
             category = get_object_or_404(models.Category, id=category_id)
             
             price_val = float(price)
@@ -291,6 +295,7 @@ def edit_product(request, code):
 
             image = request.FILES.get('image')
             if image:
+                validate_image_file(image)
                 product.image = image
 
             product.save()

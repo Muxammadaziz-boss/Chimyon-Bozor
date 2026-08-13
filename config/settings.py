@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
-
+import sys
 import dj_database_url
 from decouple import Csv, config
 
@@ -23,13 +23,31 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-abqaql=y8w8w77vv9&aq(tnqj5j-c1a1030nfnl$bdwe#wbc(y')
-
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=True, cast=bool)
+DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*', cast=Csv())
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = config('SECRET_KEY', default=None)
+if not SECRET_KEY:
+    if 'test' in sys.argv:
+        SECRET_KEY = 'test-secret-key-for-automated-unit-tests-only'
+    elif DEBUG:
+        SECRET_KEY = 'django-insecure-dev-local-only-key-chimyon-bozor-2026'
+    else:
+        from django.core.exceptions import ImproperlyConfigured
+        raise ImproperlyConfigured("SECRET_KEY environment variable is required when DEBUG=False in production.")
+
+ALLOWED_HOSTS = config(
+    'ALLOWED_HOSTS',
+    default='localhost,127.0.0.1,.vercel.app,.now.sh',
+    cast=Csv()
+)
+
+CSRF_TRUSTED_ORIGINS = config(
+    'CSRF_TRUSTED_ORIGINS',
+    default='https://*.vercel.app,http://localhost:8000,http://127.0.0.1:8000',
+    cast=Csv()
+)
 
 
 # Application definition
@@ -81,8 +99,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-
-import sys
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
@@ -137,12 +153,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 LANGUAGE_CODE = 'uz'
-
 TIME_ZONE = 'Asia/Tashkent'
-
-
 USE_I18N = True
-
 USE_TZ = True
 
 
@@ -167,9 +179,9 @@ else:
 MEDIA_URL = '/media/'
 
 if USE_S3_STORAGE:
-    AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
-    AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY')
-    AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME', default='togarak-shop-media')
+    AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default='')
+    AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', default='')
+    AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME', default='chimyon-bozor-media')
     AWS_S3_ENDPOINT_URL = config('AWS_S3_ENDPOINT_URL', default='')
     AWS_S3_REGION_NAME = config('SUPABASE_STORAGE_REGION', default='auto')
     AWS_S3_FILE_OVERWRITE = False
@@ -201,19 +213,24 @@ JAZZMIN_SETTINGS = {
     'custom_js': 'jazzmin/js/dark-mode.js',
 }
 
-# Jazzmin UI tweaks (theme va dark mode shu yerda)
+# Jazzmin UI tweaks (theme va dark mode)
 JAZZMIN_UI_TWEAKS = {
     'theme': 'darkly',
     'default_theme_mode': 'dark',
     'navbar': 'navbar-dark navbar-gray-dark',
 }
 
+# Production Security Hardening
 if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=True, cast=bool)
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
     SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=31536000, cast=int)
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_AGE = config('SESSION_COOKIE_AGE', default=86400 * 7, cast=int)

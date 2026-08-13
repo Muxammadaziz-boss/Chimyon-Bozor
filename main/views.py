@@ -15,6 +15,7 @@ from django.views.decorators.http import require_POST
 from . import models
 from .utils import paginate_queryset
 from .sms_service import send_sms_code
+from .validators import validate_image_file
 from django.contrib.auth import authenticate, login, logout
 
 logger = logging.getLogger(__name__)
@@ -464,7 +465,13 @@ def profile(request):
         user.phone = request.POST.get('phone', '')
         user.address = request.POST.get('address', '')
         if request.FILES.get('photo'):
-            user.photo = request.FILES.get('photo')
+            photo_file = request.FILES.get('photo')
+            try:
+                validate_image_file(photo_file)
+                user.photo = photo_file
+            except Exception as e:
+                messages.error(request, f"Rasm xatosi: {e}")
+                return redirect('profile')
         user.save()
         messages.success(request, "Ma'lumotlar muvaffaqiyatli saqlandi")
 
