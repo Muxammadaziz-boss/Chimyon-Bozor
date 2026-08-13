@@ -174,9 +174,9 @@ AUTH_USER_MODEL = 'main.User'
 
 # Jazzmin settings
 JAZZMIN_SETTINGS = {
-    'site_title': "To'garak shop Admin",
-    'site_header': "To'garak shop Admin",
-    'site_brand': "To'garak shop",
+    'site_title': "Chimyon-bozor Admin",
+    'site_header': "Chimyon-bozor Admin",
+    'site_brand': "Chimyon-bozor",
     'navigation': [
         {'app': 'main', 'label': 'Main', 'icon': 'fa fa-home'},
         {'app': 'dashboard', 'label': 'Dashboard', 'icon': 'fa fa-chart-line'},

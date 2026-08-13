@@ -199,7 +199,7 @@ class Review(models.Model):
 
 
 class SiteSettings(models.Model):
-    site_name = models.CharField(max_length=150, default="To'garak shop")
+    site_name = models.CharField(max_length=150, default="Chimyon-bozor")
     tagline = models.CharField(max_length=255, blank=True)
     logo = models.ImageField(upload_to='settings', null=True, blank=True)
     favicon = models.ImageField(upload_to='settings', null=True, blank=True)

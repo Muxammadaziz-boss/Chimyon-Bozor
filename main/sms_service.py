@@ -14,7 +14,7 @@ def send_sms_code(phone: str, code: str) -> bool:
     Sends an SMS verification code to the target phone number.
     Integrated with https://otp-docs.web.app/ SMS gateway.
     """
-    sms_text = f"[DpMarket] Ro'yxatdan o'tish uchun SMS kodingiz: {code}"
+    sms_text = f"[Chimyon-bozor] Ro'yxatdan o'tish uchun SMS kodingiz: {code}"
     
     # Log SMS dispatch payload (Queue simulation)
     print(f"=== [SMS QUEUE -> otp-docs.web.app] Sending SMS to {phone}: '{sms_text}' ===")

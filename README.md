@@ -1,8 +1,8 @@
-# 🛍️ DpMarket — Onlayn Do'kon Plplatformasi
+# 🏔️🛍️ Chimyon-bozor — Onlayn Do'kon Platformasi
 
-![DpMarket Logo](static/assets/images/logo/logo.png)
+![Chimyon-bozor Logo](static/assets/images/logo/logo.png)
 
-**DpMarket (To'garak Shop)** — Django va zamonaviy web texnologiyalari (HTML5, Vanilla CSS3, JavaScript ES6) asosida qurilgan premium elektron tijorat (E-commerce) web-platformasi. Platforma foydalanuvchilar va administratorlar uchun qulay, xavfsiz hamda yuqori samaradorlikdagi xarid tajribasini taqdim etadi.
+**Chimyon-bozor** — Django va zamonaviy web texnologiyalari (HTML5, Vanilla CSS3, JavaScript ES6) asosida qurilgan premium elektron tijorat (E-commerce) web-platformasi. Platforma foydalanuvchilar va administratorlar uchun qulay, xavfsiz hamda yuqori samaradorlikdagi xarid tajribasini taqdim etadi.
 
 ---
 
