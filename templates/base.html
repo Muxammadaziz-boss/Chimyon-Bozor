@@ -22,7 +22,7 @@
 
     {% else %}
 
-    <link rel="shortcut icon" href="{% static 'assets/images/logo/favicon-two.png' %}">
+    <link rel="shortcut icon" href="{% static 'assets/images/logo/favicon-two.png' %}?v=2">
 
     {% endif %}
 
@@ -846,7 +846,7 @@
                 {% if site_settings.logo %}
                 <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" style="height: 38px; width: auto;">
                 {% else %}
-                <img src="{% static 'assets/images/logo/logo.png' %}" alt="Chimyon-bozor" style="height: 38px; width: auto;">
+                <img src="{% static 'assets/images/logo/logo.png' %}?v=2" alt="Chimyon-bozor" style="height: 38px; width: auto;">
                 {% endif %}
                 <span class="fw-800 font-20" style="background: linear-gradient(135deg, #7C3AED 0%, #EC4899 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Chimyon-bozor</span>
             </a>
@@ -922,7 +922,7 @@
                                 {% if site_settings.logo %}
                                 <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" style="height: 44px; width: auto; object-fit: contain;">
                                 {% else %}
-                                <img src="{% static 'assets/images/logo/logo-two.png' %}" alt="Chimyon-bozor" style="height: 44px; width: auto; object-fit: contain;">
+                                <img src="{% static 'assets/images/logo/logo-two.png' %}?v=2" alt="Chimyon-bozor" style="height: 44px; width: auto; object-fit: contain;">
                                 {% endif %}
                                 <span class="fw-800 font-22" style="background: linear-gradient(135deg, #7C3AED 0%, #EC4899 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -0.5px;">Chimyon-bozor</span>
                             </a>
@@ -1158,7 +1158,7 @@
                         <!-- Column 1: Brand + Contact -->
                         <div class="col-lg-4 col-md-6">
                             <a href="{% url 'index' %}" class="d-inline-flex align-items-center gap-2 mb-2" style="text-decoration: none;">
-                                <img src="{% static 'assets/images/logo/white-logo.png' %}" alt="{{ site_settings.site_name }}" style="height: 44px; width: auto; object-fit: contain; filter: brightness(1.15);">
+                                <img src="{% static 'assets/images/logo/white-logo.png' %}?v=2" alt="{{ site_settings.site_name }}" style="height: 44px; width: auto; object-fit: contain; filter: brightness(1.15);">
                                 <span class="fw-800 font-24 text-white" style="letter-spacing: -0.5px;">Chimyon-bozor</span>
                             </a>
                             <p class="footer-brand-desc">
