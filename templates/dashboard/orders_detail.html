@@ -5,258 +5,491 @@
 {% block title %}Buyurtma #{{ order.code|slice:":8" }} Tafsilotlari | Chimyon-bozor{% endblock %}
 
 {% block content %}
+<style>
+/* ==========================================================
+   PRINT INVOICE STYLES (A4 Professional Print Format)
+   ========================================================== */
+@media print {
+  /* Hide dashboard navigation, sidebars, buttons and interactive forms */
+  body, html {
+    background: #ffffff !important;
+    color: #111827 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 11pt !important;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+  }
+
+  .main-sidebar,
+  .main-navbar,
+  .navbar-bg,
+  .main-footer,
+  .settingSidebar,
+  .no-print,
+  .btn,
+  form,
+  .modal,
+  .loader {
+    display: none !important;
+  }
+
+  /* Full-width reset for printable container */
+  .main-content {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: auto !important;
+    position: static !important;
+    left: 0 !important;
+    top: 0 !important;
+  }
+
+  .main-wrapper,
+  .section,
+  .section-body,
+  .invoice,
+  .invoice-print {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  /* Print Header */
+  .invoice-header-print {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    border-bottom: 2px solid #1e293b !important;
+    padding-bottom: 12px !important;
+    margin-bottom: 20px !important;
+  }
+
+  .print-brand-title {
+    font-size: 20pt !important;
+    font-weight: 800 !important;
+    color: #1e293b !important;
+    letter-spacing: -0.5px;
+    margin-bottom: 4px;
+  }
+
+  /* 3-Column Info Cards */
+  .print-info-grid {
+    display: flex !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    margin-bottom: 20px !important;
+  }
+
+  .print-info-box {
+    flex: 1 !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    padding: 10px 14px !important;
+    background-color: #f8fafc !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    font-size: 9.5pt !important;
+  }
+
+  .print-info-box h6 {
+    font-size: 10.5pt !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    margin-bottom: 6px !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    padding-bottom: 4px !important;
+  }
+
+  .print-info-box p {
+    margin-bottom: 3px !important;
+  }
+
+  /* Products Table */
+  .invoice-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin-bottom: 20px !important;
+    font-size: 9.5pt !important;
+  }
+
+  .invoice-table th,
+  .invoice-table td {
+    border: 1px solid #cbd5e1 !important;
+    padding: 6px 10px !important;
+  }
+
+  .invoice-table thead th {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+    font-weight: 700 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .invoice-table img {
+    width: 32px !important;
+    height: 32px !important;
+    object-fit: cover !important;
+  }
+
+  /* Summary Section */
+  .print-summary-wrap {
+    display: flex !important;
+    justify-content: flex-end !important;
+    margin-top: 10px !important;
+  }
+
+  .print-summary-box {
+    width: 300px !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    padding: 10px 14px !important;
+    background-color: #f8fafc !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    font-size: 10pt !important;
+  }
+
+  .print-summary-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    margin-bottom: 4px !important;
+  }
+
+  .print-summary-total {
+    border-top: 1.5px solid #1e293b !important;
+    padding-top: 6px !important;
+    margin-top: 6px !important;
+    font-size: 12pt !important;
+    font-weight: 800 !important;
+    color: #1e40af !important;
+  }
+
+  /* Signatures */
+  .print-signatures {
+    display: flex !important;
+    justify-content: space-between !important;
+    margin-top: 40px !important;
+    padding-top: 15px !important;
+    border-top: 1px dashed #94a3b8 !important;
+    font-size: 9.5pt !important;
+  }
+
+  .print-sign-item {
+    width: 45% !important;
+  }
+
+  .print-sign-line {
+    border-bottom: 1px solid #000 !important;
+    margin-top: 30px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .badge {
+    border: 1px solid #94a3b8 !important;
+    padding: 2px 6px !important;
+    font-size: 8.5pt !important;
+    font-weight: 700 !important;
+    border-radius: 4px !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+/* Screen Mode Styles */
+@media screen {
+  .print-signatures {
+    display: none;
+  }
+  .print-info-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .print-info-box {
+    flex: 1 1 300px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+  }
+}
+</style>
+
 <div class="main-content" style="min-height: 740px;">
   <section class="section">
     <div class="section-body">
-      <div class="invoice card shadow-sm">
+      <div class="invoice card shadow-sm border-0">
         <div class="invoice-print p-4">
-          <div class="row">
-            <div class="col-lg-12">
-              <div class="invoice-title d-flex justify-content-between align-items-center border-bottom pb-3">
-                <div>
-                  <h3 class="font-weight-bold text-primary mb-1">Buyurtma Hisob-Fakturasi</h3>
-                  <span class="text-muted">Buyurtma kodi: <code>{{ order.code }}</code></span>
-                </div>
-                <div class="text-right">
-                  <div class="invoice-number font-weight-bold mb-1">
-                    Status: 
-                    {% if order.status == 2 %}
-                      <span class="badge badge-warning font-weight-bold px-3 py-1">Qabul qilindi (Yangi)</span>
-                    {% elif order.status == 3 %}
-                      <span class="badge badge-info font-weight-bold px-3 py-1">Yo'lda / Jarayonda</span>
-                    {% elif order.status == 4 %}
-                      <span class="badge badge-success font-weight-bold px-3 py-1">Yetkazilgan (Tugatildi)</span>
-                    {% elif order.status == 5 %}
-                      <span class="badge badge-danger font-weight-bold px-3 py-1">Bekor qilingan / Qaytarilgan</span>
-                    {% else %}
-                      <span class="badge badge-secondary font-weight-bold px-3 py-1">Faol savat</span>
-                    {% endif %}
-                  </div>
-                  <small class="text-muted"><i class="far fa-calendar-alt mr-1"></i>{{ order.date|date:"d F Y, H:i" }}</small>
-                </div>
+          
+          <!-- 1. Header (Hisob-faktura sarlavhasi) -->
+          <div class="invoice-header-print d-flex justify-content-between align-items-start border-bottom pb-3 mb-4">
+            <div>
+              <div class="print-brand-title font-weight-bold text-primary mb-1">
+                <i class="fas fa-store mr-2"></i>Chimyon-bozor
               </div>
-
-              <!-- Mijoz, Yetkazib berish va To'lov ma'lumotlari -->
-              <div class="row mt-4">
-                <div class="col-md-4 mb-3">
-                  <div class="p-3 bg-light rounded h-100 border">
-                    <h6 class="font-weight-bold text-dark mb-2"><i class="fas fa-user mr-2 text-primary"></i>Mijoz Ma'lumotlari</h6>
-                    <p class="mb-1"><strong>Ismi:</strong> {{ order.user.get_full_name|default:order.user.username }}</p>
-                    <p class="mb-1"><strong>Login:</strong> <a href="{% url 'd_customer_detail' order.user.id %}" class="font-weight-bold">@{{ order.user.username }}</a></p>
-                    <p class="mb-1"><strong>Telefon:</strong> {{ order.user.phone|default:"Kiritilmagan" }}</p>
-                    <p class="mb-1"><strong>Email:</strong> {{ order.user.email|default:"Kiritilmagan" }}</p>
-                    <hr class="my-2">
-                    <p class="mb-0 text-muted small">
-                      <strong>Mijoz umumiy xaridlari:</strong> {{ customer_lifetime_spent|uz_price }} ({{ customer_orders_count|intspace }} ta buyurtma)
-                    </p>
-                  </div>
-                </div>
-
-                <div class="col-md-4 mb-3">
-                  <div class="p-3 bg-light rounded h-100 border">
-                    <h6 class="font-weight-bold text-dark mb-2"><i class="fas fa-truck mr-2 text-danger"></i>Yetkazib Berish</h6>
-                    <p class="mb-1"><strong>Manzil:</strong> {{ order.user.address|default:"Manzil ko'rsatilmagan" }}</p>
-                    <p class="mb-1"><strong>Xizmat:</strong> Standart kuryerlik (Chimyon-bozor)</p>
-                    <p class="mb-1"><strong>Yetkazish narxi:</strong> <span class="badge badge-success">Bepul</span></p>
-                    <p class="mb-0"><strong>Status:</strong> {{ order.get_status_display }}</p>
-                  </div>
-                </div>
-
-                <div class="col-md-4 mb-3">
-                  <div class="p-3 bg-light rounded h-100 border border-primary">
-                    <h6 class="font-weight-bold text-primary mb-2"><i class="fas fa-credit-card mr-2"></i>To'lov Ma'lumotlari</h6>
-                    {% if primary_payment %}
-                    <p class="mb-1">
-                      <strong>Provayder:</strong> 
-                      {% if primary_payment.provider == 'click' %}
-                        <span class="badge badge-info"><i class="fas fa-bolt mr-1"></i> Click</span>
-                      {% elif primary_payment.provider == 'payme' %}
-                        <span class="badge badge-success"><i class="fas fa-wallet mr-1"></i> Payme</span>
-                      {% elif primary_payment.provider == 'uzum' %}
-                        <span class="badge badge-primary"><i class="fas fa-university mr-1"></i> Uzum Bank</span>
-                      {% else %}
-                        <span class="badge badge-warning"><i class="fas fa-hand-holding-usd mr-1"></i> Naqd to'lov</span>
-                      {% endif %}
-                    </p>
-                    <p class="mb-1">
-                      <strong>Holat:</strong> 
-                      {% if primary_payment.status == 'paid' %}
-                        <span class="badge badge-success"><i class="fas fa-check-circle mr-1"></i> To'langan</span>
-                      {% elif primary_payment.status == 'pending' %}
-                        <span class="badge badge-warning" style="background-color: #fef3c7 !important; color: #92400e !important; border: 1px solid #fde68a; font-weight: 700;"><i class="fas fa-clock mr-1"></i> Kutilmoqda</span>
-                      {% elif primary_payment.status == 'refunded' %}
-                        <span class="badge badge-secondary"><i class="fas fa-undo mr-1"></i> Qaytarilgan</span>
-                      {% else %}
-                        <span class="badge badge-info">{{ primary_payment.get_status_display }}</span>
-                      {% endif %}
-                    </p>
-                    {% if primary_payment.transaction_id %}
-                    <p class="mb-1"><strong>Tranzaksiya ID:</strong> <code>{{ primary_payment.transaction_id }}</code></p>
-                    {% endif %}
-                    <p class="mb-1"><strong>Summa:</strong> <span class="font-weight-bold text-dark">{{ primary_payment.amount|uz_price }}</span></p>
-                    {% if primary_payment.paid_at %}
-                    <p class="mb-0 text-muted small"><strong>To'langan vaqt:</strong> {{ primary_payment.paid_at|date:"d.m.Y H:i" }}</p>
-                    {% endif %}
-
-                    {% if primary_payment.status == 'paid' %}
-                    <div class="mt-2">
-                      <form method="POST" action="{% url 'd_refund_payment' primary_payment.id %}" onsubmit="return confirm('Haqiqatan ham ushbu to\'lovni qaytarmoqchimisiz?');">
-                        {% csrf_token %}
-                        <input type="hidden" name="reason" value="Admin tomonidan buyurtma bekor qilinganligi sababli">
-                        <button type="submit" class="btn btn-sm btn-outline-danger btn-block"><i class="fas fa-undo mr-1"></i> To'lovni Qaytarish (Refund)</button>
-                      </form>
-                    </div>
-                    {% endif %}
-
-                    {% else %}
-                    <p class="text-muted small mb-0">Ushbu buyurtmaga to'lov hali biriktirilmagan (Standart naqd to'lov).</p>
-                    {% endif %}
-                  </div>
-                </div>
+              <h4 class="font-weight-bold text-dark mb-1">Buyurtma Hisob-Fakturasi (Invoice)</h4>
+              <span class="text-muted">Buyurtma kodi: <strong>#{{ order.code|slice:":8" }}</strong> (<code>{{ order.code }}</code>)</span>
+            </div>
+            <div class="text-right">
+              <div class="invoice-number font-weight-bold mb-1">
+                Status: 
+                {% if order.status == 2 %}
+                  <span class="badge badge-warning font-weight-bold px-3 py-1" style="background-color: #fef3c7 !important; color: #92400e !important; border: 1px solid #fde68a;">Qabul qilindi (Yangi)</span>
+                {% elif order.status == 3 %}
+                  <span class="badge badge-info font-weight-bold px-3 py-1">Yo'lda / Jarayonda</span>
+                {% elif order.status == 4 %}
+                  <span class="badge badge-success font-weight-bold px-3 py-1">Yetkazilgan (Tugatildi)</span>
+                {% elif order.status == 5 %}
+                  <span class="badge badge-danger font-weight-bold px-3 py-1">Bekor qilingan / Qaytarilgan</span>
+                {% else %}
+                  <span class="badge badge-secondary font-weight-bold px-3 py-1">Faol savat</span>
+                {% endif %}
               </div>
+              <div class="text-muted small"><i class="far fa-calendar-alt mr-1"></i>Sana: <strong>{{ order.date|date:"d F Y, H:i" }}</strong></div>
+            </div>
+          </div>
 
-              <!-- Buyurtma Mahsulotlari Jadvali -->
-              <div class="row mt-4">
-                <div class="col-md-12">
-                  <h6 class="font-weight-bold text-dark mb-3"><i class="fas fa-box-open mr-2 text-primary"></i>Buyurtma Qilingan Mahsulotlar</h6>
-                  <div class="table-responsive">
-                    <table class="table table-striped table-bordered table-md">
-                      <thead class="thead-light">
-                        <tr>
-                          <th style="width: 50px;">#</th>
-                          <th style="width: 70px;">Rasm</th>
-                          <th>Mahsulot nomi</th>
-                          <th>Kategoriya</th>
-                          <th class="text-center">Dona narxi</th>
-                          <th class="text-center">Miqdori</th>
-                          <th class="text-right">Jami summa</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {% for item in cart_products %}
-                        <tr>
-                          <td>{{ forloop.counter }}</td>
-                          <td>
-                            {% if item.product and item.product.image %}
-                              <img src="{{ item.product.image.url }}" width="45" height="45" class="rounded" style="object-fit: cover;" alt="{{ item.product.name }}">
-                            {% else %}
-                              <div class="badge badge-secondary p-2"><i class="fas fa-image"></i></div>
-                            {% endif %}
-                          </td>
-                          <td>
-                            {% if item.product %}
-                              <strong>{{ item.product.name }}</strong>
-                              <br><small class="text-muted">Kod: {{ item.product.code|slice:":8" }}</small>
-                            {% else %}
-                              <span class="text-danger">Mahsulot o'chirilgan</span>
-                            {% endif %}
-                          </td>
-                          <td>{{ item.product.category.name|default:"—" }}</td>
-                          <td class="text-center">{{ item.unit_price|uz_price }}</td>
-                          <td class="text-center"><span class="badge badge-light border font-weight-bold">{{ item.count|intspace }} dona</span></td>
-                          <td class="text-right font-weight-bold">{{ item.total_price|uz_price }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                          <td colspan="7" class="text-center py-3 text-muted">Savatda mahsulotlar mavjud emas</td>
-                        </tr>
-                        {% endfor %}
-                      </tbody>
-                    </table>
-                  </div>
+          <!-- 2. Mijoz, Yetkazib berish va To'lov 3-ustunli ma'lumotlari -->
+          <div class="print-info-grid">
+            <!-- Mijoz -->
+            <div class="print-info-box">
+              <h6 class="font-weight-bold text-dark"><i class="fas fa-user mr-2 text-primary no-print"></i>Mijoz Ma'lumotlari</h6>
+              <p class="mb-1"><strong>Ismi:</strong> {{ order.user.get_full_name|default:order.user.username }}</p>
+              <p class="mb-1"><strong>Login:</strong> <a href="{% url 'd_customer_detail' order.user.id %}" class="font-weight-bold">@{{ order.user.username }}</a></p>
+              <p class="mb-1"><strong>Telefon:</strong> {{ order.user.phone|default:"Kiritilmagan" }}</p>
+              <p class="mb-1"><strong>Email:</strong> {{ order.user.email|default:"Kiritilmagan" }}</p>
+              <p class="mb-0 text-muted small border-top pt-1 mt-1">
+                <strong>Umumiy xaridlar:</strong> {{ customer_lifetime_spent|uz_price }} ({{ customer_orders_count|intspace }} ta buyurtma)
+              </p>
+            </div>
 
-                  <!-- Jami summa hisob-kitobi -->
-                  <div class="row mt-3">
-                    <div class="col-lg-7">
-                      <div class="card border p-3 bg-light">
-                        <h6 class="font-weight-bold text-dark mb-2"><i class="fas fa-edit mr-1 text-primary"></i>Statusni O'zgartirish va Izoh:</h6>
-                        <form method="POST" action="{% url 'd_update_status' order.code %}">
-                          {% csrf_token %}
-                          <div class="form-row align-items-center">
-                            <div class="col-md-5 my-1">
-                              <select name="target_status" class="form-control form-control-sm" required>
-                                <option value="2" {% if order.status == 2 %}selected{% endif %}>Qabul qilindi (Yangi)</option>
-                                <option value="3" {% if order.status == 3 %}selected{% endif %}>Yo'lda / Jarayonda</option>
-                                <option value="4" {% if order.status == 4 %}selected{% endif %}>Yetkazilgan (Tugatildi)</option>
-                                <option value="5" {% if order.status == 5 %}selected{% endif %}>Bekor qilish / Qaytarish</option>
-                              </select>
-                            </div>
-                            <div class="col-md-5 my-1">
-                              <input type="text" name="comment" class="form-control form-control-sm" placeholder="O'zgarish izohi (ixtiyoriy)...">
-                            </div>
-                            <div class="col-md-2 my-1">
-                              <button type="submit" class="btn btn-primary btn-sm w-100 font-weight-bold">Saqlash</button>
-                            </div>
-                          </div>
-                        </form>
-                      </div>
+            <!-- Yetkazib Berish -->
+            <div class="print-info-box">
+              <h6 class="font-weight-bold text-dark"><i class="fas fa-truck mr-2 text-danger no-print"></i>Yetkazib Berish</h6>
+              <p class="mb-1"><strong>Manzil:</strong> {{ order.user.address|default:"Manzil ko'rsatilmagan" }}</p>
+              <p class="mb-1"><strong>Xizmat:</strong> Standart kuryerlik (Chimyon-bozor)</p>
+              <p class="mb-1"><strong>Yetkazish narxi:</strong> <span class="badge badge-success">Bepul</span></p>
+              <p class="mb-0"><strong>Holat:</strong> {{ order.get_status_display }}</p>
+            </div>
+
+            <!-- To'lov Ma'lumotlari -->
+            <div class="print-info-box" style="border-color: #3b82f6 !important;">
+              <h6 class="font-weight-bold text-primary"><i class="fas fa-credit-card mr-2 no-print"></i>To'lov Ma'lumotlari</h6>
+              {% if primary_payment %}
+              <p class="mb-1">
+                <strong>Provayder:</strong> 
+                {% if primary_payment.provider == 'click' %}
+                  <span class="badge badge-info"><i class="fas fa-bolt mr-1 no-print"></i> Click</span>
+                {% elif primary_payment.provider == 'payme' %}
+                  <span class="badge badge-success"><i class="fas fa-wallet mr-1 no-print"></i> Payme</span>
+                {% elif primary_payment.provider == 'uzum' %}
+                  <span class="badge badge-primary"><i class="fas fa-university mr-1 no-print"></i> Uzum Bank</span>
+                {% else %}
+                  <span class="badge badge-warning" style="background-color: #fef3c7 !important; color: #92400e !important;"><i class="fas fa-hand-holding-usd mr-1 no-print"></i> Naqd to'lov</span>
+                {% endif %}
+              </p>
+              <p class="mb-1">
+                <strong>Holat:</strong> 
+                {% if primary_payment.status == 'paid' %}
+                  <span class="badge badge-success"><i class="fas fa-check-circle mr-1 no-print"></i> To'langan</span>
+                {% elif primary_payment.status == 'pending' %}
+                  <span class="badge badge-warning" style="background-color: #fef3c7 !important; color: #92400e !important; border: 1px solid #fde68a; font-weight: 700;"><i class="fas fa-clock mr-1 no-print"></i> Kutilmoqda</span>
+                {% elif primary_payment.status == 'refunded' %}
+                  <span class="badge badge-secondary"><i class="fas fa-undo mr-1 no-print"></i> Qaytarilgan</span>
+                {% else %}
+                  <span class="badge badge-info">{{ primary_payment.get_status_display }}</span>
+                {% endif %}
+              </p>
+              {% if primary_payment.transaction_id %}
+              <p class="mb-1"><strong>Tranzaksiya ID:</strong> <code>{{ primary_payment.transaction_id }}</code></p>
+              {% endif %}
+              <p class="mb-1"><strong>Summa:</strong> <span class="font-weight-bold text-dark">{{ primary_payment.amount|uz_price }}</span></p>
+              {% if primary_payment.paid_at %}
+              <p class="mb-0 text-muted small"><strong>To'langan vaqt:</strong> {{ primary_payment.paid_at|date:"d.m.Y H:i" }}</p>
+              {% endif %}
+
+              {% if primary_payment.status == 'paid' %}
+              <div class="mt-2 no-print">
+                <form method="POST" action="{% url 'd_refund_payment' primary_payment.id %}" onsubmit="return confirm('Haqiqatan ham ushbu to\'lovni qaytarmoqchimisiz?');">
+                  {% csrf_token %}
+                  <input type="hidden" name="reason" value="Admin tomonidan buyurtma bekor qilinganligi sababli">
+                  <button type="submit" class="btn btn-sm btn-outline-danger btn-block"><i class="fas fa-undo mr-1"></i> To'lovni Qaytarish (Refund)</button>
+                </form>
+              </div>
+              {% endif %}
+
+              {% else %}
+              <p class="text-muted small mb-0">Ushbu buyurtmaga to'lov biriktirilmagan (Yetkazilganda naqd to'lov).</p>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- 3. Buyurtma Mahsulotlari Jadvali -->
+          <div class="mb-3">
+            <h6 class="font-weight-bold text-dark mb-2"><i class="fas fa-box-open mr-2 text-primary no-print"></i>Buyurtma Qilingan Mahsulotlar ({{ total_count|intspace }} dona)</h6>
+            <div class="table-responsive">
+              <table class="table table-striped table-bordered table-md invoice-table mb-0">
+                <thead class="thead-light">
+                  <tr>
+                    <th style="width: 40px;" class="text-center">#</th>
+                    <th style="width: 60px;" class="text-center">Rasm</th>
+                    <th>Mahsulot nomi</th>
+                    <th>Kategoriya</th>
+                    <th class="text-center" style="width: 130px;">Dona narxi</th>
+                    <th class="text-center" style="width: 100px;">Miqdori</th>
+                    <th class="text-right" style="width: 150px;">Jami summa</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for item in cart_products %}
+                  <tr>
+                    <td class="text-center">{{ forloop.counter }}</td>
+                    <td class="text-center">
+                      {% if item.product and item.product.image %}
+                        <img src="{{ item.product.image.url }}" width="40" height="40" class="rounded" style="object-fit: cover;" alt="{{ item.product.name }}">
+                      {% else %}
+                        <div class="badge badge-secondary p-1"><i class="fas fa-box"></i></div>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if item.product %}
+                        <strong>{{ item.product.name }}</strong>
+                        <br><small class="text-muted">Kod: {{ item.product.code|slice:":8" }}</small>
+                      {% else %}
+                        <span class="text-danger">Mahsulot o'chirilgan</span>
+                      {% endif %}
+                    </td>
+                    <td>{{ item.product.category.name|default:"—" }}</td>
+                    <td class="text-center">{{ item.unit_price|uz_price }}</td>
+                    <td class="text-center"><span class="badge badge-light border font-weight-bold">{{ item.count|intspace }} dona</span></td>
+                    <td class="text-right font-weight-bold">{{ item.total_price|uz_price }}</td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="7" class="text-center py-3 text-muted">Savatda mahsulotlar mavjud emas</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 4. Hisob-kitob Xulosasi & Status boshqaruvi -->
+          <div class="row align-items-start mt-3">
+            <!-- Screen Only: Status o'zgartirish formasi -->
+            <div class="col-lg-6 no-print mb-3">
+              <div class="card border p-3 bg-light shadow-none">
+                <h6 class="font-weight-bold text-dark mb-2"><i class="fas fa-edit mr-1 text-primary"></i>Statusni O'zgartirish va Izoh:</h6>
+                <form method="POST" action="{% url 'd_update_status' order.code %}">
+                  {% csrf_token %}
+                  <div class="form-row align-items-center">
+                    <div class="col-md-5 my-1">
+                      <select name="target_status" class="form-control form-control-sm font-weight-bold" required>
+                        <option value="2" {% if order.status == 2 %}selected{% endif %}>Qabul qilindi (Yangi)</option>
+                        <option value="3" {% if order.status == 3 %}selected{% endif %}>Yo'lda / Jarayonda</option>
+                        <option value="4" {% if order.status == 4 %}selected{% endif %}>Yetkazilgan (Tugatildi)</option>
+                        <option value="5" {% if order.status == 5 %}selected{% endif %}>Bekor qilish / Qaytarish</option>
+                      </select>
                     </div>
-
-                    <div class="col-lg-5 text-right">
-                      <div class="invoice-detail-item mb-2">
-                        <div class="invoice-detail-name d-inline mr-3 text-muted">Jami tovarlar:</div>
-                        <div class="invoice-detail-value d-inline font-weight-bold">{{ total_count|intspace }} dona</div>
-                      </div>
-                      <div class="invoice-detail-item mb-2">
-                        <div class="invoice-detail-name d-inline mr-3 text-muted">Yetkazib berish:</div>
-                        <div class="invoice-detail-value d-inline font-weight-bold text-success">0 so'm (Bepul)</div>
-                      </div>
-                      <hr class="mt-2 mb-2">
-                      <div class="invoice-detail-item">
-                        <div class="invoice-detail-name d-inline mr-3 h5 mb-0 font-weight-bold">Umumiy to'lov:</div>
-                        <div class="invoice-detail-value d-inline h4 font-weight-bold text-primary mb-0">{{ total_amount|uz_price }}</div>
-                      </div>
+                    <div class="col-md-5 my-1">
+                      <input type="text" name="comment" class="form-control form-control-sm" placeholder="O'zgarish izohi...">
+                    </div>
+                    <div class="col-md-2 my-1">
+                      <button type="submit" class="btn btn-primary btn-sm w-100 font-weight-bold">Saqlash</button>
                     </div>
                   </div>
+                </form>
+              </div>
+            </div>
 
-                  <!-- Status O'zgarishlar Tarixi (Status History Timeline) -->
-                  <div class="row mt-4">
-                    <div class="col-12">
-                      <h6 class="font-weight-bold text-dark mb-2"><i class="fas fa-history mr-2 text-info"></i>Status O'zgarishlar Tarixi</h6>
-                      <div class="table-responsive">
-                        <table class="table table-sm table-striped mb-0">
-                          <thead>
-                            <tr>
-                              <th>Vaqt</th>
-                              <th>Bajaruvchi (Admin)</th>
-                              <th>Eski Status</th>
-                              <th>Yangi Status</th>
-                              <th>Izoh</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {% for sh in status_history %}
-                            <tr>
-                              <td class="small text-muted">{{ sh.created_at|date:"d.m.Y H:i:s" }}</td>
-                              <td class="font-weight-bold">{{ sh.changed_by.username|default:"Tizim" }}</td>
-                              <td>{{ sh.get_old_status_display|default:"—" }}</td>
-                              <td><span class="badge badge-info">{{ sh.get_new_status_display }}</span></td>
-                              <td>{{ sh.comment|default:"—" }}</td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                              <td colspan="5" class="text-center py-2 text-muted small">
-                                Ushbu buyurtma yaratilgandan so'ng status tarixi qayd etilmagan.
-                              </td>
-                            </tr>
-                            {% endfor %}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </div>
-
+            <!-- Jami summa qismi -->
+            <div class="col-lg-6 ml-auto print-summary-wrap">
+              <div class="print-summary-box ml-auto text-right p-3 bg-light rounded border">
+                <div class="print-summary-row mb-1">
+                  <span class="text-muted">Jami tovarlar:</span>
+                  <strong>{{ total_count|intspace }} dona</strong>
+                </div>
+                <div class="print-summary-row mb-1">
+                  <span class="text-muted">Yetkazib berish:</span>
+                  <strong class="text-success">0 so'm (Bepul)</strong>
+                </div>
+                <div class="print-summary-row print-summary-total border-top pt-2 mt-2">
+                  <span class="font-weight-bold text-dark" style="font-size: 1.1rem;">Umumiy to'lov:</span>
+                  <strong class="text-primary font-weight-bold" style="font-size: 1.25rem;">{{ total_amount|uz_price }}</strong>
                 </div>
               </div>
             </div>
           </div>
+
+          <!-- 5. Print Signatures (Faqat chop etilganda chiqadi) -->
+          <div class="print-signatures">
+            <div class="print-sign-item">
+              <strong>Mijoz / Qabul qiluvchi:</strong>
+              <div class="print-sign-line"></div>
+              <small class="text-muted">Imzo va F.I.Sh.</small>
+            </div>
+            <div class="print-sign-item">
+              <strong>Kuryer / Mas'ul xodim:</strong>
+              <div class="print-sign-line"></div>
+              <small class="text-muted">Imzo va sana</small>
+            </div>
+          </div>
+
+          <!-- 6. Status O'zgarishlar Tarixi (Screen Only) -->
+          <div class="row mt-4 no-print">
+            <div class="col-12">
+              <h6 class="font-weight-bold text-dark mb-2"><i class="fas fa-history mr-2 text-info"></i>Status O'zgarishlar Tarixi</h6>
+              <div class="table-responsive">
+                <table class="table table-sm table-striped mb-0">
+                  <thead>
+                    <tr>
+                      <th>Vaqt</th>
+                      <th>Bajaruvchi (Admin)</th>
+                      <th>Eski Status</th>
+                      <th>Yangi Status</th>
+                      <th>Izoh</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for sh in status_history %}
+                    <tr>
+                      <td class="small text-muted">{{ sh.created_at|date:"d.m.Y H:i:s" }}</td>
+                      <td class="font-weight-bold">{{ sh.changed_by.username|default:"Tizim" }}</td>
+                      <td>{{ sh.get_old_status_display|default:"—" }}</td>
+                      <td><span class="badge badge-info">{{ sh.get_new_status_display }}</span></td>
+                      <td>{{ sh.comment|default:"—" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                      <td colspan="5" class="text-center py-2 text-muted small">
+                        Ushbu buyurtma yaratilgandan so'ng status tarixi qayd etilmagan.
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
         </div>
 
-        <hr class="mt-0">
-        <div class="card-body pt-0 d-flex justify-content-between align-items-center">
-          <a href="{% url 'd_orders' %}" class="btn btn-secondary"><i class="fas fa-arrow-left mr-1"></i> Buyurtmalar ro'yxatiga qaytish</a>
-          <button class="btn btn-primary font-weight-bold" onclick="window.print();"><i class="fas fa-print mr-1"></i> Chop Etish (Print)</button>
+        <!-- 7. Action Buttons (Screen Only) -->
+        <div class="card-footer bg-white border-top d-flex justify-content-between align-items-center no-print p-3">
+          <a href="{% url 'd_orders' %}" class="btn btn-outline-secondary font-weight-bold">
+            <i class="fas fa-arrow-left mr-1"></i> Buyurtmalar ro'yxatiga qaytish
+          </a>
+          <button class="btn btn-primary font-weight-bold px-4 py-2" onclick="window.print();" style="box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);">
+            <i class="fas fa-print mr-2"></i> Hisob-fakturani Chop Etish (Print)
+          </button>
         </div>
+
       </div>
     </div>
   </section>
