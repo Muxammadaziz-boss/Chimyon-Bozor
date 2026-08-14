@@ -33,22 +33,22 @@
                 </li>
                 <li class="nav-item">
                   <a class="nav-link {% if status_filter == '2' %}active font-weight-bold{% endif %}" href="{% url 'd_orders' %}?status=2{% if query %}&query={{ query }}{% endif %}">
-                    <span class="badge badge-warning mr-1">●</span> Yangi <span class="badge badge-light ml-1">{{ status_counts.new }}</span>
+                    <i class="fas fa-circle mr-1" style="font-size: 8px; color: #f59e0b;"></i> Yangi <span class="badge badge-light ml-1">{{ status_counts.new }}</span>
                   </a>
                 </li>
                 <li class="nav-item">
                   <a class="nav-link {% if status_filter == '3' %}active font-weight-bold{% endif %}" href="{% url 'd_orders' %}?status=3{% if query %}&query={{ query }}{% endif %}">
-                    <span class="badge badge-info mr-1">●</span> Yo'lda <span class="badge badge-light ml-1">{{ status_counts.processing }}</span>
+                    <i class="fas fa-circle mr-1" style="font-size: 8px; color: #0284c7;"></i> Yo'lda <span class="badge badge-light ml-1">{{ status_counts.processing }}</span>
                   </a>
                 </li>
                 <li class="nav-item">
                   <a class="nav-link {% if status_filter == '4' %}active font-weight-bold{% endif %}" href="{% url 'd_orders' %}?status=4{% if query %}&query={{ query }}{% endif %}">
-                    <span class="badge badge-success mr-1">●</span> Yetkazilgan <span class="badge badge-light ml-1">{{ status_counts.completed }}</span>
+                    <i class="fas fa-circle mr-1" style="font-size: 8px; color: #16a34a;"></i> Yetkazilgan <span class="badge badge-light ml-1">{{ status_counts.completed }}</span>
                   </a>
                 </li>
                 <li class="nav-item">
                   <a class="nav-link {% if status_filter == '5' %}active font-weight-bold{% endif %}" href="{% url 'd_orders' %}?status=5{% if query %}&query={{ query }}{% endif %}">
-                    <span class="badge badge-danger mr-1">●</span> Bekor qilingan <span class="badge badge-light ml-1">{{ status_counts.cancelled }}</span>
+                    <i class="fas fa-circle mr-1" style="font-size: 8px; color: #dc2626;"></i> Bekor qilingan <span class="badge badge-light ml-1">{{ status_counts.cancelled }}</span>
                   </a>
                 </li>
               </ul>
