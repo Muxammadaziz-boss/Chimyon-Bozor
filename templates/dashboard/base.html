@@ -74,27 +74,15 @@
             </a>
           </div>
           <ul class="sidebar-menu">
-            <li class="menu-header">Boshqaruv</li>
+            <li class="menu-header">Asosiy Boshqaruv</li>
             <li class="{% if request.resolver_match.url_name == 'd_index' %}active{% endif %}">
-              <a href="{% url 'd_index' %}" class="nav-link"><i data-feather="monitor"></i><span>Boshqaruv paneli</span></a>
+              <a href="{% url 'd_index' %}" class="nav-link"><i data-feather="monitor"></i><span>Boshqaruv Paneli</span></a>
+            </li>
+            <li class="{% if request.resolver_match.url_name == 'd_analytics' %}active{% endif %}">
+              <a href="{% url 'd_analytics' %}" class="nav-link"><i data-feather="trending-up"></i><span>Savdo Tahlili</span></a>
             </li>
 
-            <li class="dropdown {% if 'category' in request.resolver_match.url_name %}active{% endif %}">
-              <a href="#" class="menu-toggle nav-link has-dropdown"><i data-feather="grid"></i><span>Kategoriyalar</span></a>
-              <ul class="dropdown-menu">
-                <li><a class="nav-link" href="{% url 'd_list_category' %}">Barcha kategoriyalar</a></li>
-                <li><a class="nav-link" href="{% url 'd_create_category' %}">Kategoriya yaratish</a></li>
-              </ul>
-            </li>
-
-            <li class="dropdown {% if 'product' in request.resolver_match.url_name %}active{% endif %}">
-              <a href="#" class="menu-toggle nav-link has-dropdown"><i data-feather="box"></i><span>Mahsulotlar</span></a>
-              <ul class="dropdown-menu">
-                <li><a class="nav-link" href="{% url 'd_list_product' %}">Barcha mahsulotlar</a></li>
-                <li><a class="nav-link" href="{% url 'd_create_product' %}">Mahsulot yaratish</a></li>
-              </ul>
-            </li>
-
+            <li class="menu-header">Katalog va Savdo</li>
             <li class="dropdown {% if 'order' in request.resolver_match.url_name %}active{% endif %}">
               <a href="#" class="menu-toggle nav-link has-dropdown"><i data-feather="shopping-bag"></i><span>Buyurtmalar</span></a>
               <ul class="dropdown-menu">
@@ -106,13 +94,40 @@
               </ul>
             </li>
 
-            <li class="{% if request.resolver_match.url_name == 'd_list_users' %}active{% endif %}">
-              <a href="{% url 'd_list_users' %}" class="nav-link"><i data-feather="users"></i><span>Foydalanuvchilar</span></a>
+            <li class="dropdown {% if 'product' in request.resolver_match.url_name %}active{% endif %}">
+              <a href="#" class="menu-toggle nav-link has-dropdown"><i data-feather="box"></i><span>Mahsulotlar</span></a>
+              <ul class="dropdown-menu">
+                <li><a class="nav-link" href="{% url 'd_list_product' %}">Barcha mahsulotlar</a></li>
+                <li><a class="nav-link" href="{% url 'd_create_product' %}">Mahsulot qo'shish</a></li>
+              </ul>
             </li>
 
-            <li class="menu-header">Tezkor amallar</li>
-            <li>
-              <a href="{% url 'd_export_orders' %}" class="nav-link"><i data-feather="file-text"></i><span>Excel eksport</span></a>
+            <li class="dropdown {% if 'category' in request.resolver_match.url_name %}active{% endif %}">
+              <a href="#" class="menu-toggle nav-link has-dropdown"><i data-feather="grid"></i><span>Kategoriyalar</span></a>
+              <ul class="dropdown-menu">
+                <li><a class="nav-link" href="{% url 'd_list_category' %}">Barcha kategoriyalar</a></li>
+                <li><a class="nav-link" href="{% url 'd_create_category' %}">Kategoriya yaratish</a></li>
+              </ul>
+            </li>
+
+            <li class="{% if request.resolver_match.url_name == 'd_inventory' %}active{% endif %}">
+              <a href="{% url 'd_inventory' %}" class="nav-link"><i data-feather="archive"></i><span>Ombor Nazorati</span></a>
+            </li>
+
+            <li class="menu-header">Mijozlar va Hisobotlar</li>
+            <li class="{% if 'user' in request.resolver_match.url_name or 'customer' in request.resolver_match.url_name %}active{% endif %}">
+              <a href="{% url 'd_list_users' %}" class="nav-link"><i data-feather="users"></i><span>Mijozlar</span></a>
+            </li>
+            <li class="{% if request.resolver_match.url_name == 'd_reports' %}active{% endif %}">
+              <a href="{% url 'd_reports' %}" class="nav-link"><i data-feather="pie-chart"></i><span>Hisobotlar</span></a>
+            </li>
+
+            <li class="menu-header">Tizim</li>
+            <li class="{% if request.resolver_match.url_name == 'd_settings' %}active{% endif %}">
+              <a href="{% url 'd_settings' %}" class="nav-link"><i data-feather="settings"></i><span>Sayt Sozlamalari</span></a>
+            </li>
+            <li class="{% if request.resolver_match.url_name == 'd_audit_logs' %}active{% endif %}">
+              <a href="{% url 'd_audit_logs' %}" class="nav-link"><i data-feather="shield"></i><span>Audit Jurnali</span></a>
             </li>
             <li>
               <a href="{% url 'index' %}" class="nav-link" target="_blank"><i data-feather="globe"></i><span>Asosiy do'kon</span></a>

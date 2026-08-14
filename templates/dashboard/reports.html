@@ -1,0 +1,195 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Hisobotlar va Tahlil | Chimyon-bozor{% endblock %}
+
+{% block content %}
+<div class="main-content">
+  <section class="section">
+    <div class="section-header d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1 class="font-weight-bold text-dark mb-1">Hisobotlar va Eksport</h1>
+        <div class="text-muted small">Savdo, ombor va tovarlar bo'yicha to'liq tahliliy hisobotlar</div>
+      </div>
+      <div>
+        <a href="{% url 'd_export_orders' %}" class="btn btn-success mr-2"><i class="fas fa-file-excel mr-1"></i>Buyurtmalar Excel</a>
+        <a href="{% url 'd_export_products' %}" class="btn btn-primary"><i class="fas fa-file-excel mr-1"></i>Mahsulotlar & Ombor Excel</a>
+      </div>
+    </div>
+
+    <!-- Umumiy Hisobot Kartalari -->
+    <div class="row">
+      <div class="col-lg-4 col-md-6 col-12">
+        <div class="card card-statistic-1 shadow-sm border-0">
+          <div class="card-icon bg-success">
+            <i class="fas fa-warehouse text-white"></i>
+          </div>
+          <div class="card-wrap">
+            <div class="card-header">
+              <h4>Jami Ombor Qiymati</h4>
+            </div>
+            <div class="card-body font-weight-bold text-success" style="font-size: 1.25rem;">
+              {{ inventory_value|floatformat:0 }} so'm
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-4 col-md-6 col-12">
+        <div class="card card-statistic-1 shadow-sm border-0">
+          <div class="card-icon bg-info">
+            <i class="fas fa-cubes text-white"></i>
+          </div>
+          <div class="card-wrap">
+            <div class="card-header">
+              <h4>Ombordagi Jami Tovarlar</h4>
+            </div>
+            <div class="card-body font-weight-bold text-info" style="font-size: 1.25rem;">
+              {{ total_stock_count }} dona ({{ total_products_count }} xil)
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-4 col-md-6 col-12">
+        <div class="card card-statistic-1 shadow-sm border-0">
+          <div class="card-icon bg-primary">
+            <i class="fas fa-chart-pie text-white"></i>
+          </div>
+          <div class="card-wrap">
+            <div class="card-header">
+              <h4>Faol Kategoriyalar</h4>
+            </div>
+            <div class="card-body font-weight-bold text-primary" style="font-size: 1.25rem;">
+              {{ categories_perf|length }} ta
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1. Oylik Savdo Xulosasi Jadvali -->
+    <div class="row">
+      <div class="col-12 col-lg-6">
+        <div class="card shadow-sm">
+          <div class="card-header">
+            <h4 class="font-weight-bold"><i class="fas fa-calendar-alt text-primary mr-2"></i>Oylik Savdo Hisoboti</h4>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-striped table-hover mb-0">
+                <thead>
+                  <tr>
+                    <th>Oy</th>
+                    <th>Buyurtmalar</th>
+                    <th>Mahsulotlar</th>
+                    <th>Jami Tushum</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for m in monthly_report %}
+                  <tr>
+                    <td class="font-weight-bold">{{ m.month }}</td>
+                    <td>{{ m.orders_count }} ta</td>
+                    <td>{{ m.items_count }} dona</td>
+                    <td class="font-weight-bold text-success">{{ m.revenue|floatformat:0 }} so'm</td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="4" class="text-center py-3 text-muted">Hozircha oylik ma'lumotlar mavjud emas</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Kategoriyalar Samaradorligi Jadvali -->
+      <div class="col-12 col-lg-6">
+        <div class="card shadow-sm">
+          <div class="card-header">
+            <h4 class="font-weight-bold"><i class="fas fa-tags text-info mr-2"></i>Kategoriyalar Samaradorligi</h4>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-striped table-hover mb-0">
+                <thead>
+                  <tr>
+                    <th>Kategoriya</th>
+                    <th>Mahsulotlar</th>
+                    <th>Sotilgan dona</th>
+                    <th>Tushum</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for cat in categories_perf %}
+                  <tr>
+                    <td class="font-weight-bold">{{ cat.name }}</td>
+                    <td>{{ cat.products_count }} xil</td>
+                    <td>{{ cat.units_sold }} dona</td>
+                    <td class="font-weight-bold text-dark">{{ cat.revenue|floatformat:0 }} so'm</td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="4" class="text-center py-3 text-muted">Kategoriyalar bo'yicha ma'lumot topilmadi</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Top Mahsulotlar Samaradorligi -->
+    <div class="row">
+      <div class="col-12">
+        <div class="card shadow-sm">
+          <div class="card-header">
+            <h4 class="font-weight-bold"><i class="fas fa-trophy text-warning mr-2"></i>Eng Ko'p Sotilgan Mahsulotlar Tahlili (Top 10)</h4>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-striped table-hover mb-0">
+                <thead>
+                  <tr>
+                    <th>№</th>
+                    <th>Mahsulot Nomi</th>
+                    <th>Kategoriya</th>
+                    <th>Narx</th>
+                    <th>Jami Sotilgan (dona)</th>
+                    <th>Ombordagi Hozirgi Qoldiq</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for p in top_products_perf %}
+                  <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td class="font-weight-bold">{{ p.product__name }}</td>
+                    <td>{{ p.product__category__name }}</td>
+                    <td>{{ p.product__price|floatformat:0 }} so'm</td>
+                    <td class="font-weight-bold text-primary">{{ p.total_units }} dona</td>
+                    <td>
+                      <span class="font-weight-bold {% if p.product__count <= 5 %}text-danger{% else %}text-success{% endif %}">
+                        {{ p.product__count }} dona
+                      </span>
+                    </td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">Sotuvlar statistikasi shakllanmoqda</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

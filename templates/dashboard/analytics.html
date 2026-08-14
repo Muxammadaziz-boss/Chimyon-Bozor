@@ -1,0 +1,231 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Savdo Tahlili | Chimyon-bozor{% endblock %}
+
+{% block content %}
+<div class="main-content">
+  <section class="section">
+    <div class="section-header d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1 class="font-weight-bold text-dark mb-1">Savdo va Daromad Tahlili</h1>
+        <div class="text-muted small">Davr: <strong class="text-primary">{{ period_label }}</strong></div>
+      </div>
+      <div class="btn-group" role="group">
+        <a href="?period=today" class="btn btn-sm {% if period == 'today' %}btn-primary font-weight-bold{% else %}btn-outline-primary{% endif %}">Bugun</a>
+        <a href="?period=7days" class="btn btn-sm {% if period == '7days' %}btn-primary font-weight-bold{% else %}btn-outline-primary{% endif %}">7 kun</a>
+        <a href="?period=30days" class="btn btn-sm {% if period == '30days' %}btn-primary font-weight-bold{% else %}btn-outline-primary{% endif %}">30 kun</a>
+        <a href="?period=90days" class="btn btn-sm {% if period == '90days' %}btn-primary font-weight-bold{% else %}btn-outline-primary{% endif %}">90 kun</a>
+        <a href="?period=12months" class="btn btn-sm {% if period == '12months' %}btn-primary font-weight-bold{% else %}btn-outline-primary{% endif %}">12 oy</a>
+        <a href="?period=all" class="btn btn-sm {% if period == 'all' %}btn-primary font-weight-bold{% else %}btn-outline-primary{% endif %}">Barchasi</a>
+      </div>
+    </div>
+
+    <!-- Davriy Asosiy Ko'rsatkichlar (KPI) -->
+    <div class="row">
+      <div class="col-lg-3 col-md-6 col-sm-6 col-12">
+        <div class="card card-statistic-1 shadow-sm border-0">
+          <div class="card-icon bg-success">
+            <i class="fas fa-dollar-sign text-white"></i>
+          </div>
+          <div class="card-wrap">
+            <div class="card-header">
+              <h4>Davr Tushumi</h4>
+            </div>
+            <div class="card-body font-weight-bold text-success" style="font-size: 1.25rem;">
+              {{ period_revenue|floatformat:0 }} so'm
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-3 col-md-6 col-sm-6 col-12">
+        <div class="card card-statistic-1 shadow-sm border-0">
+          <div class="card-icon bg-primary">
+            <i class="fas fa-shopping-bag text-white"></i>
+          </div>
+          <div class="card-wrap">
+            <div class="card-header">
+              <h4>Tugatilgan Buyurtmalar</h4>
+            </div>
+            <div class="card-body font-weight-bold text-primary" style="font-size: 1.25rem;">
+              {{ period_orders_count }} ta
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-3 col-md-6 col-sm-6 col-12">
+        <div class="card card-statistic-1 shadow-sm border-0">
+          <div class="card-icon bg-info">
+            <i class="fas fa-cubes text-white"></i>
+          </div>
+          <div class="card-wrap">
+            <div class="card-header">
+              <h4>Sotilgan Tovar Birligi</h4>
+            </div>
+            <div class="card-body font-weight-bold text-info" style="font-size: 1.25rem;">
+              {{ period_items_sold }} dona
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-3 col-md-6 col-sm-6 col-12">
+        <div class="card card-statistic-1 shadow-sm border-0">
+          <div class="card-icon bg-warning">
+            <i class="fas fa-calculator text-white"></i>
+          </div>
+          <div class="card-wrap">
+            <div class="card-header">
+              <h4>O'rtacha Chek (AOV)</h4>
+            </div>
+            <div class="card-body font-weight-bold text-warning" style="font-size: 1.25rem;">
+              {{ period_aov|floatformat:0 }} so'm
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tahliliy Grafika va Kategoriyalar Taqsimoti -->
+    <div class="row">
+      <div class="col-12 col-lg-7">
+        <div class="card shadow-sm">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="font-weight-bold"><i class="fas fa-chart-area text-primary mr-2"></i>{{ period_label }} Savdo Grafigi</h4>
+          </div>
+          <div class="card-body">
+            <canvas id="analyticsChart" height="150"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-lg-5">
+        <div class="card shadow-sm">
+          <div class="card-header">
+            <h4 class="font-weight-bold"><i class="fas fa-chart-pie text-success mr-2"></i>Kategoriyalar Bo'yicha Tushum</h4>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-sm table-striped">
+                <thead>
+                  <tr>
+                    <th>Kategoriya</th>
+                    <th>Sotildi</th>
+                    <th>Summa</th>
+                    <th>Ulush</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for cat in category_sales %}
+                  <tr>
+                    <td class="font-weight-bold">{{ cat.name }}</td>
+                    <td>{{ cat.count }} dona</td>
+                    <td class="font-weight-bold text-dark">{{ cat.revenue|floatformat:0 }} so'm</td>
+                    <td>
+                      <span class="badge badge-primary">{{ cat.percentage }}%</span>
+                    </td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="4" class="text-center py-3 text-muted">Ushbu davrda sotuvlar mavjud emas</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Mahsulotlar Jadvali -->
+    <div class="row">
+      <div class="col-12">
+        <div class="card shadow-sm">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="font-weight-bold mb-0"><i class="fas fa-trophy text-warning mr-2"></i>Eng Ko'p Tushum Keltirgan Mahsulotlar (Top 10)</h4>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-striped table-hover mb-0">
+                <thead>
+                  <tr>
+                    <th>№</th>
+                    <th>Mahsulot</th>
+                    <th>Kategoriya</th>
+                    <th>Narx</th>
+                    <th>Sotilgan Miqdor</th>
+                    <th>Jami Tushum</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for p in top_products %}
+                  <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td class="font-weight-bold">
+                      {% if p.image %}
+                      <img src="{{ p.image }}" width="36" height="36" class="rounded mr-2" style="object-fit: cover;">
+                      {% endif %}
+                      {{ p.name }}
+                    </td>
+                    <td>{{ p.category }}</td>
+                    <td>{{ p.price|floatformat:0 }} so'm</td>
+                    <td class="font-weight-bold text-primary">{{ p.units }} dona</td>
+                    <td class="font-weight-bold text-success">{{ p.revenue|floatformat:0 }} so'm</td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">Ushbu davrda ma'lumotlar mavjud emas</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    var ctx = document.getElementById('analyticsChart');
+    if (ctx) {
+      fetch('{% url "revenue-chart" %}?period={{ period }}')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: data.labels,
+              datasets: [{
+                label: 'Tushum (so\'m)',
+                data: data.totals,
+                backgroundColor: 'rgba(103, 119, 239, 0.75)',
+                borderColor: '#6777ef',
+                borderWidth: 1.5
+              }]
+            },
+            options: {
+              responsive: true,
+              scales: {
+                yAxes: [{
+                  ticks: {
+                    beginAtZero: true,
+                    callback: function(value) {
+                      return value.toLocaleString() + " so'm";
+                    }
+                  }
+                }]
+              }
+            }
+          });
+        });
+    }
+  });
+</script>
+{% endblock %}

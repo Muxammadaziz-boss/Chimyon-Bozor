@@ -1,0 +1,122 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Sayt Sozlamalari | Chimyon-bozor{% endblock %}
+
+{% block content %}
+<div class="main-content">
+  <section class="section">
+    <div class="section-header d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1 class="font-weight-bold text-dark mb-1">Platforma Sozlamalari</h1>
+        <div class="text-muted small">Sayt nomi, aloqa ma'lumotlari, sarlavhalar va ijtimoiy tarmoqlar</div>
+      </div>
+    </div>
+
+    <div class="row justify-content-center">
+      <div class="col-12 col-lg-10">
+        <form method="POST" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="card shadow-sm">
+            <div class="card-header">
+              <h4 class="font-weight-bold"><i class="fas fa-sliders-h text-primary mr-2"></i>Asosiy Ma'lumotlar</h4>
+            </div>
+            <div class="card-body">
+              <div class="form-row">
+                <div class="form-group col-md-6">
+                  <label class="font-weight-bold">Sayt Nomi</label>
+                  <input type="text" name="site_name" class="form-control" value="{{ settings.site_name }}" required>
+                </div>
+                <div class="form-group col-md-6">
+                  <label class="font-weight-bold">Shior / Tagline</label>
+                  <input type="text" name="tagline" class="form-control" value="{{ settings.tagline }}" placeholder="Masalan: Onlayn qulay bozor">
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group col-md-4">
+                  <label class="font-weight-bold">Aloqa Telefoni</label>
+                  <input type="text" name="phone" class="form-control" value="{{ settings.phone }}" placeholder="+998 90 123 45 67">
+                </div>
+                <div class="form-group col-md-4">
+                  <label class="font-weight-bold">Elektron Pochta (Email)</label>
+                  <input type="email" name="email" class="form-control" value="{{ settings.email }}" placeholder="info@chimyon-bozor.uz">
+                </div>
+                <div class="form-group col-md-4">
+                  <label class="font-weight-bold">Manzil / Joylashuv</label>
+                  <input type="text" name="address" class="form-control" value="{{ settings.address }}" placeholder="Toshkent viloyati, Chimyon">
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group col-md-6">
+                  <label class="font-weight-bold">Bosh Sahifa Sarlavhasi (Hero Title)</label>
+                  <input type="text" name="hero_title" class="form-control" value="{{ settings.hero_title }}">
+                </div>
+                <div class="form-group col-md-6">
+                  <label class="font-weight-bold">Mualliflik Huquqi (Copyright Matni)</label>
+                  <input type="text" name="copyright_text" class="form-control" value="{{ settings.copyright_text }}">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="font-weight-bold">Bosh Sahifa Tavsifi (Hero Description)</label>
+                <textarea name="hero_description" rows="2" class="form-control">{{ settings.hero_description }}</textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="font-weight-bold">Footer Quyi Qism Tavsifi</label>
+                <textarea name="footer_description" rows="2" class="form-control">{{ settings.footer_description }}</textarea>
+              </div>
+
+              <h5 class="font-weight-bold text-dark mt-4 mb-3"><i class="fas fa-share-alt text-info mr-2"></i>Ijtimoiy Tarmoqlar</h5>
+              <div class="form-row">
+                <div class="form-group col-md-4">
+                  <label class="font-weight-bold"><i class="fab fa-telegram text-primary mr-1"></i> Telegram Havolasi</label>
+                  <input type="url" name="telegram" class="form-control" value="{{ settings.telegram }}" placeholder="https://t.me/...">
+                </div>
+                <div class="form-group col-md-4">
+                  <label class="font-weight-bold"><i class="fab fa-instagram text-danger mr-1"></i> Instagram Havolasi</label>
+                  <input type="url" name="instagram" class="form-control" value="{{ settings.instagram }}" placeholder="https://instagram.com/...">
+                </div>
+                <div class="form-group col-md-4">
+                  <label class="font-weight-bold"><i class="fab fa-facebook text-primary mr-1"></i> Facebook Havolasi</label>
+                  <input type="url" name="facebook" class="form-control" value="{{ settings.facebook }}" placeholder="https://facebook.com/...">
+                </div>
+              </div>
+
+              <h5 class="font-weight-bold text-dark mt-4 mb-3"><i class="fas fa-image text-warning mr-2"></i>Logotip va Favicon</h5>
+              <div class="form-row">
+                <div class="form-group col-md-6">
+                  <label class="font-weight-bold">Sayt Logotipi</label>
+                  {% if settings.logo %}
+                  <div class="mb-2">
+                    <img src="{{ settings.logo.url }}" height="50" class="border rounded p-1 bg-light">
+                  </div>
+                  {% endif %}
+                  <input type="file" name="logo" class="form-control-file" accept="image/*">
+                </div>
+
+                <div class="form-group col-md-6">
+                  <label class="font-weight-bold">Favicon (Ikonka)</label>
+                  {% if settings.favicon %}
+                  <div class="mb-2">
+                    <img src="{{ settings.favicon.url }}" height="32" class="border rounded p-1 bg-light">
+                  </div>
+                  {% endif %}
+                  <input type="file" name="favicon" class="form-control-file" accept="image/*">
+                </div>
+              </div>
+            </div>
+            <div class="card-footer bg-light text-right">
+              <button type="submit" class="btn btn-primary px-4 font-weight-bold">
+                <i class="fas fa-save mr-1"></i> Sozlamalarni Saqlash
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

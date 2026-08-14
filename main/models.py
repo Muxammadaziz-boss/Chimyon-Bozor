@@ -98,6 +98,14 @@ class Product(Code):
             return int(round(((self.price - self.discount_price) / self.price) * 100))
         return 0
 
+    @property
+    def is_low_stock(self):
+        return 0 < self.count <= 5
+
+    @property
+    def is_out_of_stock(self):
+        return self.count <= 0
+
     def __str__(self):
         return self.name
 
@@ -236,5 +244,39 @@ class Address(models.Model):
     class Meta:
         verbose_name = "Manzil"
         verbose_name_plural = "Manzillar"
+
+
+class OrderStatusHistory(models.Model):
+    order = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='status_history')
+    old_status = models.IntegerField(choices=CART_STATUS, null=True, blank=True)
+    new_status = models.IntegerField(choices=CART_STATUS)
+    changed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    comment = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Buyurtma status tarixi"
+        verbose_name_plural = "Buyurtma status tarixlari"
+
+    def __str__(self):
+        return f"Order #{self.order.code[:8] if self.order and self.order.code else self.order_id}: {self.old_status} -> {self.new_status}"
+
+
+class AuditLog(models.Model):
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    action = models.CharField(max_length=100)
+    details = models.TextField(blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Audit jurnali"
+        verbose_name_plural = "Audit jurnallari"
+
+    def __str__(self):
+        return f"{self.user} - {self.action} ({self.created_at.strftime('%d.%m.%Y %H:%M') if self.created_at else ''})"
+
 
 

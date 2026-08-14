@@ -1,61 +1,47 @@
 {% extends 'dashboard/base.html' %}
 {% load static %}
 
+{% block title %}Boshqaruv Paneli | Chimyon-bozor{% endblock %}
+
 {% block content %}
 <div class="main-content">
   <section class="section">
-    <!-- Asosiy statistika kartalari -->
+    <!-- 1. Asosiy Savdo va Daromad KPI lari -->
     <div class="row">
       <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 col-12">
-        <div class="card card-statistic-1 shadow-sm">
-          <div class="card-icon bg-primary">
-            <i class="fas fa-box-open text-white"></i>
-          </div>
-          <div class="card-wrap">
-            <div class="card-header">
-              <h4>Jami Mahsulotlar</h4>
-            </div>
-            <div class="card-body font-weight-bold">
-              {{ stats.total_products }}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 col-12">
-        <div class="card card-statistic-1 shadow-sm">
-          <div class="card-icon bg-info">
-            <i class="fas fa-th-large text-white"></i>
-          </div>
-          <div class="card-wrap">
-            <div class="card-header">
-              <h4>Kategoriyalar</h4>
-            </div>
-            <div class="card-body font-weight-bold">
-              {{ stats.total_categories }}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 col-12">
-        <div class="card card-statistic-1 shadow-sm">
+        <div class="card card-statistic-1 shadow-sm border-0">
           <div class="card-icon bg-success">
-            <i class="fas fa-users text-white"></i>
+            <i class="fas fa-calendar-day text-white"></i>
           </div>
           <div class="card-wrap">
             <div class="card-header">
-              <h4>Jami Foydalanuvchilar</h4>
+              <h4>Bugungi Tushum</h4>
             </div>
-            <div class="card-body font-weight-bold">
-              {{ stats.total_customers }}
+            <div class="card-body font-weight-bold text-success" style="font-size: 1.25rem;">
+              {{ stats.today_income|floatformat:0 }} so'm
             </div>
           </div>
         </div>
       </div>
 
       <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 col-12">
-        <div class="card card-statistic-1 shadow-sm">
+        <div class="card card-statistic-1 shadow-sm border-0">
+          <div class="card-icon bg-primary">
+            <i class="fas fa-calendar-alt text-white"></i>
+          </div>
+          <div class="card-wrap">
+            <div class="card-header">
+              <h4>Oylik Tushum (30 kun)</h4>
+            </div>
+            <div class="card-body font-weight-bold text-primary" style="font-size: 1.25rem;">
+              {{ stats.month_income|floatformat:0 }} so'm
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 col-12">
+        <div class="card card-statistic-1 shadow-sm border-0">
           <div class="card-icon bg-warning">
             <i class="fas fa-coins text-white"></i>
           </div>
@@ -63,25 +49,41 @@
             <div class="card-header">
               <h4>Jami Savdo Tushumi</h4>
             </div>
-            <div class="card-body font-weight-bold" style="font-size: 1.15rem;">
+            <div class="card-body font-weight-bold text-warning" style="font-size: 1.25rem;">
               {{ stats.total_income|floatformat:0 }} so'm
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 col-12">
+        <div class="card card-statistic-1 shadow-sm border-0">
+          <div class="card-icon bg-info">
+            <i class="fas fa-receipt text-white"></i>
+          </div>
+          <div class="card-wrap">
+            <div class="card-header">
+              <h4>O'rtacha Chek (AOV)</h4>
+            </div>
+            <div class="card-body font-weight-bold text-info" style="font-size: 1.25rem;">
+              {{ stats.aov|floatformat:0 }} so'm
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Buyurtmalar statuslari bo'yicha tezkor kartalar -->
+    <!-- 2. Buyurtmalar Statuslari Tezkor Bloklari -->
     <div class="row">
       <div class="col-lg-3 col-md-6 col-sm-6 col-12">
         <a href="{% url 'd_orders' %}?status=2" class="text-decoration-none">
-          <div class="card border-left-warning shadow-sm">
-            <div class="card-body d-flex align-items-center justify-content-between">
+          <div class="card shadow-sm border-left-warning mb-3">
+            <div class="card-body py-3 d-flex align-items-center justify-content-between">
               <div>
-                <div class="text-muted small">Yangi buyurtmalar</div>
-                <div class="h4 font-weight-bold text-dark mb-0">{{ stats.new_orders }}</div>
+                <div class="text-muted small font-weight-bold">YANGI BUYURTMALAR</div>
+                <div class="h4 font-weight-bold text-dark mb-0 mt-1">{{ stats.new_orders }}</div>
               </div>
-              <span class="badge badge-warning badge-pill">Qabul qilindi</span>
+              <span class="badge badge-warning badge-pill px-3 py-2 font-weight-bold">Qabul qilindi</span>
             </div>
           </div>
         </a>
@@ -89,13 +91,13 @@
 
       <div class="col-lg-3 col-md-6 col-sm-6 col-12">
         <a href="{% url 'd_orders' %}?status=3" class="text-decoration-none">
-          <div class="card border-left-info shadow-sm">
-            <div class="card-body d-flex align-items-center justify-content-between">
+          <div class="card shadow-sm border-left-info mb-3">
+            <div class="card-body py-3 d-flex align-items-center justify-content-between">
               <div>
-                <div class="text-muted small">Jarayonda / Yo'lda</div>
-                <div class="h4 font-weight-bold text-dark mb-0">{{ stats.processing_orders }}</div>
+                <div class="text-muted small font-weight-bold">JARAYONDA / YO'LDA</div>
+                <div class="h4 font-weight-bold text-dark mb-0 mt-1">{{ stats.processing_orders }}</div>
               </div>
-              <span class="badge badge-info badge-pill">Yo'lda</span>
+              <span class="badge badge-info badge-pill px-3 py-2 font-weight-bold">Yo'lda</span>
             </div>
           </div>
         </a>
@@ -103,13 +105,13 @@
 
       <div class="col-lg-3 col-md-6 col-sm-6 col-12">
         <a href="{% url 'd_orders' %}?status=4" class="text-decoration-none">
-          <div class="card border-left-success shadow-sm">
-            <div class="card-body d-flex align-items-center justify-content-between">
+          <div class="card shadow-sm border-left-success mb-3">
+            <div class="card-body py-3 d-flex align-items-center justify-content-between">
               <div>
-                <div class="text-muted small">Yetkazilgan</div>
-                <div class="h4 font-weight-bold text-dark mb-0">{{ stats.completed_orders }}</div>
+                <div class="text-muted small font-weight-bold">YETKAZILGAN</div>
+                <div class="h4 font-weight-bold text-dark mb-0 mt-1">{{ stats.completed_orders }}</div>
               </div>
-              <span class="badge badge-success badge-pill">Tugatildi</span>
+              <span class="badge badge-success badge-pill px-3 py-2 font-weight-bold">Tugatildi</span>
             </div>
           </div>
         </a>
@@ -117,49 +119,137 @@
 
       <div class="col-lg-3 col-md-6 col-sm-6 col-12">
         <a href="{% url 'd_orders' %}?status=5" class="text-decoration-none">
-          <div class="card border-left-danger shadow-sm">
-            <div class="card-body d-flex align-items-center justify-content-between">
+          <div class="card shadow-sm border-left-danger mb-3">
+            <div class="card-body py-3 d-flex align-items-center justify-content-between">
               <div>
-                <div class="text-muted small">Bekor qilingan</div>
-                <div class="h4 font-weight-bold text-dark mb-0">{{ stats.cancelled_orders }}</div>
+                <div class="text-muted small font-weight-bold">BEKOR QILINGAN</div>
+                <div class="h4 font-weight-bold text-dark mb-0 mt-1">{{ stats.cancelled_orders }}</div>
               </div>
-              <span class="badge badge-danger badge-pill">Bekor</span>
+              <span class="badge badge-danger badge-pill px-3 py-2 font-weight-bold">Bekor</span>
             </div>
           </div>
         </a>
       </div>
     </div>
 
-    <!-- Grafik va So'nggi buyurtmalar -->
+    <!-- 3. Grafik va Eng Ko'p Sotilgan Mahsulotlar (Bestsellers) -->
     <div class="row">
       <div class="col-12 col-lg-8">
         <div class="card shadow-sm">
           <div class="card-header d-flex justify-content-between align-items-center">
-            <h4 class="mb-0">Savdo dinamikasi grafigi</h4>
+            <h4 class="mb-0 font-weight-bold"><i class="fas fa-chart-line text-primary mr-2"></i>Savdo Dinamikasi</h4>
             <div class="card-header-action">
-              <a href="{% url 'd_orders' %}" class="btn btn-sm btn-primary">Barcha buyurtmalar</a>
-              <a href="{% url 'd_export_orders' %}" class="btn btn-sm btn-success ml-1"><i class="fas fa-file-excel mr-1"></i>Excel</a>
+              <a href="{% url 'd_analytics' %}" class="btn btn-sm btn-outline-primary mr-1">To'liq Tahlil</a>
+              <a href="{% url 'd_export_orders' %}" class="btn btn-sm btn-success"><i class="fas fa-file-excel mr-1"></i>Excel</a>
             </div>
           </div>
           <div class="card-body">
-            <canvas id="revenueChartCanvas" height="130"></canvas>
+            <canvas id="revenueChartCanvas" height="135"></canvas>
           </div>
         </div>
       </div>
 
       <div class="col-12 col-lg-4">
         <div class="card shadow-sm">
-          <div class="card-header">
-            <h4>Yangi ro'yxatdan o'tganlar</h4>
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0 font-weight-bold"><i class="fas fa-fire text-danger mr-2"></i>Top Sotilgan Mahsulotlar</h4>
+            <a href="{% url 'd_list_product' %}" class="small text-muted">Barchasi</a>
+          </div>
+          <div class="card-body p-0">
+            <ul class="list-unstyled list-unstyled-border mb-0">
+              {% for item in top_selling_items %}
+              <li class="media p-3 border-bottom align-items-center">
+                {% if item.product__image %}
+                <img class="mr-3 rounded" width="48" height="48" style="object-fit: cover;" src="/media/{{ item.product__image }}" alt="{{ item.product__name }}">
+                {% else %}
+                <div class="mr-3 bg-light rounded d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                  <i class="fas fa-box text-muted"></i>
+                </div>
+                {% endif %}
+                <div class="media-body">
+                  <div class="font-weight-bold text-dark text-truncate" style="max-width: 170px;">{{ item.product__name }}</div>
+                  <div class="text-small text-muted">{{ item.product__category__name }}</div>
+                  <div class="text-small font-weight-bold text-primary">{{ item.product__price|floatformat:0 }} so'm</div>
+                </div>
+                <div class="text-right">
+                  <span class="badge badge-primary badge-pill font-weight-bold">{{ item.total_sold }} dona</span>
+                </div>
+              </li>
+              {% empty %}
+              <li class="p-4 text-center text-muted">
+                <i class="fas fa-box-open fa-2x mb-2 d-block text-muted"></i>
+                Sotuvlar tarixi shakllanmoqda.
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Ombor Xavfsizligi Ogohlantirishlari va Yangi Foydalanuvchilar -->
+    <div class="row">
+      <div class="col-12 col-lg-6">
+        <div class="card shadow-sm border-left-danger">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0 text-danger font-weight-bold"><i class="fas fa-exclamation-triangle mr-2"></i>Omborda Kam Qolgan Mahsulotlar (≤ 5 dona)</h4>
+            <a href="{% url 'd_inventory' %}?status=low_stock" class="btn btn-sm btn-outline-danger">Ombor Nazorati &rarr;</a>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-sm table-hover mb-0">
+                <thead class="bg-light">
+                  <tr>
+                    <th>Mahsulot</th>
+                    <th>Kategoriya</th>
+                    <th>Qoldiq</th>
+                    <th>Holat</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for p in low_stock_list %}
+                  <tr>
+                    <td class="font-weight-bold">{{ p.name }}</td>
+                    <td>{{ p.category.name }}</td>
+                    <td class="font-weight-bold {% if p.count <= 0 %}text-danger{% else %}text-warning{% endif %}">
+                      {{ p.count }} dona
+                    </td>
+                    <td>
+                      {% if p.count <= 0 %}
+                        <span class="badge badge-danger">Tugagan</span>
+                      {% else %}
+                        <span class="badge badge-warning">Kam qolgan</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="4" class="text-center py-3 text-success font-weight-bold">
+                      <i class="fas fa-check-circle mr-1"></i> Barcha mahsulotlar omborda yetarli miqdorda!
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-lg-6">
+        <div class="card shadow-sm">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0 font-weight-bold"><i class="fas fa-user-plus text-success mr-2"></i>Yangi Foydalanuvchilar</h4>
+            <a href="{% url 'd_list_users' %}" class="btn btn-sm btn-outline-primary">Barchasi &rarr;</a>
           </div>
           <div class="card-body p-0">
             <ul class="list-unstyled list-unstyled-border mb-0">
               {% for u in recent_users %}
-              <li class="media p-3 border-bottom">
-                <img class="mr-3 rounded-circle" width="45" src="{{ u.get_avatar_url }}" alt="{{ u.username }}">
+              <li class="media p-3 border-bottom align-items-center">
+                <img class="mr-3 rounded-circle" width="40" height="40" src="{{ u.get_avatar_url }}" alt="{{ u.username }}">
                 <div class="media-body">
                   <div class="float-right text-small text-muted">{{ u.date_joined|date:"d.m.Y" }}</div>
-                  <div class="media-title font-weight-bold">{{ u.get_full_name|default:u.username }}</div>
+                  <div class="media-title font-weight-bold text-dark">{{ u.get_full_name|default:u.username }}</div>
                   <span class="text-small text-muted"><i class="fas fa-phone mr-1"></i>{{ u.phone|default:"Telefon kiritilmagan" }}</span>
                 </div>
               </li>
@@ -172,13 +262,13 @@
       </div>
     </div>
 
-    <!-- So'nggi Buyurtmalar Jadvali -->
+    <!-- 5. So'nggi Buyurtmalar Jadvali -->
     <div class="row">
       <div class="col-12">
         <div class="card shadow-sm">
           <div class="card-header d-flex justify-content-between align-items-center">
-            <h4 class="mb-0">So'nggi buyurtmalar</h4>
-            <a href="{% url 'd_orders' %}" class="btn btn-outline-primary btn-sm">Barchasini ko'rish &rarr;</a>
+            <h4 class="mb-0 font-weight-bold"><i class="fas fa-shopping-cart text-primary mr-2"></i>So'nggi Buyurtmalar</h4>
+            <a href="{% url 'd_orders' %}" class="btn btn-outline-primary btn-sm">Barcha Buyurtmalarni Ko'rish &rarr;</a>
           </div>
           <div class="card-body p-0">
             <div class="table-responsive">
@@ -189,7 +279,7 @@
                     <th>Mijoz</th>
                     <th>Mahsulotlar</th>
                     <th>Sana</th>
-                    <th>Summa</th>
+                    <th>Jami Summa</th>
                     <th>Status</th>
                     <th>Amallar</th>
                   </tr>
@@ -220,7 +310,7 @@
                     </td>
                     <td>
                       <a href="{% url 'd_detail_orders' order.code %}" class="btn btn-sm btn-info" title="Batafsil">
-                        <i class="fas fa-eye"></i> Batafsil
+                        <i class="fas fa-eye mr-1"></i> Batafsil
                       </a>
                     </td>
                   </tr>
@@ -258,7 +348,7 @@
                 label: 'Jami Savdo (so\'m)',
                 data: data.totals.length ? data.totals : [0, 0, 0, 0, 0],
                 borderColor: '#6777ef',
-                backgroundColor: 'rgba(103, 119, 239, 0.15)',
+                backgroundColor: 'rgba(103, 119, 239, 0.12)',
                 borderWidth: 2.5,
                 tension: 0.3,
                 fill: true,

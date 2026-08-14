@@ -1,0 +1,225 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Ombor Nazorati | Chimyon-bozor{% endblock %}
+
+{% block content %}
+<div class="main-content">
+  <section class="section">
+    <div class="section-header d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1 class="font-weight-bold text-dark mb-1">Ombor Qoldiqlari Nazorati</h1>
+        <div class="text-muted small">Mahsulotlar qoldig'i va ombor zaxiralari boshqaruvi</div>
+      </div>
+      <div>
+        <a href="{% url 'd_export_inventory' %}" class="btn btn-success mr-1"><i class="fas fa-file-excel mr-1"></i>Excel Eksport</a>
+        <a href="{% url 'd_create_product' %}" class="btn btn-primary"><i class="fas fa-plus mr-1"></i>Yangi Mahsulot</a>
+      </div>
+    </div>
+
+    <!-- Ombor Stat Kartalari -->
+    <div class="row">
+      <div class="col-lg-3 col-md-6 col-sm-6 col-12">
+        <div class="card card-statistic-1 shadow-sm border-0">
+          <div class="card-icon bg-primary">
+            <i class="fas fa-boxes text-white"></i>
+          </div>
+          <div class="card-wrap">
+            <div class="card-header">
+              <h4>Jami Tovar Turlari</h4>
+            </div>
+            <div class="card-body font-weight-bold">
+              {{ total_products_count }} xil
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-3 col-md-6 col-sm-6 col-12">
+        <div class="card card-statistic-1 shadow-sm border-0">
+          <div class="card-icon bg-info">
+            <i class="fas fa-layer-group text-white"></i>
+          </div>
+          <div class="card-wrap">
+            <div class="card-header">
+              <h4>Jami Ombor Donasi</h4>
+            </div>
+            <div class="card-body font-weight-bold text-info">
+              {{ total_stock_units }} dona
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-3 col-md-6 col-sm-6 col-12">
+        <a href="?status=low_stock" class="text-decoration-none">
+          <div class="card card-statistic-1 shadow-sm border-0">
+            <div class="card-icon bg-warning">
+              <i class="fas fa-exclamation-triangle text-white"></i>
+            </div>
+            <div class="card-wrap">
+              <div class="card-header">
+                <h4>Kam Qolgan (≤ 5 dona)</h4>
+              </div>
+              <div class="card-body font-weight-bold text-warning">
+                {{ low_stock_count }} xil
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+
+      <div class="col-lg-3 col-md-6 col-sm-6 col-12">
+        <a href="?status=out_of_stock" class="text-decoration-none">
+          <div class="card card-statistic-1 shadow-sm border-0">
+            <div class="card-icon bg-danger">
+              <i class="fas fa-times-circle text-white"></i>
+            </div>
+            <div class="card-wrap">
+              <div class="card-header">
+                <h4>Tugagan (0 dona)</h4>
+              </div>
+              <div class="card-body font-weight-bold text-danger">
+                {{ out_of_stock_count }} xil
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- Filtr va Qidiruv Bloki -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-body py-3">
+        <form method="GET" class="form-row align-items-center">
+          <div class="col-md-5 my-1">
+            <div class="input-group">
+              <input type="text" name="query" value="{{ query|default:'' }}" class="form-control" placeholder="Mahsulot nomi yoki kodi bo'yicha qidiruv...">
+              <div class="input-group-append">
+                <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-3 my-1">
+            <select name="status" class="form-control" onchange="this.form.submit()">
+              <option value="">Barcha ombor holatlari</option>
+              <option value="in_stock" {% if status_filter == 'in_stock' %}selected{% endif %}>Yetarli (> 5 dona)</option>
+              <option value="low_stock" {% if status_filter == 'low_stock' %}selected{% endif %}>Kam qolgan (1 - 5 dona)</option>
+              <option value="out_of_stock" {% if status_filter == 'out_of_stock' %}selected{% endif %}>Tugagan (0 dona)</option>
+            </select>
+          </div>
+
+          <div class="col-md-3 my-1">
+            <select name="category_id" class="form-control" onchange="this.form.submit()">
+              <option value="">Barcha kategoriyalar</option>
+              {% for c in categories %}
+              <option value="{{ c.id }}" {% if category_id == c.id|stringformat:"i" %}selected{% endif %}>{{ c.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-1 my-1">
+            <a href="{% url 'd_inventory' %}" class="btn btn-outline-secondary w-100" title="Filtrni tozalash"><i class="fas fa-redo"></i></a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Ombor Jadvali -->
+    <div class="card shadow-sm">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-striped table-hover mb-0">
+            <thead>
+              <tr>
+                <th>Rasm</th>
+                <th>Mahsulot Nomi</th>
+                <th>Kategoriya</th>
+                <th>Narx</th>
+                <th>Joriy Qoldiq</th>
+                <th>Holat</th>
+                <th class="text-right">Tezkor Yangilash</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for product in products %}
+              <tr>
+                <td>
+                  {% if product.image %}
+                  <img src="{{ product.image.url }}" width="44" height="44" class="rounded" style="object-fit: cover;">
+                  {% else %}
+                  <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
+                    <i class="fas fa-box text-muted"></i>
+                  </div>
+                  {% endif %}
+                </td>
+                <td class="font-weight-bold">
+                  <a href="{% url 'd_edit_product' product.code %}" class="text-dark">{{ product.name }}</a>
+                  <div class="small text-muted">Kodi: {{ product.code|slice:":8" }}</div>
+                </td>
+                <td>{{ product.category.name }}</td>
+                <td class="font-weight-bold">{{ product.active_price|floatformat:0 }} so'm</td>
+                <td>
+                  <span class="font-weight-bold {% if product.count <= 0 %}text-danger font-weight-bold{% elif product.count <= 5 %}text-warning font-weight-bold{% else %}text-success{% endif %}" style="font-size: 1.1rem;">
+                    {{ product.count }} dona
+                  </span>
+                </td>
+                <td>
+                  {% if product.count <= 0 %}
+                    <span class="badge badge-danger">Tugagan</span>
+                  {% elif product.count <= 5 %}
+                    <span class="badge badge-warning">Kam qolgan</span>
+                  {% else %}
+                    <span class="badge badge-success">Yetarli</span>
+                  {% endif %}
+                </td>
+                <td class="text-right">
+                  <form method="POST" action="{% url 'd_update_stock' product.code %}" class="form-inline justify-content-end">
+                    {% csrf_token %}
+                    <input type="number" name="count" min="0" value="{{ product.count }}" class="form-control form-control-sm mr-1 text-center" style="width: 85px;">
+                    <button type="submit" class="btn btn-sm btn-primary" title="Qoldiqni saqlash">
+                      <i class="fas fa-save"></i>
+                    </button>
+                  </form>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="7" class="text-center py-4 text-muted">
+                  <i class="fas fa-boxes fa-2x mb-2 d-block text-muted"></i>
+                  Qidiruv bo'yicha mahsulotlar topilmadi.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Sahifalash -->
+      {% if page_obj.has_other_pages %}
+      <div class="card-footer d-flex justify-content-center py-3">
+        <ul class="pagination mb-0">
+          {% if page_obj.has_previous %}
+          <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&query={{ query }}&status={{ status_filter }}&category_id={{ category_id }}">&laquo;</a></li>
+          {% endif %}
+
+          {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <li class="page-item"><a class="page-link" href="?page={{ num }}&query={{ query }}&status={{ status_filter }}&category_id={{ category_id }}">{{ num }}</a></li>
+            {% endif %}
+          {% endfor %}
+
+          {% if page_obj.has_next %}
+          <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&query={{ query }}&status={{ status_filter }}&category_id={{ category_id }}">&raquo;</a></li>
+          {% endif %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+</div>
+{% endblock %}

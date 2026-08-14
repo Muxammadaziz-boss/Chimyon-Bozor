@@ -4,7 +4,7 @@ from django.test import TestCase
 from django.urls import reverse
 from openpyxl import load_workbook
 
-from main.models import Cart, CartProduct, Category, Product, User
+from main.models import Cart, CartProduct, Category, Product, User, OrderStatusHistory, AuditLog, SiteSettings
 
 
 class DashboardComprehensiveTestCase(TestCase):
@@ -60,7 +60,7 @@ class DashboardComprehensiveTestCase(TestCase):
         self.assertEqual(logout_res.status_code, 302)
         self.assertRedirects(logout_res, reverse('d_login'))
 
-    # 2. DASHBOARD REAL STATS
+    # 2. DASHBOARD REAL STATS & ANALYTICS
     def test_dashboard_stats_calculation(self):
         Cart.objects.create(user=self.customer, status=1)  # Active cart - not an order
         c2 = Cart.objects.create(user=self.customer, status=2)  # New
@@ -80,6 +80,14 @@ class DashboardComprehensiveTestCase(TestCase):
         self.assertEqual(stats['processing_orders'], 1)
         self.assertEqual(stats['completed_orders'], 1)
         self.assertEqual(stats['total_income'], 16000.0)
+
+    def test_sales_analytics_view(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('d_analytics') + '?period=30days')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('period_revenue', response.context)
+        self.assertIn('category_sales', response.context)
+        self.assertIn('top_products', response.context)
 
     # 3. CATEGORY CRUD
     def test_category_crud_operations(self):
@@ -113,7 +121,7 @@ class DashboardComprehensiveTestCase(TestCase):
         self.assertEqual(del_res.status_code, 302)
         self.assertFalse(Category.objects.filter(id=created_cat.id).exists())
 
-    # 4. PRODUCT CRUD
+    # 4. PRODUCT CRUD & INVENTORY
     def test_product_crud_operations(self):
         self.client.force_login(self.admin)
 
@@ -150,11 +158,26 @@ class DashboardComprehensiveTestCase(TestCase):
         self.assertEqual(del_res.status_code, 302)
         self.assertFalse(Product.objects.filter(code=created_prod.code).exists())
 
-    # 5. ORDER MANAGEMENT & STATUS PROGRESSION
-    def test_order_management_workflow(self):
+    def test_inventory_list_and_quick_update(self):
         self.client.force_login(self.admin)
+        inv_res = self.client.get(reverse('d_inventory'))
+        self.assertEqual(inv_res.status_code, 200)
+        self.assertIn('total_stock_units', inv_res.context)
+
+        # Quick stock update
+        update_res = self.client.post(reverse('d_update_stock', args=[self.product.code]), {
+            'count': '75'
+        })
+        self.assertEqual(update_res.status_code, 302)
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.count, 75)
+
+    # 5. ORDER MANAGEMENT, STATUS HISTORY & STOCK REPLENISHMENT
+    def test_order_management_workflow_and_stock_return(self):
+        self.client.force_login(self.admin)
+        initial_stock = self.product.count
         order = Cart.objects.create(user=self.customer, status=2)
-        CartProduct.objects.create(cart=order, product=self.product, count=3)
+        CartProduct.objects.create(cart=order, product=self.product, count=5)
 
         # Order list
         list_res = self.client.get(reverse('d_orders'))
@@ -163,35 +186,39 @@ class DashboardComprehensiveTestCase(TestCase):
         # Order detail
         detail_res = self.client.get(reverse('d_detail_orders', args=[order.code]))
         self.assertEqual(detail_res.status_code, 200)
-        self.assertEqual(detail_res.context['total_amount'], 24000)
+        self.assertEqual(detail_res.context['total_amount'], 40000)
 
-        # Update status step (2 -> 3)
+        # Update status step (2 -> 3) with comment
         update_res = self.client.post(reverse('d_update_status', args=[order.code]), {
-            'target_status': '3'
+            'target_status': '3',
+            'comment': 'Kuryerga topshirildi'
         })
         self.assertEqual(update_res.status_code, 302)
         order.refresh_from_db()
         self.assertEqual(order.status, 3)
+        self.assertTrue(OrderStatusHistory.objects.filter(order=order, new_status=3).exists())
 
-        # Update status step (3 -> 4)
-        update_res2 = self.client.post(reverse('d_update_status', args=[order.code]), {
-            'target_status': '4'
+        # Cancel order (3 -> 5) and verify stock is replenished
+        cancel_res = self.client.post(reverse('d_update_status', args=[order.code]), {
+            'target_status': '5',
+            'comment': 'Mijoz talabi bilan bekor qilindi'
         })
-        self.assertEqual(update_res2.status_code, 302)
-        order.refresh_from_db()
-        self.assertEqual(order.status, 4)
-
-        # Reject order (4 -> 5)
-        reject_res = self.client.post(reverse('d_reject_cart', args=[order.code]))
-        self.assertEqual(reject_res.status_code, 302)
+        self.assertEqual(cancel_res.status_code, 302)
         order.refresh_from_db()
         self.assertEqual(order.status, 5)
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.count, initial_stock + 5)
 
-    # 6. USER MANAGEMENT
-    def test_user_management(self):
+    # 6. USER MANAGEMENT & CUSTOMER DOSSIER
+    def test_user_management_and_customer_detail(self):
         self.client.force_login(self.admin)
         list_res = self.client.get(reverse('d_list_users'))
         self.assertEqual(list_res.status_code, 200)
+
+        # Customer detail
+        detail_res = self.client.get(reverse('d_customer_detail', args=[self.customer.id]))
+        self.assertEqual(detail_res.status_code, 200)
+        self.assertEqual(detail_res.context['customer'], self.customer)
 
         # Toggle customer status (active -> inactive)
         toggle_res = self.client.get(reverse('d_toggle_user', args=[self.customer.id]))
@@ -205,15 +232,48 @@ class DashboardComprehensiveTestCase(TestCase):
         self.admin.refresh_from_db()
         self.assertTrue(self.admin.is_active)
 
-    # 7. EXPORT EXCEL
-    def test_export_orders_excel(self):
+    # 7. REPORTS & EXPORT EXCEL
+    def test_reports_and_export_excel(self):
         order = Cart.objects.create(user=self.customer, status=4)
         CartProduct.objects.create(cart=order, product=self.product, count=1)
 
         self.client.force_login(self.admin)
+
+        # Reports page
+        reports_res = self.client.get(reverse('d_reports'))
+        self.assertEqual(reports_res.status_code, 200)
+
+        # Export Orders Excel
         response = self.client.get(reverse('d_export_orders'))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['Content-Type'], "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
         workbook = load_workbook(BytesIO(response.content))
         sheet = workbook.active
         self.assertGreaterEqual(sheet.max_row, 2)
+
+        # Export Products Excel
+        prod_exp = self.client.get(reverse('d_export_products'))
+        self.assertEqual(prod_exp.status_code, 200)
+
+    # 8. SETTINGS & AUDIT LOGS
+    def test_site_settings_and_audit_logs(self):
+        self.client.force_login(self.admin)
+
+        # View settings
+        settings_res = self.client.get(reverse('d_settings'))
+        self.assertEqual(settings_res.status_code, 200)
+
+        # Update settings
+        update_res = self.client.post(reverse('d_settings'), {
+            'site_name': 'Chimyon-bozor Yangi',
+            'phone': '+998901112233',
+            'email': 'admin@chimyon.uz'
+        })
+        self.assertEqual(update_res.status_code, 302)
+        site_st = SiteSettings.objects.first()
+        self.assertEqual(site_st.site_name, 'Chimyon-bozor Yangi')
+
+        # Audit logs view
+        audit_res = self.client.get(reverse('d_audit_logs'))
+        self.assertEqual(audit_res.status_code, 200)
+        self.assertTrue(AuditLog.objects.filter(action='SETTINGS_UPDATE').exists())

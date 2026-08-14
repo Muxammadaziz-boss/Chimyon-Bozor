@@ -71,12 +71,14 @@
                         <img src="{{ u.get_avatar_url }}" width="40" height="40" class="rounded-circle shadow-sm" alt="{{ u.username }}">
                       </td>
                       <td>
-                        <strong>{{ u.get_full_name|default:"—" }}</strong>
+                        <a href="{% url 'd_customer_detail' u.id %}" class="font-weight-bold text-dark">
+                          {{ u.get_full_name|default:u.username }}
+                        </a>
                         {% if u.address %}
                           <br><small class="text-muted"><i class="fas fa-map-marker-alt mr-1"></i>{{ u.address|truncatechars:30 }}</small>
                         {% endif %}
                       </td>
-                      <td><code>{{ u.username }}</code></td>
+                      <td><code><a href="{% url 'd_customer_detail' u.id %}">{{ u.username }}</a></code></td>
                       <td>{{ u.phone|default:"—" }}</td>
                       <td>
                         <span class="badge badge-light border">{{ u.order_count }} ta</span>
@@ -99,12 +101,15 @@
                         {% endif %}
                       </td>
                       <td>
+                        <a href="{% url 'd_customer_detail' u.id %}" class="btn btn-sm btn-outline-info mr-1" title="Profil">
+                          <i class="fas fa-eye"></i>
+                        </a>
                         {% if u != request.user %}
                           <a href="{% url 'd_toggle_user' u.id %}" class="btn btn-sm {% if u.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}" title="{% if u.is_active %}Bloklash{% else %}Faollashtirish{% endif %}">
                             {% if u.is_active %}
-                              <i class="fas fa-user-slash"></i> Bloklash
+                              <i class="fas fa-user-slash"></i>
                             {% else %}
-                              <i class="fas fa-user-check"></i> Faollashtirish
+                              <i class="fas fa-user-check"></i>
                             {% endif %}
                           </a>
                         {% else %}
