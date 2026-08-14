@@ -179,9 +179,10 @@ class DashboardComprehensiveTestCase(TestCase):
         order = Cart.objects.create(user=self.customer, status=2)
         CartProduct.objects.create(cart=order, product=self.product, count=5)
 
-        # Order list
-        list_res = self.client.get(reverse('d_orders'))
+        # Order list with period filter
+        list_res = self.client.get(reverse('d_orders') + '?period=today')
         self.assertEqual(list_res.status_code, 200)
+        self.assertIn('available_months', list_res.context)
 
         # Order detail
         detail_res = self.client.get(reverse('d_detail_orders', args=[order.code]))

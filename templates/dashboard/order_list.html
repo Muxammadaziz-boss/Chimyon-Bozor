@@ -53,7 +53,7 @@
               </ul>
             </div>
 
-            <!-- Qidiruv va Sana Filtri -->
+            <!-- Qidiruv va Sotuv Davri Filtri -->
             <div class="card-body py-3 border-top mt-3">
               <form method="GET" class="form-row align-items-center">
                 {% if status_filter %}
@@ -67,14 +67,36 @@
                     </div>
                   </div>
                 </div>
+
                 <div class="col-md-3 my-1">
-                  <input type="date" name="date_from" value="{{ date_from|default:'' }}" class="form-control" title="Boshlang'ich sana">
+                  <select name="period" class="form-control font-weight-bold" onchange="this.form.submit()">
+                    <option value="all" {% if period == 'all' or not period %}selected{% endif %}>📅 Barcha sotuv davrlari</option>
+                    <option value="today" {% if period == 'today' %}selected{% endif %}>Bugungi savdolar</option>
+                    <option value="yesterday" {% if period == 'yesterday' %}selected{% endif %}>Kechagi savdolar</option>
+                    <option value="7days" {% if period == '7days' %}selected{% endif %}>Oxirgi 7 kun</option>
+                    <option value="30days" {% if period == '30days' %}selected{% endif %}>Oxirgi 30 kun</option>
+                    <option value="this_month" {% if period == 'this_month' %}selected{% endif %}>Joriy oy</option>
+                    <option value="last_month" {% if period == 'last_month' %}selected{% endif %}>O'tgan oy</option>
+                    <option value="this_year" {% if period == 'this_year' %}selected{% endif %}>Joriy yil</option>
+                    {% if available_months %}
+                    <optgroup label="Sotuv bo'lgan oylar">
+                      {% for m in available_months %}
+                      <option value="{{ m.value }}" {% if period == m.value %}selected{% endif %}>{{ m.label }}</option>
+                      {% endfor %}
+                    </optgroup>
+                    {% endif %}
+                  </select>
                 </div>
+
                 <div class="col-md-3 my-1">
-                  <input type="date" name="date_to" value="{{ date_to|default:'' }}" class="form-control" title="Tugash sanasi">
+                  <select name="ordering" class="form-control" onchange="this.form.submit()">
+                    <option value="-date" {% if ordering == '-date' %}selected{% endif %}>Sana: Yangidan eskiga</option>
+                    <option value="date_asc" {% if ordering == 'date_asc' %}selected{% endif %}>Sana: Eskidan yangiga</option>
+                  </select>
                 </div>
+
                 <div class="col-md-1 my-1">
-                  <button type="submit" class="btn btn-info w-100" title="Filtrlash"><i class="fas fa-filter"></i></button>
+                  <a href="{% url 'd_orders' %}{% if status_filter %}?status={{ status_filter }}{% endif %}" class="btn btn-outline-secondary w-100" title="Filtrni tozalash"><i class="fas fa-redo"></i></a>
                 </div>
               </form>
             </div>
@@ -171,19 +193,19 @@
             <div class="card-footer d-flex justify-content-center py-3">
               <ul class="pagination mb-0">
                 {% if page_obj.has_previous %}
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&query={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">&laquo;</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&query={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if period %}&period={{ period }}{% endif %}{% if ordering %}&ordering={{ ordering }}{% endif %}">&laquo;</a></li>
                 {% endif %}
 
                 {% for num in page_obj.paginator.page_range %}
                   {% if page_obj.number == num %}
                   <li class="page-item active"><span class="page-link">{{ num }}</span></li>
                   {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                  <li class="page-item"><a class="page-link" href="?page={{ num }}{% if query %}&query={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">{{ num }}</a></li>
+                  <li class="page-item"><a class="page-link" href="?page={{ num }}{% if query %}&query={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if period %}&period={{ period }}{% endif %}{% if ordering %}&ordering={{ ordering }}{% endif %}">{{ num }}</a></li>
                   {% endif %}
                 {% endfor %}
 
                 {% if page_obj.has_next %}
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&query={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">&raquo;</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&query={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if period %}&period={{ period }}{% endif %}{% if ordering %}&ordering={{ ordering }}{% endif %}">&raquo;</a></li>
                 {% endif %}
               </ul>
             </div>

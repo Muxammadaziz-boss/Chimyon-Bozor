@@ -603,8 +603,7 @@ def update_stock(request, code):
 def orders(request):
     query = request.GET.get('query', '').strip()
     status_filter = request.GET.get('status')
-    date_from = request.GET.get('date_from')
-    date_to = request.GET.get('date_to')
+    period = request.GET.get('period', 'all')
     ordering = request.GET.get('ordering', '-date')
 
     order_qs = (
@@ -625,22 +624,62 @@ def orders(request):
     if status_filter and status_filter.isdigit():
         order_qs = order_qs.filter(status=int(status_filter))
 
-    if date_from:
+    now = timezone.now()
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    if period == 'today':
+        order_qs = order_qs.filter(date__gte=today_start)
+    elif period == 'yesterday':
+        yesterday_start = today_start - timedelta(days=1)
+        order_qs = order_qs.filter(date__gte=yesterday_start, date__lt=today_start)
+    elif period == '7days':
+        order_qs = order_qs.filter(date__gte=now - timedelta(days=7))
+    elif period == '30days':
+        order_qs = order_qs.filter(date__gte=now - timedelta(days=30))
+    elif period == 'this_month':
+        order_qs = order_qs.filter(date__year=now.year, date__month=now.month)
+    elif period == 'last_month':
+        first_day_this_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        last_day_last_month = first_day_this_month - timedelta(days=1)
+        order_qs = order_qs.filter(date__year=last_day_last_month.year, date__month=last_day_last_month.month)
+    elif period == 'this_year':
+        order_qs = order_qs.filter(date__year=now.year)
+    elif period and period.startswith('month_'):
         try:
-            order_qs = order_qs.filter(date__date__gte=date_from)
+            parts = period.replace('month_', '').split('-')
+            if len(parts) == 2:
+                y, m = int(parts[0]), int(parts[1])
+                order_qs = order_qs.filter(date__year=y, date__month=m)
         except Exception:
             pass
 
-    if date_to:
-        try:
-            order_qs = order_qs.filter(date__date__lte=date_to)
-        except Exception:
-            pass
-
-    if ordering in ['-date', 'date', '-id', 'id']:
-        order_qs = order_qs.order_by(ordering)
+    if ordering == 'date_asc':
+        order_qs = order_qs.order_by('date', 'id')
     else:
         order_qs = order_qs.order_by('-date', '-id')
+
+    # Available sales months from DB
+    month_names_uz = {
+        1: "Yanvar", 2: "Fevral", 3: "Mart", 4: "Aprel",
+        5: "May", 6: "Iyun", 7: "Iyul", 8: "Avgust",
+        9: "Sentyabr", 10: "Oktyabr", 11: "Noyabr", 12: "Dekabr"
+    }
+
+    try:
+        available_months_raw = (
+            models.Cart.objects.exclude(status=1)
+            .dates('date', 'month', order='DESC')
+        )
+        available_months = []
+        for m_date in available_months_raw:
+            val = f"month_{m_date.year}-{m_date.month:02d}"
+            label = f"{month_names_uz.get(m_date.month, m_date.strftime('%B'))} {m_date.year}"
+            available_months.append({
+                'value': val,
+                'label': label
+            })
+    except Exception:
+        available_months = []
 
     # Status summary counts
     status_counts = {
@@ -663,9 +702,9 @@ def orders(request):
         'page_obj': page_obj,
         'query': query,
         'status_filter': status_filter,
-        'date_from': date_from,
-        'date_to': date_to,
+        'period': period,
         'ordering': ordering,
+        'available_months': available_months,
         'status_counts': status_counts,
     })
 
