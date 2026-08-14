@@ -153,12 +153,13 @@ class AuthAndCartFlowTestCase(TestCase):
         CartProduct.objects.create(cart=active_cart, product=self.product, count=2)
 
         self.client.force_login(self.user)
-        response = self.client.post(reverse('checkout'))
+        response = self.client.post(reverse('checkout'), {'provider': 'cash'})
 
         self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, reverse('order_detail', args=[active_cart.code]))
+        self.assertRedirects(response, reverse('payment_success', args=[active_cart.code]))
         active_cart.refresh_from_db()
         self.assertEqual(active_cart.status, 2)
+
 
     def test_order_history_shows_only_real_orders(self):
         Cart.objects.create(user=self.user, status=1)

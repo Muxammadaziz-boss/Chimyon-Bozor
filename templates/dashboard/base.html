@@ -94,6 +94,10 @@
               </ul>
             </li>
 
+            <li class="{% if 'payment' in request.resolver_match.url_name %}active{% endif %}">
+              <a href="{% url 'd_payments' %}" class="nav-link"><i data-feather="credit-card"></i><span>To'lovlar</span></a>
+            </li>
+
             <li class="dropdown {% if 'product' in request.resolver_match.url_name %}active{% endif %}">
               <a href="#" class="menu-toggle nav-link has-dropdown"><i data-feather="box"></i><span>Mahsulotlar</span></a>
               <ul class="dropdown-menu">

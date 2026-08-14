@@ -827,6 +827,8 @@ def cart_detail(request, code):
 
     # Status History
     status_history = order.status_history.select_related('changed_by').all()
+    payments = order.payments.all()
+    primary_payment = payments.first()
 
     context = {
         'order': order,
@@ -836,13 +838,102 @@ def cart_detail(request, code):
         'customer_orders_count': customer_orders_count,
         'customer_lifetime_spent': customer_lifetime_spent,
         'status_history': status_history,
+        'payments': payments,
+        'primary_payment': primary_payment,
     }
     return render(request, 'dashboard/orders_detail.html', context=context)
+
+
+@staff_required
+def payments_list(request):
+    """
+    To'lovlar monitoringi va boshqaruvi.
+    """
+    query = request.GET.get('query', '').strip()
+    status_filter = request.GET.get('status', '').strip()
+    provider_filter = request.GET.get('provider', '').strip()
+
+    payments_qs = models.Payment.objects.select_related('order', 'order__user').order_by('-created_at')
+
+    if query:
+        payments_qs = payments_qs.filter(
+            Q(code__icontains=query) |
+            Q(transaction_id__icontains=query) |
+            Q(order__code__icontains=query) |
+            Q(order__user__username__icontains=query) |
+            Q(order__user__phone__icontains=query)
+        )
+
+    if status_filter:
+        payments_qs = payments_qs.filter(status=status_filter)
+
+    if provider_filter:
+        payments_qs = payments_qs.filter(provider=provider_filter)
+
+    # KPI Statistics
+    total_payments_count = models.Payment.objects.count()
+    paid_payments = models.Payment.objects.filter(status=models.Payment.Status.PAID)
+    total_paid_amount = sum(float(p.amount) for p in paid_payments)
+    paid_count = paid_payments.count()
+    pending_count = models.Payment.objects.filter(status=models.Payment.Status.PENDING).count()
+    failed_refunded_count = models.Payment.objects.filter(
+        status__in=[models.Payment.Status.FAILED, models.Payment.Status.REFUNDED, models.Payment.Status.CANCELLED]
+    ).count()
+
+    paginator = Paginator(payments_qs, 20)
+    page = request.GET.get('page', 1)
+    try:
+        page_obj = paginator.page(page)
+    except (PageNotAnInteger, EmptyPage):
+        page_obj = paginator.page(1)
+
+    context = {
+        'payments': page_obj,
+        'page_obj': page_obj,
+        'query': query,
+        'status_filter': status_filter,
+        'provider_filter': provider_filter,
+        'total_payments_count': total_payments_count,
+        'total_paid_amount': total_paid_amount,
+        'paid_count': paid_count,
+        'pending_count': pending_count,
+        'failed_refunded_count': failed_refunded_count,
+        'provider_choices': models.Payment.Provider.choices,
+        'status_choices': models.Payment.Status.choices,
+    }
+    return render(request, 'dashboard/payments.html', context)
+
+
+@staff_required
+@require_POST
+def refund_payment(request, payment_id):
+    """
+    To'lovni qaytarish (Admin Refund).
+    """
+    payment = get_object_or_404(models.Payment, id=payment_id)
+    reason = request.POST.get('reason', '').strip()
+    amount_raw = request.POST.get('amount')
+    amount = float(amount_raw) if amount_raw else None
+
+    from main.services.payment import PaymentManager
+    result = PaymentManager.refund_payment(payment, amount=amount, reason=reason)
+    if result.get('success'):
+        log_admin_action(
+            request,
+            "PAYMENT_REFUND",
+            f"To'lov #{payment.code[:8]} qaytarildi. Summa: {payment.amount} {payment.currency}. Sabab: {reason}"
+        )
+        messages.success(request, f"To'lov #{payment.code[:8]} muvaffaqiyatli qaytarildi.")
+    else:
+        messages.error(request, result.get('message', "To'lovni qaytarishda xatolik."))
+
+    return redirect(request.META.get('HTTP_REFERER', 'd_payments'))
 
 
 # ==========================================
 # 6. FOYDALANUVCHILAR BOSHQARUVI (CUSTOMER MANAGEMENT)
 # ==========================================
+
 
 @staff_required
 def list_users(request):

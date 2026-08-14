@@ -1,0 +1,331 @@
+{% extends 'base.html' %}
+{% load static shop_extras %}
+
+{% block title %}Buyurtmani rasmiylashtirish (Checkout) | {{ site_settings.site_name|default:"Chimyon-bozor" }}{% endblock %}
+
+{% block content %}
+<style>
+    .checkout-shell {
+        display: grid;
+        grid-template-columns: minmax(0, 1.8fr) 380px;
+        gap: 28px;
+        align-items: start;
+    }
+
+    .checkout-card {
+        background: #fff;
+        border: 1px solid #e8eaed;
+        border-radius: 20px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+    }
+
+    .checkout-card__title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .payment-options-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+    }
+
+    .payment-option-card {
+        border: 2px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 16px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        background: #fff;
+    }
+
+    .payment-option-card:hover {
+        border-color: #7c3aed;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(124, 58, 237, 0.08);
+    }
+
+    .payment-option-card.active {
+        border-color: #7c3aed;
+        background: #faf5ff;
+    }
+
+    .payment-option-card input[type="radio"] {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        accent-color: #7c3aed;
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+    }
+
+    .payment-logo {
+        height: 32px;
+        object-fit: contain;
+        margin-bottom: 12px;
+    }
+
+    .payment-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        width: fit-content;
+    }
+
+    .payment-badge-click { background: #e0f2fe; color: #0284c7; }
+    .payment-badge-payme { background: #ccfbf1; color: #0f766e; }
+    .payment-badge-uzum { background: #f3e8ff; color: #7c3aed; }
+    .payment-badge-cash { background: #fef3c7; color: #b45309; }
+
+    .summary-card {
+        background: #fff;
+        border: 1px solid #e8eaed;
+        border-radius: 20px;
+        padding: 24px;
+        position: sticky;
+        top: 100px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+    }
+
+    .summary-line {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        color: #4b5563;
+        font-size: 15px;
+    }
+
+    .summary-total {
+        border-top: 1px solid #e5e7eb;
+        padding-top: 16px;
+        margin-top: 16px;
+        font-size: 18px;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .checkout-submit-btn {
+        width: 100%;
+        min-height: 52px;
+        font-size: 16px;
+        font-weight: 700;
+        border-radius: 999px;
+        margin-top: 20px;
+        background: linear-gradient(135deg, #7c3aed, #6d28d9);
+        color: #fff;
+        border: 0;
+        box-shadow: 0 10px 25px rgba(124, 58, 237, 0.25);
+        transition: all 0.2s ease;
+    }
+
+    .checkout-submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 30px rgba(124, 58, 237, 0.35);
+        color: #fff;
+    }
+
+    @media (max-width: 991.98px) {
+        .checkout-shell {
+            grid-template-columns: 1fr;
+        }
+        .summary-card {
+            position: static;
+        }
+    }
+</style>
+
+<section class="checkout-section padding-y-120">
+    <div class="container container-two">
+        <div class="mb-4">
+            <h2 class="mb-1 font-weight-bold">Buyurtmani Rasmiylashtirish</h2>
+            <p class="text-body mb-0">Yetkazib berish ma'lumotlarini tekshiring va qulay to'lov usulini tanlang.</p>
+        </div>
+
+        <form method="POST" action="{% url 'checkout' %}" id="checkoutForm">
+            {% csrf_token %}
+            <div class="checkout-shell">
+                <!-- Chap Qism: Manzil va To'lov usuli -->
+                <div>
+                    <!-- 1. Yetkazib Berish Ma'lumotlari -->
+                    <div class="checkout-card">
+                        <div class="checkout-card__title">
+                            <i class="fas fa-map-marker-alt text-primary"></i> 1. Yetkazib Berish Ma'lumotlari
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label font-weight-bold text-dark">Qabul qiluvchi ismi</label>
+                                <input type="text" class="form-control" value="{{ request.user.get_full_name|default:request.user.username }}" readonly style="background-color: #f8fafc;">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label font-weight-bold text-dark">Telefon raqam <span class="text-danger">*</span></label>
+                                <input type="text" name="phone" class="form-control" value="{{ request.user.phone|default:'' }}" placeholder="+998 90 123 45 67" required>
+                                <small class="text-muted">Kuryer yetkazishdan oldin ushbu raqamga bog'lanadi</small>
+                            </div>
+                            <div class="col-12 mb-2">
+                                <label class="form-label font-weight-bold text-dark">Yetkazib berish manzili <span class="text-danger">*</span></label>
+                                <textarea name="address" class="form-control" rows="2" placeholder="Shahar, tuman, ko'cha, uy, xonadon..." required>{{ request.user.address|default:'' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. To'lov Usulini Tanlash -->
+                    <div class="checkout-card">
+                        <div class="checkout-card__title">
+                            <i class="fas fa-credit-card text-success"></i> 2. To'lov Usulini Tanlang
+                        </div>
+
+                        <div class="payment-options-grid">
+                            <!-- Click -->
+                            <label class="payment-option-card active" for="pay_click">
+                                <input type="radio" name="provider" value="click" id="pay_click" checked>
+                                <div>
+                                    <div class="payment-badge payment-badge-click mb-2"><i class="fas fa-bolt mr-1"></i> CLICK</div>
+                                    <h6 class="font-weight-bold mb-1">Click orqali to'lov</h6>
+                                    <small class="text-muted d-block">Uzcard, Humo, Visa, Mastercard</small>
+                                </div>
+                            </label>
+
+                            <!-- Payme -->
+                            <label class="payment-option-card" for="pay_payme">
+                                <input type="radio" name="provider" value="payme" id="pay_payme">
+                                <div>
+                                    <div class="payment-badge payment-badge-payme mb-2"><i class="fas fa-wallet mr-1"></i> PAYME</div>
+                                    <h6 class="font-weight-bold mb-1">Payme orqali to'lov</h6>
+                                    <small class="text-muted d-block">Uzcard, Humo kartalari</small>
+                                </div>
+                            </label>
+
+                            <!-- Uzum Bank -->
+                            <label class="payment-option-card" for="pay_uzum">
+                                <input type="radio" name="provider" value="uzum" id="pay_uzum">
+                                <div>
+                                    <div class="payment-badge payment-badge-uzum mb-2"><i class="fas fa-university mr-1"></i> UZUM</div>
+                                    <h6 class="font-weight-bold mb-1">Uzum Bank</h6>
+                                    <small class="text-muted d-block">Uzum Pay va kartalar</small>
+                                </div>
+                            </label>
+
+                            <!-- Cash on delivery -->
+                            <label class="payment-option-card" for="pay_cash">
+                                <input type="radio" name="provider" value="cash" id="pay_cash">
+                                <div>
+                                    <div class="payment-badge payment-badge-cash mb-2"><i class="fas fa-hand-holding-usd mr-1"></i> NAQD</div>
+                                    <h6 class="font-weight-bold mb-1">Yetkazilganda to'lash</h6>
+                                    <small class="text-muted d-block">Kuryerga naqd yoki karta orqali</small>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 3. Buyurtma Mahsulotlari Ro'yxati -->
+                    <div class="checkout-card">
+                        <div class="checkout-card__title">
+                            <i class="fas fa-shopping-bag text-info"></i> 3. Savatdagi Mahsulotlar ({{ cart_count }} dona)
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-borderless align-middle mb-0">
+                                <tbody>
+                                    {% for item in cart_products %}
+                                    <tr class="border-bottom">
+                                        <td style="width: 60px;">
+                                            {% if item.product.image %}
+                                            <img src="{{ item.product.image.url }}" width="50" height="50" class="rounded" style="object-fit: cover;">
+                                            {% else %}
+                                            <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width:50px;height:50px;"><i class="fas fa-box text-muted"></i></div>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="font-weight-bold text-dark">{{ item.product.name }}</div>
+                                            <small class="text-muted">{{ item.product.category.name }} &bull; {{ item.count }} dona &times; {{ item.product.active_price|uz_price }}</small>
+                                        </td>
+                                        <td class="text-right font-weight-bold text-dark">
+                                            {{ item.total_price|uz_price }}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- O'ng Qism: Hisob-Kitob Xulosasi -->
+                <aside>
+                    <div class="summary-card">
+                        <h5 class="font-weight-bold text-dark mb-3">Buyurtma Xulosasi</h5>
+
+                        <div class="summary-line">
+                            <span>Mahsulotlar ({{ cart_count }} dona):</span>
+                            <span class="font-weight-bold text-dark">{{ cart_total|uz_price }}</span>
+                        </div>
+
+                        <div class="summary-line">
+                            <span>Yetkazib berish:</span>
+                            <span class="badge badge-success px-2 py-1">Bepul</span>
+                        </div>
+
+                        <div class="summary-line">
+                            <span>Xizmat haqi:</span>
+                            <span class="text-muted">0 so'm</span>
+                        </div>
+
+                        <div class="summary-line summary-total">
+                            <span>Jami To'lov:</span>
+                            <span class="text-primary font-weight-bold" style="font-size: 1.3rem;">{{ cart_total|uz_price }}</span>
+                        </div>
+
+                        <button type="submit" class="checkout-submit-btn" id="submitBtn">
+                            <i class="fas fa-shield-alt mr-2"></i> To'lovga O'tish
+                        </button>
+
+                        <div class="text-center mt-3 small text-muted">
+                            <i class="fas fa-lock text-success mr-1"></i> Barcha to'lovlar 256-bit SSL shifrlash orqali himoyalangan
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </form>
+    </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const optionCards = document.querySelectorAll('.payment-option-card');
+    const submitBtn = document.getElementById('submitBtn');
+
+    optionCards.forEach(card => {
+        card.addEventListener('click', function() {
+            optionCards.forEach(c => c.classList.remove('active'));
+            this.classList.add('active');
+            const radio = this.querySelector('input[type="radio"]');
+            if (radio) {
+                radio.checked = true;
+                if (radio.value === 'cash') {
+                    submitBtn.innerHTML = '<i class="fas fa-check mr-2"></i> Buyurtmani Tasdiqlash';
+                } else {
+                    submitBtn.innerHTML = '<i class="fas fa-shield-alt mr-2"></i> To\'lovga O\'tish (' + radio.value.toUpperCase() + ')';
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

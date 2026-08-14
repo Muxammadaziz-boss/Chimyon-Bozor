@@ -74,3 +74,12 @@ class OTPCodeAdmin(admin.ModelAdmin):
     list_display = ('user', 'phone', 'code', 'created_at', 'is_used')
     list_filter = ('is_used', 'created_at')
     search_fields = ('phone', 'code', 'user__username')
+
+
+@admin.register(models.Payment)
+class PaymentAdmin(admin.ModelAdmin):
+    list_display = ('code', 'order', 'provider', 'amount', 'currency', 'status', 'transaction_id', 'created_at')
+    list_filter = ('status', 'provider', 'currency', 'created_at')
+    search_fields = ('code', 'transaction_id', 'order__code', 'order__user__username')
+    readonly_fields = ('code', 'created_at', 'updated_at', 'paid_at', 'refunded_at')
+

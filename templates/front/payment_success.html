@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% load static shop_extras %}
+
+{% block title %}To'lov Muvaffaqiyatli | {{ site_settings.site_name|default:"Chimyon-bozor" }}{% endblock %}
+
+{% block content %}
+<style>
+    .success-card {
+        background: #fff;
+        border: 1px solid #e8eaed;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.04);
+        max-width: 780px;
+        margin: 0 auto;
+    }
+
+    .success-icon-wrap {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: #dcfce7;
+        color: #16a34a;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 36px;
+        margin: 0 auto 20px;
+        box-shadow: 0 10px 25px rgba(22, 163, 74, 0.2);
+    }
+
+    .receipt-box {
+        background: #f8fafc;
+        border: 1px dashed #cbd5e1;
+        border-radius: 16px;
+        padding: 20px;
+        margin: 24px 0;
+    }
+
+    .receipt-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        font-size: 15px;
+    }
+
+    .receipt-row strong {
+        color: #111827;
+    }
+</style>
+
+<section class="padding-y-120">
+    <div class="container">
+        <div class="success-card text-center">
+            <div class="success-icon-wrap">
+                <i class="fas fa-check"></i>
+            </div>
+
+            <h2 class="font-weight-bold text-dark mb-2">Buyurtmangiz Qabul Qilindi!</h2>
+            <p class="text-muted mb-4">
+                Xaridingiz uchun tashakkur. Buyurtmangiz tez orada tayyorlanib, kuryer orqali yetkaziladi.
+            </p>
+
+            <div class="receipt-box text-left">
+                <div class="receipt-row">
+                    <span class="text-muted">Buyurtma kodi:</span>
+                    <strong>#{{ order.code|slice:":8" }} (<code>{{ order.code }}</code>)</strong>
+                </div>
+                <div class="receipt-row">
+                    <span class="text-muted">To'lov usuli:</span>
+                    <strong>{{ payment.get_provider_display|default:"Yetkazilganda naqd to'lov" }}</strong>
+                </div>
+                <div class="receipt-row">
+                    <span class="text-muted">To'lov holati:</span>
+                    <span>
+                        {% if payment.status == 'paid' %}
+                            <span class="badge badge-success px-2 py-1"><i class="fas fa-check-circle mr-1"></i> To'landi</span>
+                        {% elif payment.status == 'pending' %}
+                            <span class="badge badge-warning px-2 py-1"><i class="fas fa-clock mr-1"></i> Kutilmoqda (Yetkazilganda to'lanadi)</span>
+                        {% else %}
+                            <span class="badge badge-info px-2 py-1">{{ payment.get_status_display }}</span>
+                        {% endif %}
+                    </span>
+                </div>
+                {% if payment.transaction_id %}
+                <div class="receipt-row">
+                    <span class="text-muted">Tranzaksiya ID:</span>
+                    <strong><code>{{ payment.transaction_id }}</code></strong>
+                </div>
+                {% endif %}
+                <div class="receipt-row">
+                    <span class="text-muted">Sana va vaqt:</span>
+                    <strong>{{ order.date|date:"d.m.Y H:i" }}</strong>
+                </div>
+                <div class="receipt-row">
+                    <span class="text-muted">Yetkazish manzili:</span>
+                    <strong>{{ order.user.address|default:"Manzil ko'rsatilmagan" }}</strong>
+                </div>
+                <div class="receipt-row border-top pt-2 mt-2">
+                    <span class="text-dark font-weight-bold" style="font-size: 1.1rem;">Jami To'lov:</span>
+                    <strong class="text-primary font-weight-bold" style="font-size: 1.25rem;">{{ order.total_price|uz_price }}</strong>
+                </div>
+            </div>
+
+            <!-- Mahsulotlar -->
+            <div class="text-left mt-4 mb-4">
+                <h6 class="font-weight-bold text-dark mb-3"><i class="fas fa-box-open mr-2 text-primary"></i>Buyurtma tarkibi ({{ cart_products|length }} xil):</h6>
+                <div class="list-group">
+                    {% for item in cart_products %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center border-0 bg-light rounded mb-2 py-2">
+                        <div class="d-flex align-items-center gap-3">
+                            {% if item.product.image %}
+                            <img src="{{ item.product.image.url }}" width="40" height="40" class="rounded mr-2" style="object-fit: cover;">
+                            {% endif %}
+                            <div>
+                                <strong class="text-dark">{{ item.product.name }}</strong>
+                                <small class="text-muted d-block">{{ item.count }} dona &times; {{ item.unit_price|uz_price }}</small>
+                            </div>
+                        </div>
+                        <span class="font-weight-bold text-dark">{{ item.total_price|uz_price }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-center gap-3 flex-wrap mt-4">
+                <a href="{% url 'order_detail' order.code %}" class="btn btn-outline-primary pill px-4 py-2 font-weight-bold">
+                    <i class="fas fa-receipt mr-1"></i> Buyurtma Tafsiloti
+                </a>
+                <a href="{% url 'all_products' %}" class="btn btn-main pill px-4 py-2 font-weight-bold">
+                    <i class="fas fa-shopping-bag mr-1"></i> Katalogga Qaytish
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

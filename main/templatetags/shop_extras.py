@@ -1,5 +1,6 @@
 from decimal import Decimal, InvalidOperation
 from django import template
+from django.utils.safestring import mark_safe
 
 register = template.Library()
 
@@ -12,13 +13,14 @@ def uz_price(value):
     1000200 -> 1 000 200 so'm
     """
     if value is None or value == '':
-        return "0 so'm"
+        return mark_safe("0 so'm")
     try:
         amount = Decimal(str(value))
     except (InvalidOperation, TypeError, ValueError):
-        return "0 so'm"
+        return mark_safe("0 so'm")
     formatted = f"{amount:,.0f}".replace(',', ' ')
-    return f"{formatted} so'm"
+    return mark_safe(f"{formatted} so'm")
+
 
 
 @register.filter
@@ -47,32 +49,33 @@ def compact_money(value):
     850000 -> 850 ming so'm
     """
     if value is None or value == '':
-        return "0 so'm"
+        return mark_safe("0 so'm")
     try:
         val = float(value)
     except (TypeError, ValueError):
-        return "0 so'm"
+        return mark_safe("0 so'm")
 
     if val >= 1_000_000_000:
         res = f"{val / 1_000_000_000:.2f}".rstrip('0').rstrip('.')
-        return f"{res} mlrd so'm"
+        return mark_safe(f"{res} mlrd so'm")
     elif val >= 1_000_000:
         res = f"{val / 1_000_000:.1f}".rstrip('0').rstrip('.')
-        return f"{res} mln so'm"
+        return mark_safe(f"{res} mln so'm")
     elif val >= 100_000:
         res = f"{val / 1_000:.0f}"
-        return f"{res} ming so'm"
+        return mark_safe(f"{res} ming so'm")
     else:
-        return f"{val:,.0f} so'm".replace(',', ' ')
+        return mark_safe(f"{val:,.0f} so'm".replace(',', ' '))
 
 
 @register.filter
 def monthly_price(value, months=12):
     if value is None or value == '':
-        return "0 so'm/oyiga"
+        return mark_safe("0 so'm/oyiga")
     try:
         amount = Decimal(str(value)) / Decimal(months)
     except (InvalidOperation, TypeError, ValueError):
-        return "0 so'm/oyiga"
+        return mark_safe("0 so'm/oyiga")
     formatted = f"{amount:,.0f}".replace(',', ' ')
-    return f"{formatted} so'm/oyiga"
+    return mark_safe(f"{formatted} so'm/oyiga")
+

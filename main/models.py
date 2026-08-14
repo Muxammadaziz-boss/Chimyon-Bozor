@@ -279,4 +279,57 @@ class AuditLog(models.Model):
         return f"{self.user} - {self.action} ({self.created_at.strftime('%d.%m.%Y %H:%M') if self.created_at else ''})"
 
 
+class Payment(models.Model):
+    class Provider(models.TextChoices):
+        CLICK = 'click', 'Click'
+        PAYME = 'payme', 'Payme'
+        UZUM = 'uzum', 'Uzum Bank'
+        CASH = 'cash', 'Yetkazilganda naqd to\'lov'
+
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Kutilmoqda'
+        INITIATED = 'initiated', 'Boshlandi'
+        PAID = 'paid', 'To\'landi'
+        FAILED = 'failed', 'Xatolik'
+        CANCELLED = 'cancelled', 'Bekor qilindi'
+        REFUNDED = 'refunded', 'Qaytarildi'
+
+    code = models.CharField(max_length=150, unique=True, default=uuid4, db_index=True)
+    order = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='payments')
+    provider = models.CharField(max_length=30, choices=Provider.choices, default=Provider.CASH, db_index=True)
+    transaction_id = models.CharField(max_length=255, blank=True, null=True, unique=True, db_index=True)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    currency = models.CharField(max_length=10, default='UZS')
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING, db_index=True)
+    payment_method = models.CharField(max_length=50, blank=True, default='card')
+    provider_response = models.JSONField(blank=True, null=True)
+    error_message = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
+    refund_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    refunded_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "To'lov"
+        verbose_name_plural = "To'lovlar"
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            self.code = str(uuid4())
+        elif not isinstance(self.code, str):
+            self.code = str(self.code)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        code_str = str(self.code)[:8] if self.code else ''
+        return f"Payment #{code_str} - {self.get_provider_display()} - {self.amount} {self.currency} ({self.get_status_display()})"
+
+    @property
+    def is_paid(self):
+        return self.status == self.Status.PAID
+
+
+
 

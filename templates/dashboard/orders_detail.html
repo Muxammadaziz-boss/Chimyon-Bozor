@@ -36,9 +36,9 @@
                 </div>
               </div>
 
-              <!-- Mijoz va Yetkazib berish ma'lumotlari -->
+              <!-- Mijoz, Yetkazib berish va To'lov ma'lumotlari -->
               <div class="row mt-4">
-                <div class="col-md-6">
+                <div class="col-md-4 mb-3">
                   <div class="p-3 bg-light rounded h-100 border">
                     <h6 class="font-weight-bold text-dark mb-2"><i class="fas fa-user mr-2 text-primary"></i>Mijoz Ma'lumotlari</h6>
                     <p class="mb-1"><strong>Ismi:</strong> {{ order.user.get_full_name|default:order.user.username }}</p>
@@ -52,13 +52,65 @@
                   </div>
                 </div>
 
-                <div class="col-md-6 mt-3 mt-md-0">
+                <div class="col-md-4 mb-3">
                   <div class="p-3 bg-light rounded h-100 border">
-                    <h6 class="font-weight-bold text-dark mb-2"><i class="fas fa-truck mr-2 text-danger"></i>Yetkazib Berish va To'lov</h6>
-                    <p class="mb-1"><strong>Yetkazish manzili:</strong> {{ order.user.address|default:"Manzil ko'rsatilmagan" }}</p>
-                    <p class="mb-1"><strong>Yetkazish xizmati:</strong> Standart kuryerlik (Chimyon-bozor)</p>
+                    <h6 class="font-weight-bold text-dark mb-2"><i class="fas fa-truck mr-2 text-danger"></i>Yetkazib Berish</h6>
+                    <p class="mb-1"><strong>Manzil:</strong> {{ order.user.address|default:"Manzil ko'rsatilmagan" }}</p>
+                    <p class="mb-1"><strong>Xizmat:</strong> Standart kuryerlik (Chimyon-bozor)</p>
                     <p class="mb-1"><strong>Yetkazish narxi:</strong> <span class="badge badge-success">Bepul</span></p>
-                    <p class="mb-0"><strong>To'lov usuli:</strong> Naqd pul / Karta orqali yetkazilganda</p>
+                    <p class="mb-0"><strong>Status:</strong> {{ order.get_status_display }}</p>
+                  </div>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                  <div class="p-3 bg-light rounded h-100 border border-primary">
+                    <h6 class="font-weight-bold text-primary mb-2"><i class="fas fa-credit-card mr-2"></i>To'lov Ma'lumotlari</h6>
+                    {% if primary_payment %}
+                    <p class="mb-1">
+                      <strong>Provayder:</strong> 
+                      {% if primary_payment.provider == 'click' %}
+                        <span class="badge badge-info"><i class="fas fa-bolt mr-1"></i> Click</span>
+                      {% elif primary_payment.provider == 'payme' %}
+                        <span class="badge badge-success"><i class="fas fa-wallet mr-1"></i> Payme</span>
+                      {% elif primary_payment.provider == 'uzum' %}
+                        <span class="badge badge-primary"><i class="fas fa-university mr-1"></i> Uzum Bank</span>
+                      {% else %}
+                        <span class="badge badge-warning"><i class="fas fa-hand-holding-usd mr-1"></i> Naqd to'lov</span>
+                      {% endif %}
+                    </p>
+                    <p class="mb-1">
+                      <strong>Holat:</strong> 
+                      {% if primary_payment.status == 'paid' %}
+                        <span class="badge badge-success"><i class="fas fa-check-circle mr-1"></i> To'langan</span>
+                      {% elif primary_payment.status == 'pending' %}
+                        <span class="badge badge-warning"><i class="fas fa-clock mr-1"></i> Kutilmoqda</span>
+                      {% elif primary_payment.status == 'refunded' %}
+                        <span class="badge badge-secondary"><i class="fas fa-undo mr-1"></i> Qaytarilgan</span>
+                      {% else %}
+                        <span class="badge badge-info">{{ primary_payment.get_status_display }}</span>
+                      {% endif %}
+                    </p>
+                    {% if primary_payment.transaction_id %}
+                    <p class="mb-1"><strong>Tranzaksiya ID:</strong> <code>{{ primary_payment.transaction_id }}</code></p>
+                    {% endif %}
+                    <p class="mb-1"><strong>Summa:</strong> <span class="font-weight-bold text-dark">{{ primary_payment.amount|uz_price }}</span></p>
+                    {% if primary_payment.paid_at %}
+                    <p class="mb-0 text-muted small"><strong>To'langan vaqt:</strong> {{ primary_payment.paid_at|date:"d.m.Y H:i" }}</p>
+                    {% endif %}
+
+                    {% if primary_payment.status == 'paid' %}
+                    <div class="mt-2">
+                      <form method="POST" action="{% url 'd_refund_payment' primary_payment.id %}" onsubmit="return confirm('Haqiqatan ham ushbu to\'lovni qaytarmoqchimisiz?');">
+                        {% csrf_token %}
+                        <input type="hidden" name="reason" value="Admin tomonidan buyurtma bekor qilinganligi sababli">
+                        <button type="submit" class="btn btn-sm btn-outline-danger btn-block"><i class="fas fa-undo mr-1"></i> To'lovni Qaytarish (Refund)</button>
+                      </form>
+                    </div>
+                    {% endif %}
+
+                    {% else %}
+                    <p class="text-muted small mb-0">Ushbu buyurtmaga to'lov hali biriktirilmagan (Standart naqd to'lov).</p>
+                    {% endif %}
                   </div>
                 </div>
               </div>

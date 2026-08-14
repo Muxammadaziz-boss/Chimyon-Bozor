@@ -21,6 +21,10 @@ urlpatterns = [
     path('wishlist/', views.wishlist, name='wishlist'),
     path('cart/', views.cart, name='cart'),
     path('checkout/', views.checkout, name='checkout'),
+    path('payments/webhook/<str:provider>/', views.payment_webhook, name='payment_webhook'),
+    path('payment/success/<str:code>/', views.payment_success, name='payment_success'),
+    path('payment/failed/<str:code>/', views.payment_failed, name='payment_failed'),
+    path('payment/retry/<str:code>/', views.retry_payment, name='retry_payment'),
     path('orders/', views.order_history, name='order_history'),
     path('orders/<str:code>/', views.order_detail, name='order_detail'),
     path('api/live-search/', views.live_search, name='live_search'),
@@ -30,3 +34,4 @@ urlpatterns = [
     path('api/check-phone/', views.check_phone_api, name='check_phone_api'),
     path('product-detail/<str:product_code>/add-review/', views.add_review, name='add_review'),
 ]
+

@@ -235,3 +235,15 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = True
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_AGE = config('SESSION_COOKIE_AGE', default=86400 * 7, cast=int)
+
+# Payment Gateway Settings
+CLICK_SERVICE_ID = config('CLICK_SERVICE_ID', default='test_service_id')
+CLICK_MERCHANT_ID = config('CLICK_MERCHANT_ID', default='test_merchant_id')
+CLICK_SECRET_KEY = config('CLICK_SECRET_KEY', default='test_click_secret')
+
+PAYME_MERCHANT_ID = config('PAYME_MERCHANT_ID', default='test_payme_merchant_id')
+PAYME_SECRET_KEY = config('PAYME_SECRET_KEY', default='test_payme_secret')
+
+UZUM_MERCHANT_ID = config('UZUM_MERCHANT_ID', default='test_uzum_merchant_id')
+UZUM_SECRET_KEY = config('UZUM_SECRET_KEY', default='test_uzum_secret')
+UZUM_API_URL = config('UZUM_API_URL', default='https://pay.uzumbank.uz')

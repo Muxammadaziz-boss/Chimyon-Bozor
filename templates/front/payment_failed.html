@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% load static shop_extras %}
+
+{% block title %}To'lovda Xatolik | {{ site_settings.site_name|default:"Chimyon-bozor" }}{% endblock %}
+
+{% block content %}
+<style>
+    .failure-card {
+        background: #fff;
+        border: 1px solid #fee2e2;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 10px 40px rgba(239, 68, 68, 0.05);
+        max-width: 680px;
+        margin: 0 auto;
+    }
+
+    .failure-icon-wrap {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: #fee2e2;
+        color: #ef4444;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 36px;
+        margin: 0 auto 20px;
+        box-shadow: 0 10px 25px rgba(239, 68, 68, 0.2);
+    }
+</style>
+
+<section class="padding-y-120">
+    <div class="container">
+        <div class="failure-card text-center">
+            <div class="failure-icon-wrap">
+                <i class="fas fa-times"></i>
+            </div>
+
+            <h2 class="font-weight-bold text-dark mb-2">To'lov Amalga Oshmadi</h2>
+            <p class="text-muted mb-4">
+                Afsuski, to'lov jarayonida xatolik yuz berdi yoki to'lov bekor qilindi. Mablag'ingiz yechilmagan.
+            </p>
+
+            {% if payment and payment.error_message %}
+            <div class="alert alert-warning text-left mb-4">
+                <i class="fas fa-exclamation-triangle mr-2"></i><strong>Sabab:</strong> {{ payment.error_message }}
+            </div>
+            {% endif %}
+
+            <div class="card bg-light border-0 p-3 mb-4 text-left">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Buyurtma:</span>
+                    <strong>#{{ order.code|slice:":8" }}</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">To'lov summasi:</span>
+                    <strong class="text-primary">{{ order.total_price|uz_price }}</strong>
+                </div>
+            </div>
+
+            <!-- Qayta to'lash formasi -->
+            <form method="POST" action="{% url 'retry_payment' order.code %}" class="mb-4">
+                {% csrf_token %}
+                <h6 class="font-weight-bold text-dark mb-3">Boshqa to'lov usulini tanlab qayta urinib ko'ring:</h6>
+                <div class="row g-2 justify-content-center mb-3">
+                    <div class="col-6 col-md-3">
+                        <label class="btn btn-outline-primary w-100 py-2 active">
+                            <input type="radio" name="provider" value="click" checked> Click
+                        </label>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="btn btn-outline-info w-100 py-2">
+                            <input type="radio" name="provider" value="payme"> Payme
+                        </label>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="btn btn-outline-purple w-100 py-2">
+                            <input type="radio" name="provider" value="uzum"> Uzum
+                        </label>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="btn btn-outline-warning w-100 py-2">
+                            <input type="radio" name="provider" value="cash"> Naqd
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary pill px-4 py-2 font-weight-bold">
+                    <i class="fas fa-redo mr-2"></i> Qayta To'lash
+                </button>
+            </form>
+
+            <div class="d-flex justify-content-center gap-2">
+                <a href="{% url 'cart' %}" class="btn btn-outline-secondary pill">
+                    <i class="fas fa-shopping-cart mr-1"></i> Savatga Qaytish
+                </a>
+                <a href="{% url 'all_products' %}" class="btn btn-outline-primary pill">
+                    Katalogga O'tish
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

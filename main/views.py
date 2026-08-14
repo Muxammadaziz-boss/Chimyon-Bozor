@@ -6,16 +6,18 @@ import logging
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import F, Count
+from django.db.models import F, Count, Q
 from django.shortcuts import get_object_or_404, render, redirect
+from django.http import JsonResponse, HttpResponse
 from django.utils.http import url_has_allowed_host_and_scheme
-from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from . import models
 from .utils import paginate_queryset
 from .sms_service import send_sms_code
 from .validators import validate_image_file
+from .services.payment import PaymentManager
 from django.contrib.auth import authenticate, login, logout
 
 logger = logging.getLogger(__name__)
@@ -683,49 +685,150 @@ def cart(request):
 
 
 @login_required(login_url='login')
-@require_POST
 def checkout(request):
+    """
+    Checkout sahifasi (GET) va Buyurtma/To'lov yaratish (POST).
+    """
     user = request.user
-    if not (user.phone and user.address):
-        messages.warning(
-            request,
-            "Buyurtma berish uchun profilga telefon va manzil kiriting"
-        )
-        return redirect('profile')
-
     cart = models.Cart.objects.filter(user=user, status=1).first()
-    if not cart:
-        messages.error(request, "Faol savat topilmadi")
+    if not cart or not cart.cart_products.filter(product__isnull=False).exists():
+        messages.error(request, "Savatingiz bo'sh. Iltimos, avval mahsulot tanlang.")
         return redirect('cart')
 
-    cart_products = list(cart.cart_products.filter(product__isnull=False))
-    if not cart_products:
-        messages.error(request, "Checkout uchun savat bo'sh")
-        return redirect('cart')
+    cart_products = list(cart.cart_products.filter(product__isnull=False).select_related('product', 'product__category'))
+    cart_total = sum(item.total_price for item in cart_products)
+    cart_count = sum(item.count for item in cart_products)
 
-    for item in cart_products:
-        if item.count > item.product.count:
-            messages.error(
-                request,
-                f'"{item.product.name}" uchun omborda yetarli mahsulot yo\'q'
-            )
-            return redirect('cart')
+    if request.method == 'POST':
+        phone = request.POST.get('phone', '').strip()
+        address = request.POST.get('address', '').strip()
+        provider = request.POST.get('provider', models.Payment.Provider.CASH).strip().lower()
+        payment_method = request.POST.get('payment_method', 'card').strip()
 
-    with transaction.atomic():
+        # Update user profile details if provided
+        if phone:
+            user.phone = phone
+        if address:
+            user.address = address
+        if phone or address:
+            user.save(update_fields=['phone', 'address'] if phone and address else ['phone'] if phone else ['address'])
+
+        if not (user.phone and user.address):
+            messages.warning(request, "Buyurtmani rasmiylashtirish uchun telefon raqamingiz va yetkazish manzilini kiriting.")
+            return render(request, 'front/checkout.html', {
+                'cart': cart,
+                'cart_products': cart_products,
+                'cart_total': cart_total,
+                'cart_count': cart_count,
+                'selected_provider': provider,
+            })
+
+        # Validate stock availability
         for item in cart_products:
-            updated = models.Product.objects.filter(
-                pk=item.product.pk,
-                count__gte=item.count,
-            ).update(count=F('count') - item.count)
-            if not updated:
-                messages.error(request, 'Buyurtma vaqtida ombor yangilanmadi, qayta urinib ko\'ring')
+            if item.count > item.product.count:
+                messages.error(request, f'"{item.product.name}" mahsulotidan omborda yetarli qoldiq mavjud emas (Mavjud: {item.product.count} dona).')
                 return redirect('cart')
 
-        cart.status = 2
-        cart.save(update_fields=['status'])
+        try:
+            with transaction.atomic():
+                # Deduct stock atomically
+                for item in cart_products:
+                    updated = models.Product.objects.filter(
+                        pk=item.product.pk,
+                        count__gte=item.count,
+                    ).update(count=F('count') - item.count)
+                    if not updated:
+                        messages.error(request, "Ombor yangilanishida xatolik yuz berdi. Qayta urinib ko'ring.")
+                        return redirect('cart')
 
-    messages.success(request, f"Buyurtma qabul qilindi. Buyurtma kodi: {cart.code}")
-    return redirect('order_detail', code=cart.code)
+                # Create payment & get checkout URL via PaymentManager
+                payment, checkout_url = PaymentManager.create_payment(
+                    order=cart,
+                    provider_name=provider,
+                    payment_method=payment_method,
+                    request=request
+                )
+
+            # Redirect to provider checkout or success page
+            if provider == models.Payment.Provider.CASH:
+                messages.success(request, f"Buyurtmangiz muvaffaqiyatli qabul qilindi! Buyurtma kodi: #{cart.code[:8]}")
+                return redirect('payment_success', code=cart.code)
+            else:
+                return redirect(checkout_url)
+
+        except Exception as e:
+            logger.error("Checkout payment creation error: %s", e, exc_info=True)
+            messages.error(request, f"To'lovni yaratishda xatolik yuz berdi: {str(e)}")
+            return redirect('checkout')
+
+    # GET request
+    context = {
+        'cart': cart,
+        'cart_products': cart_products,
+        'cart_total': cart_total,
+        'cart_count': cart_count,
+        'selected_provider': models.Payment.Provider.CASH,
+    }
+    return render(request, 'front/checkout.html', context)
+
+
+@csrf_exempt
+def payment_webhook(request, provider):
+    """
+    To'lov provayderlari (Click, Payme, Uzum) uchun yagona xavfsiz webhook endpoint.
+    """
+    return PaymentManager.handle_webhook(provider, request)
+
+
+@login_required(login_url='login')
+def payment_success(request, code):
+    """
+    To'lov muvaffaqiyatli amalga oshirilgandan keyingi sahifa.
+    """
+    order = get_object_or_404(models.Cart, user=request.user, code=code)
+    payment = order.payments.first()
+    cart_products = order.cart_products.filter(product__isnull=False).select_related('product', 'product__category')
+
+    return render(request, 'front/payment_success.html', {
+        'order': order,
+        'payment': payment,
+        'cart_products': cart_products,
+    })
+
+
+@login_required(login_url='login')
+def payment_failed(request, code):
+    """
+    To'lov amalga oshmay qolganda ko'rsatiladigan xatolik sahifasi.
+    """
+    order = get_object_or_404(models.Cart, user=request.user, code=code)
+    payment = order.payments.first()
+
+    return render(request, 'front/payment_failed.html', {
+        'order': order,
+        'payment': payment,
+    })
+
+
+@login_required(login_url='login')
+@require_POST
+def retry_payment(request, code):
+    """
+    Muvaffaqiyatsiz bo'lgan yoki to'lanmagan buyurtma uchun to'lovni qayta boshlash.
+    """
+    order = get_object_or_404(models.Cart, user=request.user, code=code)
+    provider = request.POST.get('provider', models.Payment.Provider.CLICK).strip().lower()
+
+    try:
+        payment, checkout_url = PaymentManager.create_payment(
+            order=order,
+            provider_name=provider,
+            request=request
+        )
+        return redirect(checkout_url)
+    except Exception as e:
+        messages.error(request, f"To'lovni qayta boshlashda xatolik: {str(e)}")
+        return redirect('order_detail', code=order.code)
 
 
 @login_required(login_url='login')
@@ -737,9 +840,11 @@ def order_history(request):
 def order_detail(request, code):
     order = get_object_or_404(models.Cart, user=request.user, code=code, status__gt=1)
     cart_products = order.cart_products.filter(product__isnull=False)
+    payment = order.payments.first()
     return render(request, 'front/order_detail.html', {
         'order': order,
         'cart_products': cart_products,
+        'payment': payment,
     })
 
 
