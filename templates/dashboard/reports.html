@@ -131,7 +131,11 @@
                   <tr>
                     <td class="font-weight-bold">{{ cat.name }}</td>
                     <td>{{ cat.products_count|intspace }} xil</td>
-                    <td>{{ cat.units_sold|intspace }} dona</td>
+                    <td>
+                      <span class="badge badge-light border font-weight-bold" style="background-color: #f0fdf4 !important; color: #15803d !important; border-color: #bbf7d0 !important; font-size: 0.85rem; padding: 4px 8px;">
+                        {{ cat.units_sold|intspace }} dona
+                      </span>
+                    </td>
                     <td class="font-weight-bold text-dark">{{ cat.revenue|uz_price }}</td>
                   </tr>
                   {% empty %}
@@ -174,7 +178,11 @@
                     <td class="font-weight-bold">{{ p.product__name }}</td>
                     <td>{{ p.product__category__name }}</td>
                     <td>{{ p.product__price|uz_price }}</td>
-                    <td class="font-weight-bold text-primary">{{ p.total_units|intspace }} dona</td>
+                    <td>
+                      <span class="badge badge-light border font-weight-bold" style="background-color: #f0fdf4 !important; color: #15803d !important; border-color: #bbf7d0 !important; font-size: 0.9rem; padding: 4px 10px;">
+                        <i class="fas fa-check-circle mr-1"></i>{{ p.total_units|intspace }} dona
+                      </span>
+                    </td>
                     <td>
                       <span class="font-weight-bold {% if p.product__count <= 5 %}text-danger{% else %}text-success{% endif %}">
                         {{ p.product__count|intspace }} dona

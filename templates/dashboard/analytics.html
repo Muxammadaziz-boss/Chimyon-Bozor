@@ -63,9 +63,9 @@
           </div>
           <div class="card-wrap">
             <div class="card-header">
-              <h4 style="color: #475569; font-weight: 600;">Sotilgan Tovar Birligi</h4>
+              <h4 style="color: #1e293b; font-weight: 700;">Sotilgan Tovar Birligi</h4>
             </div>
-            <div class="card-body font-weight-bold" style="font-size: 1.25rem; color: #0f766e !important;">
+            <div class="card-body font-weight-bold" style="font-size: 1.25rem; color: #0284c7 !important;">
               {{ period_items_sold|intspace }} dona
             </div>
           </div>
@@ -173,8 +173,12 @@
                     </td>
                     <td>{{ p.category }}</td>
                     <td>{{ p.price|uz_price }}</td>
-                    <td class="font-weight-bold text-primary">{{ p.units|intspace }} dona</td>
-                    <td class="font-weight-bold text-success">{{ p.revenue|uz_price }}</td>
+                    <td>
+                      <span class="badge badge-light border font-weight-bold" style="background-color: #f0fdf4 !important; color: #15803d !important; border-color: #bbf7d0 !important; font-size: 0.9rem; padding: 4px 10px;">
+                        <i class="fas fa-check-circle mr-1"></i>{{ p.units|intspace }} dona
+                      </span>
+                    </td>
+                    <td class="font-weight-bold" style="color: #1e40af; font-size: 0.95rem;">{{ p.revenue|uz_price }}</td>
                   </tr>
                   {% empty %}
                   <tr>
