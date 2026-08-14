@@ -1,3 +1,4 @@
+import json
 from unittest.mock import patch
 from django.test import TestCase
 from django.urls import reverse
@@ -246,4 +247,56 @@ class AuthAndCartFlowTestCase(TestCase):
 
         # 4. monthly_price
         self.assertEqual(monthly_price(1200000, 12), "100 000 so'm/oyiga")
+
+    def test_update_cart_quantity_ajax_and_stock_cap(self):
+        user = User.objects.create_user(username='cartuser', password='password123', is_active=True)
+        self.client.force_login(user)
+
+        category = Category.objects.create(name="Shirinliklar", is_active=True)
+        product = Product.objects.create(
+            category=category,
+            name="Two Zero",
+            price=300,
+            count=10
+        )
+
+        cart = Cart.objects.create(user=user, status=1)
+        cart_product = CartProduct.objects.create(cart=cart, product=product, count=1)
+
+        # 1. Update quantity to 3
+        url = reverse('update_cart_quantity', kwargs={'product_code': product.code})
+        response = self.client.post(
+            url,
+            data=json.dumps({'quantity': 3}),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data['status'], 'updated')
+        self.assertEqual(data['count'], 3)
+        self.assertEqual(data['item_total_price'], 900.0)
+        self.assertIsNone(data['stock_warning'])
+
+        # 2. Exceed stock (product has count=10, request 15)
+        response = self.client.post(
+            url,
+            data=json.dumps({'quantity': 15}),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data['status'], 'updated')
+        self.assertEqual(data['count'], 10)
+        self.assertIn('Omborda faqat 10 ta mahsulot mavjud', data['stock_warning'])
+
+        # 3. Delete via quantity 0
+        response = self.client.post(
+            url,
+            data=json.dumps({'quantity': 0}),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data['status'], 'deleted')
+        self.assertFalse(CartProduct.objects.filter(cart=cart, product=product).exists())
 

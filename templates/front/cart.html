@@ -1,11 +1,13 @@
 {% extends 'base.html' %}
 {% load static shop_extras %}
 
+{% block title %}Savatcha | {{ site_settings.site_name|default:"Chimyon-bozor" }}{% endblock %}
+
 {% block content %}
 <style>
     .cart-shell {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 320px;
+        grid-template-columns: minmax(0, 1fr) 340px;
         gap: 24px;
         align-items: start;
     }
@@ -49,6 +51,7 @@
         gap: 16px;
         align-items: center;
         padding: 24px;
+        transition: background-color 0.2s ease;
     }
 
     .cart-row + .cart-row {
@@ -93,7 +96,8 @@
     }
 
     .cart-quantity__btn,
-    .cart-quantity .qty-minus {
+    .cart-quantity .qty-minus,
+    .cart-quantity .qty-plus {
         width: 38px;
         height: 38px;
         display: inline-flex;
@@ -104,28 +108,29 @@
         border-radius: 50%;
         background: #f3edff;
         color: #7c3aed;
-        font-size: 22px;
+        font-size: 20px;
         font-weight: 700;
         line-height: 1;
-        transition: 0.2s ease;
+        cursor: pointer;
+        user-select: none;
+        transition: all 0.2s ease;
     }
 
     .cart-quantity__btn:hover,
     .cart-quantity__btn:focus,
     .cart-quantity .qty-minus:hover,
-    .cart-quantity .qty-minus:focus {
-        background: hsl(var(--main));
+    .cart-quantity .qty-minus:focus,
+    .cart-quantity .qty-plus:hover,
+    .cart-quantity .qty-plus:focus {
+        background: #7c3aed;
         color: #fff;
     }
 
-    .cart-quantity .qty-minus {
-        font-size: 0;
-    }
-
-    .cart-quantity .qty-minus::before {
-        content: "-";
-        font-size: 22px;
-        font-weight: 700;
+    .cart-quantity__btn:disabled,
+    .cart-quantity .qty-minus:disabled,
+    .cart-quantity .qty-plus:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
     }
 
     .cart-quantity__input {
@@ -137,6 +142,7 @@
         background: #fff !important;
         color: #111827 !important;
         font-weight: 600;
+        font-size: 16px;
         text-align: center;
         appearance: textfield;
         box-shadow: none;
@@ -165,10 +171,6 @@
 
     .cart-checkout-btn:hover {
         transform: translateY(-1px);
-    }
-
-    #deleteConfirmModal .modal-body p:not(.cart-delete-message) {
-        display: none;
     }
 
     .cart-remove-btn {
@@ -202,7 +204,7 @@
 
     .cart-summary__card h5 {
         margin-bottom: 18px;
-        font-size: 28px;
+        font-size: 24px;
         font-weight: 700;
         color: #111827;
     }
@@ -223,7 +225,7 @@
         padding-top: 14px;
         margin-top: 14px;
         border-top: 1px solid #eef0f3;
-        font-size: 15px;
+        font-size: 16px;
     }
 
     .cart-summary__submit {
@@ -252,6 +254,34 @@
     .cart-suggest__text {
         margin: 0;
         font-size: 13px;
+    }
+
+    /* Floating Toast Notification */
+    .cart-toast {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        background: #1e293b;
+        color: #fff;
+        padding: 14px 20px;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        z-index: 99999;
+        font-weight: 500;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transform: translateY(100px);
+        opacity: 0;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .cart-toast.show {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    .cart-toast.warning {
+        background: #b45309;
     }
 
     @media (max-width: 1199.98px) {
@@ -286,7 +316,7 @@
         <div class="cart-content">
             {% if cart_products %}
                 <div class="mb-4">
-                    <h2 class="mb-1">Savatingiz, {{ cart_count }} mahsulot</h2>
+                    <h2 class="mb-1" id="cart-main-heading">Savatingiz, {{ cart_count }} mahsulot</h2>
                     <p class="text-body mb-0">Mahsulot sonini shu yerda boshqarib, keyin buyurtmani yuborishingiz mumkin.</p>
                 </div>
 
@@ -300,7 +330,7 @@
                         </div>
 
                         {% for item in cart_products %}
-                        <div class="cart-row" data-product-code="{{ item.product.code }}" data-price="{{ item.product.active_price }}">
+                        <div class="cart-row" data-product-code="{{ item.product.code }}" data-price="{{ item.product.active_price }}" data-max-stock="{{ item.product.count }}">
                             <div>
                                 <div class="cart-col__label">Mahsulot</div>
                                 <div class="cart-item d-flex align-items-center gap-3">
@@ -318,7 +348,7 @@
                                             <a href="{% url 'product_detail' item.product.code %}" class="link">{{ item.product.name }}</a>
                                         </h6>
                                         <div class="font-14 text-body mb-1">Kategoriya: {{ item.product.category.name }}</div>
-                                        <div class="font-14 text-body">Omborda: {{ item.product.count }} ta</div>
+                                        <div class="font-14 text-body">Omborda: <span class="stock-badge font-weight-bold text-dark">{{ item.product.count }}</span> ta</div>
                                     </div>
                                 </div>
                                 <div class="cart-suggest">
@@ -329,15 +359,15 @@
 
                             <div>
                                 <div class="cart-col__label">Narx</div>
-                                <span class="cart-item__totalPrice text-body font-18 fw-400 mb-0">{{ item.product.active_price|uz_price }}</span>
+                                <span class="cart-item__unitPrice text-body font-18 fw-400 mb-0">{{ item.product.active_price|uz_price }}</span>
                             </div>
 
                             <div>
                                 <div class="cart-col__label">Soni</div>
                                 <div class="cart-quantity" aria-label="Mahsulot soni">
-                                    <button class="btn btn-sm btn-outline-secondary qty-btn qty-minus">−</button>
-                                    <input type="number" class="cart-quantity__input qty-input" value="{{ item.count }}" min="1" aria-label="Soni">
-                                    <button type="button" class="cart-quantity__btn qty-plus" aria-label="Ko'paytirish">+</button>
+                                    <button type="button" class="qty-minus" aria-label="Kamaytirish">−</button>
+                                    <input type="number" class="cart-quantity__input qty-input" value="{{ item.count }}" min="1" max="{{ item.product.count }}" aria-label="Soni">
+                                    <button type="button" class="qty-plus" aria-label="Ko'paytirish">+</button>
                                 </div>
                             </div>
 
@@ -366,12 +396,12 @@
                         <div class="cart-summary__card">
                             <h5>Buyurtmangiz</h5>
                             <div class="cart-summary__line">
-                                <span>{{ cart_count }} mahsulot</span>
-                                <span>{{ cart_total|uz_price }}</span>
+                                <span id="cart-summary-count">{{ cart_count }} mahsulot</span>
+                                <span id="cart-summary-subtotal" class="cart-summary-total">{{ cart_total|uz_price }}</span>
                             </div>
                             <div class="cart-summary__line cart-summary__total">
                                 <strong>Jami</strong>
-                                <strong>{{ cart_total|uz_price }}</strong>
+                                <strong id="cart-summary-total-price" class="cart-summary-total text-primary">{{ cart_total|uz_price }}</strong>
                             </div>
                             <form method="post" action="{% url 'checkout' %}" class="m-0">
                                 {% csrf_token %}
@@ -392,142 +422,162 @@
 
 <!-- Confirmation Modal -->
 <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="deleteConfirmLabel">Mahsulotni o'chirish</h5>
+                <h5 class="modal-title font-weight-bold" id="deleteConfirmLabel">Mahsulotni o'chirish</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p class="cart-delete-message">Siz mahsulot sonini 1 dan kamaytirdingiz. Bu mahsulot savatdan o'chiriladi. O'chirilsinmi?</p>
-                <p>Siz mahsulotni 1 dan kamaytirdingiz — bu uni o'chirishga olib keladi. O'chirilsinmi?</p>
+                <p class="mb-0">Siz mahsulot sonini 1 dan kamaytirdingiz. Ushbu mahsulot savatdan butunlay olib tashlansinmi?</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Bekor qilish</button>
-                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Ha, o'chirish</button>
+                <button type="button" class="btn btn-danger font-weight-bold" id="confirmDeleteBtn">Ha, o'chirish</button>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Dynamic Toast Container -->
+<div id="cartToast" class="cart-toast" role="alert" aria-live="assertive" aria-atomic="true">
+    <i class="fas fa-info-circle"></i>
+    <span id="cartToastMsg"></span>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
-    let pendingProductCode = null;
-    let pendingRow = null;
-    let pendingInput = null;
-
-    document.querySelectorAll('[data-product-code]').forEach(row => {
-        const qtyInput = row.querySelector('.qty-input');
-        const qtyMinus = row.querySelector('.qty-minus');
-        const qtyPlus = row.querySelector('.qty-plus');
-        const itemTotal = row.querySelector('.item-total');
-        const productCode = row.dataset.productCode;
-        const price = parseFloat(row.dataset.price);
-
-        qtyMinus.addEventListener('click', () => {
-            const currentQty = parseInt(qtyInput.value, 10) || 1;
-            const newQty = Math.max(0, currentQty - 1);
-            qtyInput.value = newQty;
-            updateQuantity(productCode, newQty, row, itemTotal, price, qtyInput);
-        });
-
-        qtyPlus.addEventListener('click', () => {
-            const currentQty = parseInt(qtyInput.value, 10) || 1;
-            const newQty = currentQty + 1;
-            qtyInput.value = newQty;
-            updateQuantity(productCode, newQty, row, itemTotal, price, qtyInput);
-        });
-
-        qtyInput.addEventListener('change', () => {
-            const newQty = Math.max(1, parseInt(qtyInput.value, 10) || 1);
-            qtyInput.value = newQty;
-            updateQuantity(productCode, newQty, row, itemTotal, price, qtyInput);
-        });
-
-    });
-
-    function updateQuantity(productCode, newQty, row, itemTotal, price, qtyInput) {
-        if (newQty <= 0) {
-            pendingProductCode = productCode;
-            pendingRow = row;
-            pendingInput = qtyInput;
-            deleteModal.show();
-        } else {
-            sendQuantityUpdate(productCode, newQty, row, itemTotal, price, qtyInput);
+    // Helper to format currency
+    function formatUzPrice(value) {
+        if (value === null || value === undefined || isNaN(value)) {
+            return "0 so'm";
         }
+        var intVal = Math.round(Number(value));
+        return intVal.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " so'm";
     }
 
-    document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
-        deleteModal.hide();
-        sendQuantityUpdate(pendingProductCode, 0, pendingRow, null, null, null);
-    });
+    // Helper toast notification
+    var toastTimeout = null;
+    function showToast(msg, isWarning) {
+        var toast = document.getElementById('cartToast');
+        var toastMsg = document.getElementById('cartToastMsg');
+        if (!toast || !toastMsg) return;
 
-    document.getElementById('deleteConfirmModal').addEventListener('hidden.bs.modal', () => {
-        if (pendingInput && pendingRow && document.body.contains(pendingRow)) {
-            pendingInput.value = 1;
-        }
-        pendingProductCode = null;
-        pendingRow = null;
-        pendingInput = null;
-    });
-
-    function sendQuantityUpdate(productCode, quantity, row, itemTotal, price, qtyInput) {
-        fetch(`{% url 'update_cart_quantity' 'PRODUCT_CODE' %}`.replace('PRODUCT_CODE', productCode), {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
-
-        qtyMinus.addEventListener('click', () => {
-            const currentQty = parseInt(qtyInput.value, 10) || 1;
-            const newQty = Math.max(0, currentQty - 1);
-            qtyInput.value = newQty;
-            updateQuantity(productCode, newQty, row, itemTotal, price, qtyInput);
-        });
-
-        qtyPlus.addEventListener('click', () => {
-            const currentQty = parseInt(qtyInput.value, 10) || 1;
-            const newQty = currentQty + 1;
-            qtyInput.value = newQty;
-            updateQuantity(productCode, newQty, row, itemTotal, price, qtyInput);
-        });
-
-        qtyInput.addEventListener('change', () => {
-            const newQty = Math.max(1, parseInt(qtyInput.value, 10) || 1);
-            qtyInput.value = newQty;
-            updateQuantity(productCode, newQty, row, itemTotal, price, qtyInput);
-        });
-
-    });
-
-    function updateQuantity(productCode, newQty, row, itemTotal, price, qtyInput) {
-        if (newQty <= 0) {
-            pendingProductCode = productCode;
-            pendingRow = row;
-            pendingInput = qtyInput;
-            deleteModal.show();
+        toastMsg.textContent = msg;
+        if (isWarning) {
+            toast.classList.add('warning');
         } else {
-            sendQuantityUpdate(productCode, newQty, row, itemTotal, price, qtyInput);
+            toast.classList.remove('warning');
         }
+        toast.classList.add('show');
+
+        if (toastTimeout) clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(function() {
+            toast.classList.remove('show');
+        }, 3000);
     }
 
-    document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
-        deleteModal.hide();
-        sendQuantityUpdate(pendingProductCode, 0, pendingRow, null, null, null);
-    });
+    // Modal delete setup
+    var deleteModalEl = document.getElementById('deleteConfirmModal');
+    var deleteModal = null;
+    if (deleteModalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        deleteModal = new bootstrap.Modal(deleteModalEl);
+    }
 
-    document.getElementById('deleteConfirmModal').addEventListener('hidden.bs.modal', () => {
-        if (pendingInput && pendingRow && document.body.contains(pendingRow)) {
-            pendingInput.value = 1;
+    var pendingProductCode = null;
+    var pendingRow = null;
+    var pendingInput = null;
+
+    var confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', function() {
+            if (deleteModal) deleteModal.hide();
+            if (pendingProductCode) {
+                sendQuantityUpdate(pendingProductCode, 0, pendingRow, null, null);
+            }
+        });
+    }
+
+    if (deleteModalEl) {
+        deleteModalEl.addEventListener('hidden.bs.modal', function() {
+            if (pendingInput && pendingRow && document.body.contains(pendingRow)) {
+                pendingInput.value = 1;
+            }
+            pendingProductCode = null;
+            pendingRow = null;
+            pendingInput = null;
+        });
+    }
+
+    // Initialize all cart product rows
+    document.querySelectorAll('.cart-row[data-product-code]').forEach(function(row) {
+        var qtyInput = row.querySelector('.qty-input');
+        var qtyMinus = row.querySelector('.qty-minus');
+        var qtyPlus = row.querySelector('.qty-plus');
+        var itemTotal = row.querySelector('.item-total');
+        var productCode = row.dataset.productCode;
+        var maxStock = parseInt(row.dataset.maxStock, 10) || 99999;
+
+        if (qtyMinus) {
+            qtyMinus.addEventListener('click', function(e) {
+                e.preventDefault();
+                var currentQty = parseInt(qtyInput.value, 10) || 1;
+                var newQty = currentQty - 1;
+                if (newQty <= 0) {
+                    pendingProductCode = productCode;
+                    pendingRow = row;
+                    pendingInput = qtyInput;
+                    if (deleteModal) {
+                        deleteModal.show();
+                    } else if (confirm("Mahsulotni savatdan o'chirmoqchimisiz?")) {
+                        sendQuantityUpdate(productCode, 0, row, itemTotal, qtyInput);
+                    } else {
+                        qtyInput.value = 1;
+                    }
+                } else {
+                    qtyInput.value = newQty;
+                    sendQuantityUpdate(productCode, newQty, row, itemTotal, qtyInput);
+                }
+            });
         }
-        pendingProductCode = null;
-        pendingRow = null;
-        pendingInput = null;
+
+        if (qtyPlus) {
+            qtyPlus.addEventListener('click', function(e) {
+                e.preventDefault();
+                var currentQty = parseInt(qtyInput.value, 10) || 1;
+                if (currentQty >= maxStock) {
+                    showToast("Omborda faqat " + maxStock + " ta mahsulot mavjud", true);
+                    return;
+                }
+                var newQty = currentQty + 1;
+                qtyInput.value = newQty;
+                sendQuantityUpdate(productCode, newQty, row, itemTotal, qtyInput);
+            });
+        }
+
+        if (qtyInput) {
+            qtyInput.addEventListener('change', function() {
+                var newQty = parseInt(qtyInput.value, 10) || 1;
+                if (newQty < 1) newQty = 1;
+                if (newQty > maxStock) {
+                    newQty = maxStock;
+                    showToast("Omborda faqat " + maxStock + " ta mahsulot mavjud", true);
+                }
+                qtyInput.value = newQty;
+                sendQuantityUpdate(productCode, newQty, row, itemTotal, qtyInput);
+            });
+        }
     });
 
-    function sendQuantityUpdate(productCode, quantity, row, itemTotal, price, qtyInput) {
-        fetch(`{% url 'update_cart_quantity' 'PRODUCT_CODE' %}`.replace('PRODUCT_CODE', productCode), {
+    var isUpdating = false;
+
+    function sendQuantityUpdate(productCode, quantity, row, itemTotal, qtyInput) {
+        var rowControls = row ? row.querySelectorAll('button, input') : [];
+        rowControls.forEach(function(el) { el.disabled = true; });
+
+        var url = "{% url 'update_cart_quantity' 'PRODUCT_PLACEHOLDER' %}".replace('PRODUCT_PLACEHOLDER', productCode);
+
+        fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -535,22 +585,70 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             body: JSON.stringify({ quantity: quantity })
         })
-        .then(response => response.json())
-        .then(data => {
+        .then(function(response) {
+            if (!response.ok && response.status === 401) {
+                window.location.href = '/login/';
+                return;
+            }
+            return response.json();
+        })
+        .then(function(data) {
+            if (!data) return;
+
             if (data.status === 'deleted') {
-                location.reload();
-            } else if (data.status === 'updated' && itemTotal && price) {
-                itemTotal.textContent = data.total_price.toLocaleString('uz-UZ') + " so'm";
-                if (qtyInput) {
+                if (data.cart_items_count === 0) {
+                    location.reload();
+                } else {
+                    if (row) row.remove();
+                    updateCartSummary(data.cart_total, data.cart_count);
+                    showToast("Mahsulot savatdan olib tashlandi");
+                }
+            } else if (data.status === 'updated') {
+                if (itemTotal && data.item_total_price !== undefined) {
+                    itemTotal.textContent = formatUzPrice(data.item_total_price);
+                }
+                if (qtyInput && data.count !== undefined) {
                     qtyInput.value = data.count;
                 }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            if (qtyInput) {
-                qtyInput.value = Math.max(1, quantity - 1);
+                if (data.stock_warning) {
+                    showToast(data.stock_warning, true);
+                }
+                updateCartSummary(data.cart_total, data.cart_count);
+            } else if (data.status === 'error') {
+                showToast(data.message || "Xatolik yuz berdi", true);
             }
+        })
+        .catch(function(error) {
+            console.error('Cart quantity update error:', error);
+            showToast("Server bilan bog'lanishda xatolik", true);
+        })
+        .finally(function() {
+            rowControls.forEach(function(el) { el.disabled = false; });
         });
+    }
+
+    function updateCartSummary(cartTotal, cartCount) {
+        if (cartTotal !== undefined) {
+            var formattedTotal = formatUzPrice(cartTotal);
+            document.querySelectorAll('.cart-summary-total').forEach(function(el) {
+                el.textContent = formattedTotal;
+            });
+        }
+        if (cartCount !== undefined) {
+            var heading = document.getElementById('cart-main-heading');
+            if (heading) {
+                heading.textContent = "Savatingiz, " + cartCount + " mahsulot";
+            }
+            var summaryCount = document.getElementById('cart-summary-count');
+            if (summaryCount) {
+                summaryCount.textContent = cartCount + " mahsulot";
+            }
+            // Update navbar badge if present
+            var navBadges = document.querySelectorAll('.cart-badge, [data-cart-count]');
+            navBadges.forEach(function(b) {
+                b.textContent = cartCount;
+            });
+        }
     }
 });
 </script>

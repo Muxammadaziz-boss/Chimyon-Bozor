@@ -572,28 +572,43 @@ def update_cart_quantity(request, product_code):
             quantity = int(data.get('quantity', 0))
         else:
             quantity = int(request.POST.get('quantity', 0))
-        quantity = min(quantity, product.count)
+
+        stock_warning = None
+        if quantity > product.count:
+            quantity = product.count
+            stock_warning = f"Omborda faqat {product.count} ta mahsulot mavjud"
 
         if quantity <= 0:
             cart_product.delete()
             if request.content_type == 'application/json':
-                return JsonResponse({'status': 'deleted'})
+                return JsonResponse({
+                    'status': 'deleted',
+                    'cart_total': float(cart.total_price),
+                    'cart_count': cart.count_product,
+                    'cart_items_count': cart.cart_products.count(),
+                })
             messages.success(request, f'"{product.name}" savatdan olib tashlandi')
             return redirect('cart')
 
         cart_product.count = quantity
         cart_product.save()
+
         if request.content_type == 'application/json':
             return JsonResponse({
                 'status': 'updated',
-                'total_price': float(cart_product.total_price),
-                'count': cart_product.count
+                'item_total_price': float(cart_product.total_price),
+                'count': cart_product.count,
+                'max_stock': product.count,
+                'stock_warning': stock_warning,
+                'cart_total': float(cart.total_price),
+                'cart_count': cart.count_product,
+                'cart_items_count': cart.cart_products.count(),
             })
         messages.success(request, 'Savat yangilandi')
         return redirect_back(request, 'product_detail', code=product.code)
-    except (ValueError, TypeError):
+    except (ValueError, TypeError, json.JSONDecodeError):
         if request.content_type == 'application/json':
-            return JsonResponse({'status': 'error'}, status=400)
+            return JsonResponse({'status': 'error', 'message': "Noto'g'ri qiymat kiritildi"}, status=400)
         return redirect_back(request, 'product_detail', code=product.code)
 
 
