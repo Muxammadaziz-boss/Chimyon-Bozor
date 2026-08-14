@@ -1,5 +1,6 @@
 {% extends 'dashboard/base.html' %}
 {% load static %}
+{% load shop_extras %}
 
 {% block title %}Mijoz Profili: {{ customer.username }} | Chimyon-bozor{% endblock %}
 
@@ -69,7 +70,7 @@
                   <h4 style="color: #475569; font-weight: 600;">Jami Xarid Summasi</h4>
                 </div>
                 <div class="card-body font-weight-bold" style="font-size: 1.15rem; color: #166534 !important;">
-                  {{ total_spent|floatformat:0 }} so'm
+                  {{ total_spent|uz_price }}
                 </div>
               </div>
             </div>
@@ -85,7 +86,7 @@
                   <h4 style="color: #475569; font-weight: 600;">Buyurtmalar Soni</h4>
                 </div>
                 <div class="card-body font-weight-bold" style="font-size: 1.15rem; color: #1e40af !important;">
-                  {{ total_orders }} ta ({{ completed_orders }} yetkazildi)
+                  {{ total_orders|intspace }} ta ({{ completed_orders|intspace }} yetkazildi)
                 </div>
               </div>
             </div>
@@ -101,7 +102,7 @@
                   <h4 style="color: #475569; font-weight: 600;">O'rtacha Chek</h4>
                 </div>
                 <div class="card-body font-weight-bold" style="font-size: 1.15rem; color: #b45309 !important;">
-                  {{ aov|floatformat:0 }} so'm
+                  {{ aov|uz_price }}
                 </div>
               </div>
             </div>
@@ -131,8 +132,8 @@
                   <tr>
                     <td class="font-weight-bold">#{{ order.code|slice:":8" }}</td>
                     <td>{{ order.date|date:"d.m.Y H:i" }}</td>
-                    <td>{{ order.cartproduct_set.count }} ta turdagi</td>
-                    <td class="font-weight-bold">{{ order.total_price|floatformat:0 }} so'm</td>
+                    <td>{{ order.cartproduct_set.count|intspace }} ta turdagi</td>
+                    <td class="font-weight-bold">{{ order.total_price|uz_price }}</td>
                     <td>
                       {% if order.status == 2 %}
                         <span class="badge badge-warning">Qabul qilindi</span>

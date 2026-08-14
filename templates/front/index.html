@@ -252,7 +252,7 @@
                     <div class="service-card-body">
                         <h6 class="service-card-title">{{ service.name }}</h6>
                         <p class="service-card-desc">{{ service.description|truncatewords:12 }}</p>
-                        <div class="service-card-price">{{ service.price|floatformat:0 }} so'm</div>
+                        <div class="service-card-price">{{ service.price|uz_price }}</div>
                     </div>
                 </div>
             </div>

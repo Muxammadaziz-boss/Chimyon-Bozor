@@ -1,5 +1,6 @@
 {% extends 'dashboard/base.html' %}
 {% load static %}
+{% load shop_extras %}
 
 {% block title %}Mahsulotlar Katalogi | Chimyon-bozor{% endblock %}
 
@@ -104,10 +105,10 @@
                       <td>
                         <span class="badge badge-light border">{{ product.category.name }}</span>
                       </td>
-                      <td class="font-weight-bold">{{ product.price|floatformat:0 }} so'm</td>
+                      <td class="font-weight-bold">{{ product.price|uz_price }}</td>
                       <td>
                         {% if product.discount_status and product.discount_price %}
-                          <span class="text-danger font-weight-bold">{{ product.discount_price|floatformat:0 }} so'm</span>
+                          <span class="text-danger font-weight-bold">{{ product.discount_price|uz_price }}</span>
                           <small class="badge badge-danger ml-1">-{{ product.discount_percent }}%</small>
                         {% else %}
                           <span class="text-muted">—</span>
@@ -115,7 +116,7 @@
                       </td>
                       <td>
                         <span class="font-weight-bold {% if product.count <= 0 %}text-danger{% elif product.count <= 5 %}text-warning{% else %}text-success{% endif %}">
-                          {{ product.count }} dona
+                          {{ product.count|intspace }} dona
                         </span>
                       </td>
                       <td>

@@ -224,3 +224,26 @@ class AuthAndCartFlowTestCase(TestCase):
         self.assertTrue(new_user.is_active)
         self.assertTrue(new_user.phone_verified)
 
+    def test_shop_extras_formatting_filters(self):
+        from main.templatetags.shop_extras import uz_price, intspace, compact_money, monthly_price
+
+        # 1. uz_price
+        self.assertEqual(uz_price(36068578000), "36 068 578 000 so'm")
+        self.assertEqual(uz_price(1000200), "1 000 200 so'm")
+        self.assertEqual(uz_price(0), "0 so'm")
+        self.assertEqual(uz_price(None), "0 so'm")
+
+        # 2. intspace
+        self.assertEqual(intspace(57271), "57 271")
+        self.assertEqual(intspace(36068578000), "36 068 578 000")
+        self.assertEqual(intspace(0), "0")
+
+        # 3. compact_money
+        self.assertEqual(compact_money(36068578000), "36.07 mlrd so'm")
+        self.assertEqual(compact_money(1200000), "1.2 mln so'm")
+        self.assertEqual(compact_money(850000), "850 ming so'm")
+        self.assertEqual(compact_money(500), "500 so'm")
+
+        # 4. monthly_price
+        self.assertEqual(monthly_price(1200000, 12), "100 000 so'm/oyiga")
+

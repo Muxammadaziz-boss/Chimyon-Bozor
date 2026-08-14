@@ -1,5 +1,6 @@
 {% extends 'dashboard/base.html' %}
 {% load static %}
+{% load shop_extras %}
 
 {% block title %}Buyurtmalar Boshqaruvi | Chimyon-bozor{% endblock %}
 
@@ -130,9 +131,9 @@
                       <td>{{ order.user.phone|default:"—" }}</td>
                       <td>{{ order.date|date:"d.m.Y H:i" }}</td>
                       <td>
-                        <span class="badge badge-light border">{{ order.cartproduct_set.count }} xil ({{ order.count_product }} dona)</span>
+                        <span class="badge badge-light border">{{ order.cartproduct_set.count|intspace }} xil ({{ order.count_product|intspace }} dona)</span>
                       </td>
-                      <td class="font-weight-bold text-dark">{{ order.total_price|floatformat:0 }} so'm</td>
+                      <td class="font-weight-bold text-dark">{{ order.total_price|uz_price }}</td>
                       <td>
                         {% if order.status == 2 %}
                           <span class="badge badge-warning">Qabul qilindi</span>

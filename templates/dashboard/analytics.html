@@ -1,5 +1,6 @@
 {% extends 'dashboard/base.html' %}
 {% load static %}
+{% load shop_extras %}
 
 {% block title %}Savdo Tahlili | Chimyon-bozor{% endblock %}
 
@@ -33,7 +34,7 @@
               <h4 style="color: #475569; font-weight: 600;">Davr Tushumi</h4>
             </div>
             <div class="card-body font-weight-bold" style="font-size: 1.25rem; color: #166534 !important;">
-              {{ period_revenue|floatformat:0 }} so'm
+              {{ period_revenue|uz_price }}
             </div>
           </div>
         </div>
@@ -49,7 +50,7 @@
               <h4 style="color: #475569; font-weight: 600;">Tugatilgan Buyurtmalar</h4>
             </div>
             <div class="card-body font-weight-bold" style="font-size: 1.25rem; color: #1e40af !important;">
-              {{ period_orders_count }} ta
+              {{ period_orders_count|intspace }} ta
             </div>
           </div>
         </div>
@@ -65,7 +66,7 @@
               <h4 style="color: #475569; font-weight: 600;">Sotilgan Tovar Birligi</h4>
             </div>
             <div class="card-body font-weight-bold" style="font-size: 1.25rem; color: #0f766e !important;">
-              {{ period_items_sold }} dona
+              {{ period_items_sold|intspace }} dona
             </div>
           </div>
         </div>
@@ -81,7 +82,7 @@
               <h4 style="color: #475569; font-weight: 600;">O'rtacha Chek (AOV)</h4>
             </div>
             <div class="card-body font-weight-bold" style="font-size: 1.25rem; color: #b45309 !important;">
-              {{ period_aov|floatformat:0 }} so'm
+              {{ period_aov|uz_price }}
             </div>
           </div>
         </div>
@@ -121,8 +122,8 @@
                   {% for cat in category_sales %}
                   <tr>
                     <td class="font-weight-bold">{{ cat.name }}</td>
-                    <td>{{ cat.count }} dona</td>
-                    <td class="font-weight-bold text-dark">{{ cat.revenue|floatformat:0 }} so'm</td>
+                    <td>{{ cat.count|intspace }} dona</td>
+                    <td class="font-weight-bold text-dark">{{ cat.revenue|uz_price }}</td>
                     <td>
                       <span class="badge badge-primary">{{ cat.percentage }}%</span>
                     </td>
@@ -171,9 +172,9 @@
                       {{ p.name }}
                     </td>
                     <td>{{ p.category }}</td>
-                    <td>{{ p.price|floatformat:0 }} so'm</td>
-                    <td class="font-weight-bold text-primary">{{ p.units }} dona</td>
-                    <td class="font-weight-bold text-success">{{ p.revenue|floatformat:0 }} so'm</td>
+                    <td>{{ p.price|uz_price }}</td>
+                    <td class="font-weight-bold text-primary">{{ p.units|intspace }} dona</td>
+                    <td class="font-weight-bold text-success">{{ p.revenue|uz_price }}</td>
                   </tr>
                   {% empty %}
                   <tr>

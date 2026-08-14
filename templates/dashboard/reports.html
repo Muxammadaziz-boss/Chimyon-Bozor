@@ -1,5 +1,6 @@
 {% extends 'dashboard/base.html' %}
 {% load static %}
+{% load shop_extras %}
 
 {% block title %}Hisobotlar va Tahlil | Chimyon-bozor{% endblock %}
 
@@ -29,7 +30,8 @@
               <h4 style="color: #475569; font-weight: 600;">Jami Ombor Qiymati</h4>
             </div>
             <div class="card-body font-weight-bold" style="font-size: 1.25rem; color: #166534 !important;">
-              {{ inventory_value|floatformat:0 }} so'm
+              {{ inventory_value|uz_price }}
+              <div class="small font-weight-normal text-muted mt-1" style="font-size: 0.85rem;">({{ inventory_value|compact_money }})</div>
             </div>
           </div>
         </div>
@@ -45,7 +47,8 @@
               <h4 style="color: #475569; font-weight: 600;">Ombordagi Jami Tovarlar</h4>
             </div>
             <div class="card-body font-weight-bold" style="font-size: 1.25rem; color: #0f766e !important;">
-              {{ total_stock_count }} dona ({{ total_products_count }} xil)
+              {{ total_stock_count|intspace }} dona
+              <div class="small font-weight-normal text-muted mt-1" style="font-size: 0.85rem;">({{ total_products_count|intspace }} xil turdagi)</div>
             </div>
           </div>
         </div>
@@ -61,7 +64,7 @@
               <h4 style="color: #475569; font-weight: 600;">Faol Kategoriyalar</h4>
             </div>
             <div class="card-body font-weight-bold" style="font-size: 1.25rem; color: #1e40af !important;">
-              {{ categories_perf|length }} ta
+              {{ categories_perf|length|intspace }} ta
             </div>
           </div>
         </div>
@@ -90,9 +93,9 @@
                   {% for m in monthly_report %}
                   <tr>
                     <td class="font-weight-bold">{{ m.month }}</td>
-                    <td>{{ m.orders_count }} ta</td>
-                    <td>{{ m.items_count }} dona</td>
-                    <td class="font-weight-bold text-success">{{ m.revenue|floatformat:0 }} so'm</td>
+                    <td>{{ m.orders_count|intspace }} ta</td>
+                    <td>{{ m.items_count|intspace }} dona</td>
+                    <td class="font-weight-bold text-success">{{ m.revenue|uz_price }}</td>
                   </tr>
                   {% empty %}
                   <tr>
@@ -127,9 +130,9 @@
                   {% for cat in categories_perf %}
                   <tr>
                     <td class="font-weight-bold">{{ cat.name }}</td>
-                    <td>{{ cat.products_count }} xil</td>
-                    <td>{{ cat.units_sold }} dona</td>
-                    <td class="font-weight-bold text-dark">{{ cat.revenue|floatformat:0 }} so'm</td>
+                    <td>{{ cat.products_count|intspace }} xil</td>
+                    <td>{{ cat.units_sold|intspace }} dona</td>
+                    <td class="font-weight-bold text-dark">{{ cat.revenue|uz_price }}</td>
                   </tr>
                   {% empty %}
                   <tr>
@@ -170,11 +173,11 @@
                     <td>{{ forloop.counter }}</td>
                     <td class="font-weight-bold">{{ p.product__name }}</td>
                     <td>{{ p.product__category__name }}</td>
-                    <td>{{ p.product__price|floatformat:0 }} so'm</td>
-                    <td class="font-weight-bold text-primary">{{ p.total_units }} dona</td>
+                    <td>{{ p.product__price|uz_price }}</td>
+                    <td class="font-weight-bold text-primary">{{ p.total_units|intspace }} dona</td>
                     <td>
                       <span class="font-weight-bold {% if p.product__count <= 5 %}text-danger{% else %}text-success{% endif %}">
-                        {{ p.product__count }} dona
+                        {{ p.product__count|intspace }} dona
                       </span>
                     </td>
                   </tr>

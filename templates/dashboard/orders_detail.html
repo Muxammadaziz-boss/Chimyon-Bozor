@@ -1,5 +1,6 @@
 {% extends 'dashboard/base.html' %}
 {% load static %}
+{% load shop_extras %}
 
 {% block title %}Buyurtma #{{ order.code|slice:":8" }} Tafsilotlari | Chimyon-bozor{% endblock %}
 
@@ -46,7 +47,7 @@
                     <p class="mb-1"><strong>Email:</strong> {{ order.user.email|default:"Kiritilmagan" }}</p>
                     <hr class="my-2">
                     <p class="mb-0 text-muted small">
-                      <strong>Mijoz umumiy xaridlari:</strong> {{ customer_lifetime_spent|floatformat:0 }} so'm ({{ customer_orders_count }} ta buyurtma)
+                      <strong>Mijoz umumiy xaridlari:</strong> {{ customer_lifetime_spent|uz_price }} ({{ customer_orders_count|intspace }} ta buyurtma)
                     </p>
                   </div>
                 </div>
@@ -99,9 +100,9 @@
                             {% endif %}
                           </td>
                           <td>{{ item.product.category.name|default:"—" }}</td>
-                          <td class="text-center">{{ item.unit_price|floatformat:0 }} so'm</td>
-                          <td class="text-center"><span class="badge badge-light border font-weight-bold">{{ item.count }} dona</span></td>
-                          <td class="text-right font-weight-bold">{{ item.total_price|floatformat:0 }} so'm</td>
+                          <td class="text-center">{{ item.unit_price|uz_price }}</td>
+                          <td class="text-center"><span class="badge badge-light border font-weight-bold">{{ item.count|intspace }} dona</span></td>
+                          <td class="text-right font-weight-bold">{{ item.total_price|uz_price }}</td>
                         </tr>
                         {% empty %}
                         <tr>
@@ -142,7 +143,7 @@
                     <div class="col-lg-5 text-right">
                       <div class="invoice-detail-item mb-2">
                         <div class="invoice-detail-name d-inline mr-3 text-muted">Jami tovarlar:</div>
-                        <div class="invoice-detail-value d-inline font-weight-bold">{{ total_count }} dona</div>
+                        <div class="invoice-detail-value d-inline font-weight-bold">{{ total_count|intspace }} dona</div>
                       </div>
                       <div class="invoice-detail-item mb-2">
                         <div class="invoice-detail-name d-inline mr-3 text-muted">Yetkazib berish:</div>
@@ -151,7 +152,7 @@
                       <hr class="mt-2 mb-2">
                       <div class="invoice-detail-item">
                         <div class="invoice-detail-name d-inline mr-3 h5 mb-0 font-weight-bold">Umumiy to'lov:</div>
-                        <div class="invoice-detail-value d-inline h4 font-weight-bold text-primary mb-0">{{ total_amount|floatformat:0 }} so'm</div>
+                        <div class="invoice-detail-value d-inline h4 font-weight-bold text-primary mb-0">{{ total_amount|uz_price }}</div>
                       </div>
                     </div>
                   </div>

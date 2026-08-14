@@ -1,5 +1,6 @@
 {% extends 'dashboard/base.html' %}
 {% load static %}
+{% load shop_extras %}
 
 {% block title %}Ombor Nazorati | Chimyon-bozor{% endblock %}
 
@@ -29,7 +30,7 @@
               <h4 style="color: #475569; font-weight: 600;">Jami Tovar Turlari</h4>
             </div>
             <div class="card-body font-weight-bold" style="font-size: 1.25rem; color: #1e40af !important;">
-              {{ total_products_count }} xil
+              {{ total_products_count|intspace }} xil
             </div>
           </div>
         </div>
@@ -45,7 +46,7 @@
               <h4 style="color: #475569; font-weight: 600;">Jami Ombor Donasi</h4>
             </div>
             <div class="card-body font-weight-bold" style="font-size: 1.25rem; color: #0f766e !important;">
-              {{ total_stock_units }} dona
+              {{ total_stock_units|intspace }} dona
             </div>
           </div>
         </div>
@@ -62,7 +63,7 @@
                 <h4 style="color: #475569; font-weight: 600;">Kam Qolgan (≤ 5 dona)</h4>
               </div>
               <div class="card-body font-weight-bold" style="font-size: 1.25rem; color: #b45309 !important;">
-                {{ low_stock_count }} xil
+                {{ low_stock_count|intspace }} xil
               </div>
             </div>
           </div>
@@ -80,7 +81,7 @@
                 <h4 style="color: #475569; font-weight: 600;">Tugagan (0 dona)</h4>
               </div>
               <div class="card-body font-weight-bold" style="font-size: 1.25rem; color: #b91c1c !important;">
-                {{ out_of_stock_count }} xil
+                {{ out_of_stock_count|intspace }} xil
               </div>
             </div>
           </div>
@@ -159,10 +160,10 @@
                   <div class="small text-muted">Kodi: {{ product.code|slice:":8" }}</div>
                 </td>
                 <td>{{ product.category.name }}</td>
-                <td class="font-weight-bold">{{ product.active_price|floatformat:0 }} so'm</td>
+                <td class="font-weight-bold">{{ product.active_price|uz_price }}</td>
                 <td>
                   <span class="font-weight-bold {% if product.count <= 0 %}text-danger font-weight-bold{% elif product.count <= 5 %}text-warning font-weight-bold{% else %}text-success{% endif %}" style="font-size: 1.1rem;">
-                    {{ product.count }} dona
+                    {{ product.count|intspace }} dona
                   </span>
                 </td>
                 <td>
