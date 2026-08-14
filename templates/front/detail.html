@@ -276,7 +276,7 @@
                         <div class="d-flex align-items-end gap-3 flex-wrap">
                             {% if product.discount_status and product.discount_price %}
                             <h3 class="fw-800 text-main mb-0" style="font-size: 28px;">{{ product.discount_price|uz_price }}</h3>
-                            <span class="text-decoration-line-through text-muted font-16 mb-1">{{ product.price|uz_price }}</span>
+                            <span class="text-decoration-line-through font-16 mb-1" style="color: #64748b; font-weight: 500;">{{ product.price|uz_price }}</span>
                             {% else %}
                             <h3 class="fw-800 text-main mb-0" style="font-size: 28px;">{{ product.price|uz_price }}</h3>
                             {% endif %}
