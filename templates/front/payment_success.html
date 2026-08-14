@@ -33,19 +33,111 @@
         background: #f8fafc;
         border: 1px dashed #cbd5e1;
         border-radius: 16px;
-        padding: 20px;
+        padding: 24px;
         margin: 24px 0;
     }
 
     .receipt-row {
         display: flex;
         justify-content: space-between;
-        margin-bottom: 10px;
+        align-items: center;
+        margin-bottom: 12px;
         font-size: 15px;
     }
 
     .receipt-row strong {
         color: #111827;
+    }
+
+    /* High-contrast status badges */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+    }
+
+    .status-badge--pending {
+        background-color: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fcd34d;
+    }
+
+    .status-badge--paid {
+        background-color: #dcfce7;
+        color: #15803d;
+        border: 1px solid #86efac;
+    }
+
+    .status-badge--initiated {
+        background-color: #e0f2fe;
+        color: #0369a1;
+        border: 1px solid #7dd3fc;
+    }
+
+    .status-badge--failed {
+        background-color: #fee2e2;
+        color: #b91c1c;
+        border: 1px solid #fca5a5;
+    }
+
+    .status-badge--refunded {
+        background-color: #f1f5f9;
+        color: #334155;
+        border: 1px solid #cbd5e1;
+    }
+
+    /* High-contrast action buttons */
+    .btn-detail-action {
+        background: linear-gradient(135deg, #4f46e5, #4338ca);
+        color: #ffffff !important;
+        font-weight: 700;
+        font-size: 15px;
+        padding: 12px 28px;
+        border-radius: 999px;
+        border: 1px solid #3730a3;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+
+    .btn-detail-action:hover {
+        background: linear-gradient(135deg, #4338ca, #3730a3);
+        color: #ffffff !important;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+    }
+
+    .btn-catalog-action {
+        background: linear-gradient(135deg, #059669, #047857);
+        color: #ffffff !important;
+        font-weight: 700;
+        font-size: 15px;
+        padding: 12px 28px;
+        border-radius: 999px;
+        border: 1px solid #065f46;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+
+    .btn-catalog-action:hover {
+        background: linear-gradient(135deg, #047857, #065f46);
+        color: #ffffff !important;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(5, 150, 105, 0.4);
     }
 </style>
 
@@ -63,42 +155,48 @@
 
             <div class="receipt-box text-left">
                 <div class="receipt-row">
-                    <span class="text-muted">Buyurtma kodi:</span>
+                    <span class="text-muted font-weight-600">Buyurtma kodi:</span>
                     <strong>#{{ order.code|slice:":8" }} (<code>{{ order.code }}</code>)</strong>
                 </div>
                 <div class="receipt-row">
-                    <span class="text-muted">To'lov usuli:</span>
+                    <span class="text-muted font-weight-600">To'lov usuli:</span>
                     <strong>{{ payment.get_provider_display|default:"Yetkazilganda naqd to'lov" }}</strong>
                 </div>
                 <div class="receipt-row">
-                    <span class="text-muted">To'lov holati:</span>
+                    <span class="text-muted font-weight-600">To'lov holati:</span>
                     <span>
                         {% if payment.status == 'paid' %}
-                            <span class="badge badge-success px-2 py-1"><i class="fas fa-check-circle mr-1"></i> To'landi</span>
+                            <span class="status-badge status-badge--paid"><i class="fas fa-check-circle"></i> To'landi</span>
                         {% elif payment.status == 'pending' %}
-                            <span class="badge badge-warning px-2 py-1"><i class="fas fa-clock mr-1"></i> Kutilmoqda (Yetkazilganda to'lanadi)</span>
+                            <span class="status-badge status-badge--pending"><i class="fas fa-clock"></i> Kutilmoqda (Yetkazilganda to'lanadi)</span>
+                        {% elif payment.status == 'initiated' %}
+                            <span class="status-badge status-badge--initiated"><i class="fas fa-spinner fa-spin"></i> Boshlandi</span>
+                        {% elif payment.status == 'failed' %}
+                            <span class="status-badge status-badge--failed"><i class="fas fa-times-circle"></i> Xatolik</span>
+                        {% elif payment.status == 'refunded' %}
+                            <span class="status-badge status-badge--refunded"><i class="fas fa-undo"></i> Qaytarildi</span>
                         {% else %}
-                            <span class="badge badge-info px-2 py-1">{{ payment.get_status_display }}</span>
+                            <span class="status-badge status-badge--pending">{{ payment.get_status_display }}</span>
                         {% endif %}
                     </span>
                 </div>
                 {% if payment.transaction_id %}
                 <div class="receipt-row">
-                    <span class="text-muted">Tranzaksiya ID:</span>
+                    <span class="text-muted font-weight-600">Tranzaksiya ID:</span>
                     <strong><code>{{ payment.transaction_id }}</code></strong>
                 </div>
                 {% endif %}
                 <div class="receipt-row">
-                    <span class="text-muted">Sana va vaqt:</span>
+                    <span class="text-muted font-weight-600">Sana va vaqt:</span>
                     <strong>{{ order.date|date:"d.m.Y H:i" }}</strong>
                 </div>
                 <div class="receipt-row">
-                    <span class="text-muted">Yetkazish manzili:</span>
+                    <span class="text-muted font-weight-600">Yetkazish manzili:</span>
                     <strong>{{ order.user.address|default:"Manzil ko'rsatilmagan" }}</strong>
                 </div>
-                <div class="receipt-row border-top pt-2 mt-2">
+                <div class="receipt-row border-top pt-3 mt-3">
                     <span class="text-dark font-weight-bold" style="font-size: 1.1rem;">Jami To'lov:</span>
-                    <strong class="text-primary font-weight-bold" style="font-size: 1.25rem;">{{ order.total_price|uz_price }}</strong>
+                    <strong class="text-primary font-weight-bold" style="font-size: 1.3rem;">{{ order.total_price|uz_price }}</strong>
                 </div>
             </div>
 
@@ -110,7 +208,7 @@
                     <div class="list-group-item d-flex justify-content-between align-items-center border-0 bg-light rounded mb-2 py-2">
                         <div class="d-flex align-items-center gap-3">
                             {% if item.product.image %}
-                            <img src="{{ item.product.image.url }}" width="40" height="40" class="rounded mr-2" style="object-fit: cover;">
+                            <img src="{{ item.product.image.url }}" width="45" height="45" class="rounded mr-2" style="object-fit: cover;">
                             {% endif %}
                             <div>
                                 <strong class="text-dark">{{ item.product.name }}</strong>
@@ -124,14 +222,15 @@
             </div>
 
             <div class="d-flex justify-content-center gap-3 flex-wrap mt-4">
-                <a href="{% url 'order_detail' order.code %}" class="btn btn-outline-primary pill px-4 py-2 font-weight-bold">
-                    <i class="fas fa-receipt mr-1"></i> Buyurtma Tafsiloti
+                <a href="{% url 'order_detail' order.code %}" class="btn-detail-action">
+                    <i class="fas fa-file-invoice"></i> Buyurtma Tafsiloti
                 </a>
-                <a href="{% url 'all_products' %}" class="btn btn-main pill px-4 py-2 font-weight-bold">
-                    <i class="fas fa-shopping-bag mr-1"></i> Katalogga Qaytish
+                <a href="{% url 'all_products' %}" class="btn-catalog-action">
+                    <i class="fas fa-shopping-bag"></i> Katalogga Qaytish
                 </a>
             </div>
         </div>
     </div>
 </section>
 {% endblock %}
+
