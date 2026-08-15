@@ -1991,7 +1991,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             exportCanvas.toBlob(function(blob) {
                 if (!blob) {
-                    alert("Rasmni qayta ishlashda xatolik yuz berdi.");
+                    if (window.showAlertModal) {
+                        showAlertModal({ title: "Xatolik", body: "Rasmni qayta ishlashda xatolik yuz berdi.", type: "error" });
+                    }
                     return;
                 }
                 croppedBlob = blob;
@@ -2061,15 +2063,19 @@ document.addEventListener('DOMContentLoaded', function() {
             // 1. Format check
             const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
             if (!allowedTypes.includes(file.type.toLowerCase())) {
-                alert("Noto'g'ri fayl formati. Faqat JPG, PNG, WEBP formatlariga ruxsat berilgan.");
                 this.value = '';
+                if (window.showAlertModal) {
+                    showAlertModal({ title: "Noto'g'ri format", body: "Faqat JPG, PNG, WEBP formatlaridagi rasmlarga ruxsat berilgan.", type: "error" });
+                }
                 return;
             }
 
             // 2. Size check (5MB max)
             if (file.size > 5 * 1024 * 1024) {
-                alert("Rasm hajmi 5MB dan oshmasligi kerak.");
                 this.value = '';
+                if (window.showAlertModal) {
+                    showAlertModal({ title: "Katta hajm", body: "Rasm hajmi 5MB dan oshmasligi kerak.", type: "error" });
+                }
                 return;
             }
 
@@ -2086,19 +2092,25 @@ document.addEventListener('DOMContentLoaded', function() {
         profileForm.addEventListener('submit', function(e) {
             if (isUsernameChecking || isPhoneChecking) {
                 e.preventDefault();
-                alert('Iltimos, ma\'lumotlar tekshirilishini kuting...');
+                if (window.showAlertModal) {
+                    showAlertModal({ title: "Kuting", body: "Iltimos, ma'lumotlar tekshirilishini kuting...", type: "info" });
+                }
                 return false;
             }
             if (!isUsernameValid) {
                 e.preventDefault();
                 if (usernameInput) usernameInput.focus();
-                alert('Iltimos, to\'g\'ri va band bo\'lmagan foydalanuvchi nomini kiriting!');
+                if (window.showAlertModal) {
+                    showAlertModal({ title: "Foydalanuvchi nomi", body: "Iltimos, to'g'ri va band bo'lmagan foydalanuvchi nomini kiriting!", type: "error" });
+                }
                 return false;
             }
             if (!isPhoneValid) {
                 e.preventDefault();
                 if (phoneInput) phoneInput.focus();
-                alert('Iltimos, to\'g\'ri va band bo\'lmagan telefon raqamini kiriting!');
+                if (window.showAlertModal) {
+                    showAlertModal({ title: "Telefon raqami", body: "Iltimos, to'g'ri va band bo'lmagan telefon raqamini kiriting!", type: "error" });
+                }
                 return false;
             }
 

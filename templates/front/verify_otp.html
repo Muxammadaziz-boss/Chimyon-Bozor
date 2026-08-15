@@ -251,7 +251,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const code = syncHiddenCode();
         if (code.length < 6) {
             e.preventDefault();
-            alert("Iltimos, 6 xonali SMS kodni to'liq kiriting.");
+            if (window.showAlertModal) {
+                showAlertModal({ title: "SMS Kod", body: "Iltimos, 6 xonali SMS kodni to'liq kiriting.", type: "warning" });
+            }
             const firstEmpty = boxes.find(b => !b.value);
             if (firstEmpty) firstEmpty.focus();
         }

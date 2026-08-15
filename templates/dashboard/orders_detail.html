@@ -480,7 +480,7 @@
                       <td class="text-muted small">{{ p.created_at|date:"d.m.Y H:i" }}</td>
                       <td class="text-center">
                         {% if p.status == 'paid' %}
-                        <form method="POST" action="{% url 'd_refund_payment' p.id %}" onsubmit="return confirm('Haqiqatan ham ushbu to\'lovni ({{ p.amount|uz_price }}) qaytarmoqchimisiz?');" class="d-inline">
+                        <form method="POST" action="{% url 'd_refund_payment' p.id %}" onsubmit="event.preventDefault(); const form = this; showConfirmModal({ title: 'To\'lovni qaytarish', body: 'Haqiqatan ham ushbu to\'lovni ({{ p.amount|uz_price }}) qaytarmoqchimisiz?', type: 'danger', confirmText: 'Ha, qaytarish' }).then(yes => { if (yes) form.submit(); });" class="d-inline">
                           {% csrf_token %}
                           <input type="hidden" name="reason" value="Admin tomonidan buyurtma to'lovi qaytarildi">
                           <button type="submit" class="btn btn-xs btn-outline-danger py-0 px-2 font-weight-bold" style="font-size: 12px;">

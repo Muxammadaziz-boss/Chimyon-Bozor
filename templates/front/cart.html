@@ -529,10 +529,22 @@ document.addEventListener('DOMContentLoaded', function() {
                     pendingInput = qtyInput;
                     if (deleteModal) {
                         deleteModal.show();
-                    } else if (confirm("Mahsulotni savatdan o'chirmoqchimisiz?")) {
-                        sendQuantityUpdate(productCode, 0, row, itemTotal, qtyInput);
+                    } else if (window.showConfirmModal) {
+                        showConfirmModal({
+                            title: "Savatdan o'chirish",
+                            body: "Mahsulotni savatdan o'chirmoqchimisiz?",
+                            type: "danger",
+                            confirmText: "O'chirish",
+                            cancelText: "Bekor qilish"
+                        }).then(function(confirmed) {
+                            if (confirmed) {
+                                sendQuantityUpdate(productCode, 0, row, itemTotal, qtyInput);
+                            } else {
+                                qtyInput.value = 1;
+                            }
+                        });
                     } else {
-                        qtyInput.value = 1;
+                        sendQuantityUpdate(productCode, 0, row, itemTotal, qtyInput);
                     }
                 } else {
                     qtyInput.value = newQty;

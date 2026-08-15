@@ -14,7 +14,7 @@
       </div>
       <div>
         <a href="{% url 'd_list_users' %}" class="btn btn-outline-secondary mr-2">&larr; Mijozlar ro'yxatiga qaytish</a>
-        <a href="{% url 'd_toggle_user' customer.id %}" class="btn {% if customer.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}" onclick="return confirm('Haqiqatan ham bu foydalanuvchi holatini o\'zgartirmoqchimisiz?');">
+        <a href="{% url 'd_toggle_user' customer.id %}" class="btn {% if customer.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}" onclick="event.preventDefault(); const href=this.href; showConfirmModal({ title: 'Foydalanuvchi holati', body: 'Haqiqatan ham bu foydalanuvchi holatini o\'zgartirmoqchimisiz?', type: 'warning', confirmText: 'Ha, o\'zgartirish' }).then(yes => { if(yes) window.location.href = href; });">
           {% if customer.is_active %}<i class="fas fa-ban mr-1"></i> Bloklash{% else %}<i class="fas fa-check mr-1"></i> Faollashtirish{% endif %}
         </a>
       </div>
