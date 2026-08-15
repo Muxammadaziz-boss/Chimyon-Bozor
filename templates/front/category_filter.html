@@ -610,9 +610,9 @@
                                 <span>Narx (so'm)</span>
                             </div>
                             <div class="price-input-group">
-                                <input type="text" inputmode="numeric" pattern="[0-9]*" name="min_price" id="minPriceInput" class="price-input-control" placeholder="0" value="{{ min_price_raw|default:'' }}" autocomplete="off">
+                                <input type="text" inputmode="numeric" pattern="[0-9]*" name="min_price" id="minPriceInput" class="price-input-control" placeholder="0" value="{{ min_price_raw|default:'' }}" oninput="this.value=this.value.replace(/\D/g,'')" autocomplete="off">
                                 <span class="text-muted font-weight-bold">-</span>
-                                <input type="text" inputmode="numeric" pattern="[0-9]*" name="max_price" id="maxPriceInput" class="price-input-control" placeholder="1 000 000" value="{{ max_price_raw|default:'' }}" autocomplete="off">
+                                <input type="text" inputmode="numeric" pattern="[0-9]*" name="max_price" id="maxPriceInput" class="price-input-control" placeholder="1 000 000" value="{{ max_price_raw|default:'' }}" oninput="this.value=this.value.replace(/\D/g,'')" autocomplete="off">
                             </div>
 
                             <!-- Price Quick Presets -->
@@ -770,14 +770,107 @@
 
 <!-- Filter Interactivity Script -->
 <script>
+// Global price preset function
 function setPricePreset(min, max) {
     const minInput = document.getElementById('minPriceInput');
     const maxInput = document.getElementById('maxPriceInput');
-    if (minInput) minInput.value = min !== '' ? min : '';
-    if (maxInput) maxInput.value = max !== '' ? max : '';
+    if (minInput) {
+        minInput.value = min !== '' ? String(min).replace(/\D/g, '') : '';
+        minInput.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    if (maxInput) {
+        maxInput.value = max !== '' ? String(max).replace(/\D/g, '') : '';
+        maxInput.dispatchEvent(new Event('input', { bubbles: true }));
+    }
 }
 
+// Authoritative Strict Numeric Input Sanitizer (digits 0-9 only)
+function sanitizeNumericPriceInput(el) {
+    if (!el) return;
+
+    // 1. Initial Page-load sanitization
+    if (el.value) {
+        el.value = el.value.replace(/\D/g, '');
+    }
+
+    // 2. BeforeInput: block non-digit characters before they reach the DOM
+    el.addEventListener('beforeinput', function(e) {
+        if (e.data && /\D/.test(e.data)) {
+            e.preventDefault();
+        }
+    });
+
+    // 3. Keydown: allow navigation & control shortcuts, block all non-digit keys
+    el.addEventListener('keydown', function(e) {
+        // Navigation & editing keys: Backspace, Tab, Enter, Escape, Delete, Arrows, Home, End
+        if (['Backspace', 'Tab', 'Enter', 'Escape', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) {
+            return;
+        }
+        // Keyboard shortcuts: Ctrl/Cmd + A, C, V, X, Z, Y
+        if ((e.ctrlKey || e.metaKey) && ['a', 'c', 'v', 'x', 'z', 'y'].includes(e.key.toLowerCase())) {
+            return;
+        }
+        // Block anything that is not a single digit 0-9
+        if (!/^[0-9]$/.test(e.key)) {
+            e.preventDefault();
+        }
+    });
+
+    // 4. Input: authoritative real-time sanitization for all input methods
+    el.addEventListener('input', function() {
+        const clean = this.value.replace(/\D/g, '');
+        if (this.value !== clean) {
+            this.value = clean;
+        }
+    });
+
+    // 5. Paste: sanitize clipboard text immediately
+    el.addEventListener('paste', function(e) {
+        e.preventDefault();
+        const clipboardData = e.clipboardData || window.clipboardData;
+        const pastedText = clipboardData ? clipboardData.getData('text') : '';
+        const clean = pastedText.replace(/\D/g, '');
+        const start = this.selectionStart || 0;
+        const end = this.selectionEnd || 0;
+        const current = this.value || '';
+        this.value = (current.substring(0, start) + clean + current.substring(end)).replace(/\D/g, '');
+        const newPos = start + clean.length;
+        if (typeof this.setSelectionRange === 'function') {
+            this.setSelectionRange(newPos, newPos);
+        }
+        this.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+
+    // 6. Drop: sanitize dragged text immediately
+    el.addEventListener('drop', function(e) {
+        e.preventDefault();
+        const droppedText = e.dataTransfer ? e.dataTransfer.getData('text') : '';
+        const clean = (droppedText || '').replace(/\D/g, '');
+        this.value = clean;
+        this.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+
+    // 7. Change & Blur: guaranteed final check
+    el.addEventListener('change', function() {
+        this.value = this.value.replace(/\D/g, '');
+    });
+    el.addEventListener('blur', function() {
+        this.value = this.value.replace(/\D/g, '');
+    });
+}
+
+// Initialize sanitizers immediately if DOM elements exist
+const _immMin = document.getElementById('minPriceInput');
+const _immMax = document.getElementById('maxPriceInput');
+if (_immMin) sanitizeNumericPriceInput(_immMin);
+if (_immMax) sanitizeNumericPriceInput(_immMax);
+
 document.addEventListener('DOMContentLoaded', function() {
+    const minPriceInput = document.getElementById('minPriceInput');
+    const maxPriceInput = document.getElementById('maxPriceInput');
+    sanitizeNumericPriceInput(minPriceInput);
+    sanitizeNumericPriceInput(maxPriceInput);
+
     const toggleBtn = document.getElementById('toggleFilterSidebarBtn');
     const closeBtn = document.getElementById('closeFilterDrawerBtn');
     const sidebarCard = document.getElementById('filterSidebarCard');
@@ -832,36 +925,11 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.setItem('chimyon_catalog_view', 'list');
         });
 
-    // Numeric Input Sanitizer (Prevents 'e', 'E', '+', '-', '.' and letters)
-    function sanitizeNumericInput(el) {
-        if (!el) return;
-        el.addEventListener('keydown', function(e) {
-            // Block 'e', 'E', '+', '-', '.', ','
-            if (['e', 'E', '+', '-', '.', ','].includes(e.key)) {
-                e.preventDefault();
-            }
-        });
-
-        el.addEventListener('input', function() {
-            this.value = this.value.replace(/[^0-9]/g, '');
-        });
-
-        el.addEventListener('paste', function(e) {
-            setTimeout(() => {
-                this.value = this.value.replace(/[^0-9]/g, '');
-            }, 10);
-        });
-    }
-
-    const minPriceInput = document.getElementById('minPriceInput');
-    const maxPriceInput = document.getElementById('maxPriceInput');
-    sanitizeNumericInput(minPriceInput);
-    sanitizeNumericInput(maxPriceInput);
-
-    // Restore view preference from localStorage if set
-    const savedView = localStorage.getItem('chimyon_catalog_view');
-    if (savedView === 'list') {
-        listViewBtn.click();
+        // Restore view preference from localStorage if set
+        const savedView = localStorage.getItem('chimyon_catalog_view');
+        if (savedView === 'list') {
+            listViewBtn.click();
+        }
     }
 });
 </script>

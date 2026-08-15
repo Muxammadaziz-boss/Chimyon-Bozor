@@ -288,19 +288,44 @@ class ProductFilterAndSortingTests(TestCase):
         self.assertIn("class=\"filter-all-cats-btn\"", content)
         self.assertIn("Barchasi <i class=\"fas fa-arrow-right", content)
 
-    # 22. Price Sanitization Against Non-Numeric Chars (e.g. 'e342', '2143e')
+    # 22. Price Sanitization Against Non-Numeric Chars (e.g. 'e342', '2143e', '3r2341234eq')
     def test_price_input_sanitization_against_invalid_chars(self):
         url = reverse('all_products')
-        res = self.client.get(url, {'min_price': 'e342', 'max_price': '2143e'})
-        self.assertEqual(res.status_code, 200)
-        # Should sanitize 'e342' to 342 and '2143e' to 2143
-        self.assertEqual(res.context['min_price_raw'], '342')
-        self.assertEqual(res.context['max_price_raw'], '2143')
 
-        # If completely non-numeric
+        # 1. Mixed letters and digits
+        res = self.client.get(url, {'min_price': '3r2341234eq', 'max_price': '1a000b000'})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.context['min_price_raw'], '32341234')
+        self.assertEqual(res.context['max_price_raw'], '1000000')
+
+        # 2. Exponential chars and symbols: e342, 2143e, 1.5, +123, -500
+        res2 = self.client.get(url, {'min_price': 'e342', 'max_price': '2143e'})
+        self.assertEqual(res2.status_code, 200)
+        self.assertEqual(res2.context['min_price_raw'], '342')
+        self.assertEqual(res2.context['max_price_raw'], '2143')
+
+        res3 = self.client.get(url, {'min_price': '1.5', 'max_price': '+123'})
+        self.assertEqual(res3.status_code, 200)
+        self.assertEqual(res3.context['min_price_raw'], '15')
+        self.assertEqual(res3.context['max_price_raw'], '123')
+
+        res4 = self.client.get(url, {'min_price': '-500', 'max_price': '1000'})
+        self.assertEqual(res4.status_code, 200)
+        self.assertEqual(res4.context['min_price_raw'], '500')
+        self.assertEqual(res4.context['max_price_raw'], '1000')
+
+        # 3. Completely non-numeric
         res_empty = self.client.get(url, {'min_price': 'abc', 'max_price': 'xyz'})
         self.assertEqual(res_empty.status_code, 200)
         self.assertEqual(res_empty.context['min_price_raw'], '')
         self.assertEqual(res_empty.context['max_price_raw'], '')
+
+        # 4. Template attributes check (inputmode numeric, inline oninput fallback, sanitize function)
+        content = res.content.decode('utf-8')
+        self.assertIn('inputmode="numeric"', content)
+        self.assertIn('pattern="[0-9]*"', content)
+        self.assertIn("oninput=\"this.value=this.value.replace(/\\D/g,'')\"", content)
+        self.assertIn("function sanitizeNumericPriceInput", content)
+
 
 
