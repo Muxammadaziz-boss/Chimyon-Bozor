@@ -24,3 +24,9 @@ urlpatterns = [
     path('', include('main.urls')),
     path('dashboard/', include('dashboard.urls')),
 ]+static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+handler404 = 'main.views.custom_404_view'
+handler403 = 'main.views.custom_403_view'
+handler500 = 'main.views.custom_500_view'
+handler400 = 'main.views.custom_400_view'
+

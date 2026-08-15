@@ -1526,3 +1526,26 @@ def check_phone_api(request):
     return JsonResponse({'valid': True, 'available': True, 'canonical': phone, 'message': "Telefon raqami to'g'ri va bo'sh"})
 
 
+def custom_404_view(request, exception=None):
+    return render(request, '404.html', status=404)
+
+
+def custom_403_view(request, exception=None):
+    return render(request, '403.html', status=403)
+
+
+def custom_500_view(request):
+    try:
+        return render(request, '500.html', status=500)
+    except Exception:
+        from django.http import HttpResponseServerError
+        from django.template import loader
+        t = loader.get_template('500.html')
+        return HttpResponseServerError(t.render({}, request=None))
+
+
+def custom_400_view(request, exception=None):
+    return render(request, '400.html', status=400)
+
+
+

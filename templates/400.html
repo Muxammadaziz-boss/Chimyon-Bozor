@@ -1,0 +1,271 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}400 — Noto‘g‘ri so‘rov | Chimyon-bozor{% endblock %}
+
+{% block meta_robots %}
+<meta name="robots" content="noindex, nofollow">
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ==========================================================
+       CHIMYON-BOZOR PREMIUM 400 ERROR PAGE STYLES
+       ========================================================== */
+    .error-page-section {
+        min-height: calc(100vh - 280px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 60px 16px;
+        background: radial-gradient(circle at 50% 30%, rgba(245, 158, 11, 0.05) 0%, #F8FAFC 70%);
+    }
+
+    .error-card {
+        background: #FFFFFF;
+        border-radius: 28px;
+        border: 1.5px solid #E2E8F0;
+        box-shadow: 0 20px 50px -12px rgba(15, 23, 42, 0.08), 0 4px 16px rgba(245, 158, 11, 0.04);
+        max-width: 640px;
+        width: 100%;
+        padding: 48px 36px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .error-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 6px;
+        background: linear-gradient(90deg, #F59E0B 0%, #D97706 100%);
+    }
+
+    .error-illustration-wrap {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 24px;
+    }
+
+    .error-code-badge {
+        font-size: clamp(72px, 14vw, 110px);
+        font-weight: 900;
+        line-height: 1;
+        letter-spacing: -3px;
+        background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        user-select: none;
+        margin: 0;
+    }
+
+    .error-floating-icon {
+        position: absolute;
+        top: -10px;
+        right: -16px;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+        color: #FFFFFF;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        box-shadow: 0 8px 20px rgba(245, 158, 11, 0.35);
+        animation: floatWarning 3s ease-in-out infinite;
+    }
+
+    @keyframes floatWarning {
+        0%, 100% {
+            transform: translateY(0) rotate(0deg);
+        }
+        50% {
+            transform: translateY(-8px) rotate(6deg);
+        }
+    }
+
+    .error-title {
+        font-size: clamp(22px, 5vw, 28px);
+        font-weight: 800;
+        color: #0F172A;
+        margin-bottom: 12px;
+        line-height: 1.3;
+    }
+
+    .error-description {
+        font-size: 15.5px;
+        color: #475569;
+        line-height: 1.6;
+        margin-bottom: 28px;
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .error-actions {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin-bottom: 32px;
+    }
+
+    .btn-error-primary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 13px 26px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%);
+        color: #FFFFFF !important;
+        font-weight: 700;
+        font-size: 15px;
+        text-decoration: none !important;
+        box-shadow: 0 6px 20px rgba(124, 58, 237, 0.3);
+        transition: all 0.25s ease;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-error-primary:hover {
+        background: linear-gradient(135deg, #6D28D9 0%, #5B21B6 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 24px rgba(124, 58, 237, 0.4);
+    }
+
+    .btn-error-secondary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 13px 24px;
+        border-radius: 14px;
+        background: #F8FAFC;
+        color: #334155 !important;
+        font-weight: 700;
+        font-size: 15px;
+        text-decoration: none !important;
+        border: 1.5px solid #CBD5E1;
+        transition: all 0.25s ease;
+        cursor: pointer;
+    }
+
+    .btn-error-secondary:hover {
+        background: #F1F5F9;
+        border-color: #94A3B8;
+        color: #0F172A !important;
+        transform: translateY(-2px);
+    }
+
+    .error-quick-links {
+        border-top: 1px solid #E2E8F0;
+        padding-top: 24px;
+    }
+
+    .error-quick-links-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #64748B;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+    }
+
+    .error-chips-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .error-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 999px;
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        color: #475569;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none !important;
+        transition: all 0.2s ease;
+    }
+
+    .error-chip:hover {
+        background: #F3E8FF;
+        border-color: #DDD6FE;
+        color: #7C3AED;
+    }
+
+    @media (max-width: 576px) {
+        .error-card {
+            padding: 36px 20px 28px;
+            border-radius: 22px;
+        }
+        .error-actions {
+            flex-direction: column;
+            width: 100%;
+        }
+        .btn-error-primary,
+        .btn-error-secondary {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="error-page-section" aria-labelledby="errorHeading">
+    <div class="container d-flex justify-content-center">
+        <div class="error-card">
+            <!-- Code Badge & Animated Icon -->
+            <div class="error-illustration-wrap">
+                <span class="error-code-badge" aria-hidden="true">400</span>
+                <div class="error-floating-icon" aria-hidden="true">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+            </div>
+
+            <!-- Heading & Description -->
+            <h1 class="error-title" id="errorHeading">Noto‘g‘ri so‘rov</h1>
+            <p class="error-description">
+                Yuborilgan so‘rovda sintaktik xatolik mavjud yoki server so‘rovni qabul qila olmadi.
+            </p>
+
+            <!-- Recovery Buttons -->
+            <div class="error-actions">
+                <a href="{% url 'index' %}" class="btn-error-primary" aria-label="Bosh sahifaga qaytish">
+                    <i class="fas fa-home" aria-hidden="true"></i> Bosh sahifaga qaytish
+                </a>
+                <a href="{% url 'all_products' %}" class="btn-error-secondary" aria-label="Mahsulotlar katalogini ko'rish">
+                    <i class="fas fa-th-large" aria-hidden="true"></i> Katalogni ko‘rish
+                </a>
+            </div>
+
+            <!-- Helpful Navigation Shortcuts -->
+            <div class="error-quick-links">
+                <div class="error-quick-links-title">Ommabop bo‘limlar:</div>
+                <div class="error-chips-wrap">
+                    <a href="{% url 'all_products' %}" class="error-chip">
+                        <i class="fas fa-shopping-bag text-primary" aria-hidden="true"></i> Katalog
+                    </a>
+                    <a href="{% url 'categories' %}" class="error-chip">
+                        <i class="fas fa-layer-group text-primary" aria-hidden="true"></i> Kategoriyalar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1440,6 +1440,104 @@ class GlobalAccessibilityAuditTests(TestCase):
         self.assertIn('aria-label="Savatdan o\'chirish"', content)
 
 
+class GlobalErrorPagesTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='errortestuser',
+            password='password123',
+            phone='+998909876543',
+            address='Chimyon'
+        )
+
+    def test_404_view_and_template(self):
+        """Ensure custom 404 handler returns 404 status and rendered Uzbek recovery UI."""
+        from main.views import custom_404_view
+        from django.test import RequestFactory
+        factory = RequestFactory()
+        request = factory.get('/non-existent-page-url/')
+        response = custom_404_view(request)
+        self.assertEqual(response.status_code, 404)
+        content = response.content.decode('utf-8')
+        self.assertIn('404', content)
+        self.assertIn('Sahifa topilmadi', content)
+        self.assertIn('Bosh sahifaga qaytish', content)
+        self.assertIn('Katalogni ko‘rish', content)
+        self.assertIn('robots', content)
+        self.assertIn('noindex', content)
+
+    def test_403_unauthenticated_view(self):
+        """Ensure 403 shows login prompt when user is not authenticated."""
+        from main.views import custom_403_view
+        from django.test import RequestFactory
+        from django.contrib.auth.models import AnonymousUser
+        factory = RequestFactory()
+        request = factory.get('/dashboard/analytics/')
+        request.user = AnonymousUser()
+        response = custom_403_view(request)
+        self.assertEqual(response.status_code, 403)
+        content = response.content.decode('utf-8')
+        self.assertIn('403', content)
+        self.assertIn('Kirish cheklangan', content)
+        self.assertIn('Tizimga kirish', content)
+        self.assertIn('Bosh sahifa', content)
+
+    def test_403_authenticated_view(self):
+        """Ensure 403 shows insufficient permissions message when user is authenticated."""
+        from main.views import custom_403_view
+        from django.test import RequestFactory
+        factory = RequestFactory()
+        request = factory.get('/dashboard/analytics/')
+        request.user = self.user
+        response = custom_403_view(request)
+        self.assertEqual(response.status_code, 403)
+        content = response.content.decode('utf-8')
+        self.assertIn('403', content)
+        self.assertIn('Kirish cheklangan', content)
+        self.assertIn('Mening profilim', content)
+        self.assertIn('Bosh sahifaga qaytish', content)
+
+    def test_500_view_resilience_and_safety(self):
+        """Ensure 500 handler returns 500 status and does not leak tracebacks or secrets."""
+        from main.views import custom_500_view
+        from django.test import RequestFactory
+        from django.conf import settings
+        factory = RequestFactory()
+        request = factory.get('/some-failing-view/')
+        response = custom_500_view(request)
+        self.assertEqual(response.status_code, 500)
+        content = response.content.decode('utf-8')
+        self.assertIn('500', content)
+        self.assertIn('Serverda vaqtinchalik xatolik', content)
+        self.assertIn('Qayta urinish', content)
+        self.assertIn('Bosh sahifaga qaytish', content)
+        # Security check: Ensure SECRET_KEY and traceback are not leaked
+        self.assertNotIn(settings.SECRET_KEY, content)
+        self.assertNotIn('Traceback (most recent call last)', content)
+        self.assertNotIn('OperationalError', content)
+
+    def test_400_view(self):
+        """Ensure 400 handler returns 400 status and clean error UI."""
+        from main.views import custom_400_view
+        from django.test import RequestFactory
+        factory = RequestFactory()
+        request = factory.get('/bad-request/')
+        response = custom_400_view(request)
+        self.assertEqual(response.status_code, 400)
+        content = response.content.decode('utf-8')
+        self.assertIn('400', content)
+        self.assertIn('Noto‘g‘ri so‘rov', content)
+        self.assertIn('Bosh sahifaga qaytish', content)
+
+    def test_handler_registrations_in_urls(self):
+        """Ensure handler404, handler403, handler500, handler400 are registered in config.urls."""
+        import config.urls as root_urls
+        self.assertEqual(root_urls.handler404, 'main.views.custom_404_view')
+        self.assertEqual(root_urls.handler403, 'main.views.custom_403_view')
+        self.assertEqual(root_urls.handler500, 'main.views.custom_500_view')
+        self.assertEqual(root_urls.handler400, 'main.views.custom_400_view')
+
+
+
 
 
 
