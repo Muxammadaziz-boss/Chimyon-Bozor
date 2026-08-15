@@ -207,6 +207,10 @@
         transform: translateY(-2px);
         box-shadow: 0 8px 22px rgba(124, 58, 237, 0.4) !important;
     }
+    .order-detail-section {
+        padding-top: 50px;
+        padding-bottom: 120px;
+    }
 </style>
 
 <section class="breadcrumb breadcrumb-one padding-y-60 section-bg position-relative z-index-1 overflow-hidden">
@@ -224,7 +228,7 @@
     </div>
 </section>
 
-<section class="padding-y-80">
+<section class="order-detail-section padding-y-120">
     <div class="container container-two">
         <div class="order-detail-shell">
             <!-- Chap Panel: Buyurtma Tarkibi, To'lovlar Tarixi va Yetkazish -->
@@ -365,7 +369,7 @@
                 </div>
 
                 <!-- 4. Harakat tugmalari -->
-                <div class="d-flex gap-3 flex-wrap align-items-center mt-3">
+                <div class="d-flex gap-3 flex-wrap align-items-center mt-4 pt-2 mb-4">
                     <a href="{% url 'order_history' %}" class="btn-orders-back">
                         <i class="fas fa-arrow-left mr-1"></i> Barcha Buyurtmalar
                     </a>
