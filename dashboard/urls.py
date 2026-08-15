@@ -31,6 +31,7 @@ urlpatterns = [
     path('logout/', views.log_out, name='d_logout'),
     path('api/revenue-chart/', views.revenue_chart_data, name='revenue-chart'),
     path('export-orders/', views.export_orders, name='d_export_orders'),
+    path('export-payments/', views.export_payments_excel, name='d_export_payments'),
     path('export-products/', views.export_products_excel, name='d_export_products'),
     path('export-inventory/', views.export_inventory_excel, name='d_export_inventory'),
 ]

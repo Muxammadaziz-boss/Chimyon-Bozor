@@ -853,22 +853,24 @@ def cart_detail(request, code):
 @require_POST
 def settle_order_balance(request, code):
     """
-    Buyurtmaning qoldiq summasini yetkazib berishda (naqd/terminal) qabul qilib to'liq to'langan deb belgilash.
+    Buyurtmaning qoldiq summasini yetkazib berishda (naqd/terminal/online) qabul qilib to'liq to'langan deb belgilash.
     """
     order = get_object_or_404(models.Cart, code=code, status__gt=1)
     amount_raw = request.POST.get('amount')
+    provider = (request.POST.get('provider') or models.Payment.Provider.CASH).strip().lower()
     comment = request.POST.get('comment', '').strip()
 
     try:
         amount = Decimal(str(amount_raw)) if amount_raw else None
         from main.services.payment import PaymentManager
-        PaymentManager.settle_cash_balance(
+        payment = PaymentManager.settle_cash_balance(
             order=order,
             amount=amount,
+            provider=provider,
             user=request.user,
-            comment=comment or "Yetkazib berishda naqd to'lov orqali qoldiq yopildi."
+            comment=comment or f"Yetkazib berishda {provider.upper()} orqali qoldiq to'lov qabul qilindi."
         )
-        messages.success(request, f"Buyurtma #{str(order.code)[:8]} uchun qoldiq to'lov muvaffaqiyatli qabul qilindi!")
+        messages.success(request, f"Buyurtma #{str(order.code)[:8]} uchun {payment.amount} UZS qoldiq to'lov ({provider.upper()}) muvaffaqiyatli qabul qilindi!")
     except Exception as e:
         messages.error(request, f"Qoldiq to'lovni rasmiylashtirishda xatolik: {str(e)}")
 
@@ -911,9 +913,11 @@ def payments_list(request):
     total_paid_amount = sum(float(p.amount) for p in paid_payments)
     prepayment_collected = sum(float(p.amount) for p in paid_payments.filter(purpose=models.Payment.Purpose.PREPAYMENT))
     balance_collected = sum(float(p.amount) for p in paid_payments.filter(purpose=models.Payment.Purpose.BALANCE))
+    cash_balance_collected = sum(float(p.amount) for p in paid_payments.filter(purpose=models.Payment.Purpose.BALANCE, provider=models.Payment.Provider.CASH))
+    online_balance_collected = sum(float(p.amount) for p in paid_payments.filter(purpose=models.Payment.Purpose.BALANCE).exclude(provider=models.Payment.Provider.CASH))
 
-    outstanding_orders = models.Cart.objects.filter(status__in=[2, 3])
-    outstanding_balances = sum(float(o.remaining_amount) for o in outstanding_orders)
+    outstanding_orders = models.Cart.objects.filter(status__in=[2, 3, 4])
+    outstanding_balances = sum(float(o.remaining_amount) for o in outstanding_orders if o.remaining_amount > 0)
 
     paid_count = paid_payments.count()
     pending_count = models.Payment.objects.filter(status=models.Payment.Status.PENDING).count()
@@ -939,6 +943,8 @@ def payments_list(request):
         'total_paid_amount': total_paid_amount,
         'prepayment_collected': prepayment_collected,
         'balance_collected': balance_collected,
+        'cash_balance_collected': cash_balance_collected,
+        'online_balance_collected': online_balance_collected,
         'outstanding_balances': outstanding_balances,
         'paid_count': paid_count,
         'pending_count': pending_count,
@@ -1080,7 +1086,7 @@ def toggle_user_status(request, id):
 @staff_required
 def reports_overview(request):
     """
-    Professional hisobotlar boshqaruv paneli.
+    Professional hisobotlar va to'liq moliyaviy tahlil boshqaruv paneli.
     """
     # 1. Monthly sales summary
     delivered_products = models.CartProduct.objects.filter(
@@ -1105,7 +1111,37 @@ def reports_overview(request):
             'revenue': monthly_summary[m_key]['revenue'],
         })
 
-    # 2. Category Performance
+    # 2. Financial Metrics (Prepayments, Balance Collected, Outstanding)
+    paid_payments = models.Payment.objects.filter(status=models.Payment.Status.PAID)
+
+    prepayment_collected = paid_payments.filter(
+        purpose=models.Payment.Purpose.PREPAYMENT
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+    balance_collected = paid_payments.filter(
+        purpose=models.Payment.Purpose.BALANCE
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+    cash_balance_collected = paid_payments.filter(
+        purpose=models.Payment.Purpose.BALANCE,
+        provider=models.Payment.Provider.CASH
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+    online_balance_collected = paid_payments.filter(
+        purpose=models.Payment.Purpose.BALANCE
+    ).exclude(provider=models.Payment.Provider.CASH).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+    full_payments_collected = paid_payments.filter(
+        purpose=models.Payment.Purpose.FULL
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+    total_revenue_collected = paid_payments.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+    # Outstanding balances across uncancelled orders
+    active_orders = models.Cart.objects.filter(status__in=[2, 3, 4])
+    outstanding_balances = sum(o.remaining_amount for o in active_orders if o.remaining_amount > 0)
+
+    # 3. Category Performance
     categories_perf = []
     for cat in models.Category.objects.all():
         cat_items = delivered_products.filter(product__category=cat)
@@ -1119,7 +1155,7 @@ def reports_overview(request):
         })
     categories_perf.sort(key=lambda x: x['revenue'], reverse=True)
 
-    # 3. Top Products Performance
+    # 4. Top Products Performance
     top_products_perf = (
         models.CartProduct.objects.filter(cart__status=4, product__isnull=False)
         .values('product_id', 'product__name', 'product__price', 'product__category__name', 'product__count')
@@ -1127,7 +1163,7 @@ def reports_overview(request):
         .order_by('-total_units')[:10]
     )
 
-    # 4. Inventory Value
+    # 5. Inventory Value
     all_products = models.Product.objects.all()
     inventory_value = sum(float(p.price) * p.count for p in all_products)
     total_stock_count = sum(p.count for p in all_products)
@@ -1139,6 +1175,13 @@ def reports_overview(request):
         'inventory_value': inventory_value,
         'total_stock_count': total_stock_count,
         'total_products_count': all_products.count(),
+        'prepayment_collected': prepayment_collected,
+        'balance_collected': balance_collected,
+        'cash_balance_collected': cash_balance_collected,
+        'online_balance_collected': online_balance_collected,
+        'full_payments_collected': full_payments_collected,
+        'total_revenue_collected': total_revenue_collected,
+        'outstanding_balances': outstanding_balances,
     }
     return render(request, 'dashboard/reports.html', context)
 
@@ -1148,7 +1191,7 @@ def export_orders(request):
     orders_qs = (
         models.Cart.objects.exclude(status=1)
         .select_related('user')
-        .prefetch_related('cartproduct_set__product')
+        .prefetch_related('cartproduct_set__product', 'payments')
         .order_by('-date', 'id')
     )
     wb = Workbook()
@@ -1167,9 +1210,9 @@ def export_orders(request):
     )
 
     headers = [
-        "№", "Buyurtma ID", "Mijoz Ismi", "Foydalanuvchi nomi",
+        "№", "Buyurtma Kodi", "Mijoz Ismi", "Foydalanuvchi nomi",
         "Telefon", "Status", "Moliyaviy Holat", "Oldindan To'lov (%)", "Sana", "Mahsulotlar soni",
-        "Jami Summa (so'm)", "To'langan Summa", "Qoldiq Summa", "Manzil"
+        "Jami Summa (so'm)", "To'langan Summa", "Qoldiq Summa", "To'lovlar Tarixi (Maqsad & Provayder)", "Manzil"
     ]
     ws.append(headers)
 
@@ -1201,6 +1244,12 @@ def export_orders(request):
         user_phone = order.user.phone if hasattr(order.user, 'phone') and order.user.phone else '—'
         user_address = order.user.address if hasattr(order.user, 'address') and order.user.address else '—'
 
+        # Payment details summary
+        paid_records = order.payments.filter(status=models.Payment.Status.PAID)
+        payment_summary = "; ".join([
+            f"{p.get_purpose_display()} ({p.provider.upper()}): {float(p.amount):,.0f}" for p in paid_records
+        ]) if paid_records.exists() else "To'lov yo'q"
+
         row = [
             idx,
             order.code,
@@ -1215,6 +1264,7 @@ def export_orders(request):
             total_price,
             paid_price,
             remaining_price,
+            payment_summary,
             user_address
         ]
         ws.append(row)
@@ -1236,6 +1286,90 @@ def export_orders(request):
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
     filename = f"chimyon_bozor_buyurtmalar_{now().strftime('%Y%m%d_%H%M')}.xlsx"
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    wb.save(response)
+    return response
+
+
+@staff_required
+def export_payments_excel(request):
+    """
+    Barcha to'lovlar (Prepayments, Balance, Full, Cash & Online) bo'yicha batafsil Excel hisoboti.
+    """
+    payments_qs = (
+        models.Payment.objects.select_related('order', 'order__user')
+        .order_by('-created_at')
+    )
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "To'lovlar Hisoboti"
+
+    header_fill = PatternFill(start_color="1E40AF", end_color="1E40AF", fill_type="solid")
+    header_font = Font(name="Arial", size=11, bold=True, color="FFFFFF")
+    data_font = Font(name="Arial", size=10)
+    thin_border = Border(
+        left=Side(style='thin', color='DDDDDD'),
+        right=Side(style='thin', color='DDDDDD'),
+        top=Side(style='thin', color='DDDDDD'),
+        bottom=Side(style='thin', color='DDDDDD')
+    )
+
+    headers = [
+        "№", "To'lov Kodi", "Buyurtma Kodi", "Mijoz Ismi", "Foydalanuvchi",
+        "Telefon", "To'lov Maqsadi (Purpose)", "To'lov Provayderi",
+        "Summa (so'm)", "To'lov Holati", "Tranzaksiya ID", "To'langan Sana", "Yaratilgan Sana"
+    ]
+    ws.append(headers)
+
+    for col_num, _ in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+
+    for idx, p in enumerate(payments_qs, 1):
+        order_code = p.order.code if p.order else "—"
+        user = p.order.user if p.order and p.order.user else None
+        user_name = user.get_full_name() or user.username if user else "—"
+        user_uname = user.username if user else "—"
+        user_phone = getattr(user, 'phone', '—') if user else "—"
+
+        paid_date = p.paid_at.strftime('%d.%m.%Y %H:%M') if p.paid_at else "—"
+        created_date = p.created_at.strftime('%d.%m.%Y %H:%M') if p.created_at else "—"
+
+        row = [
+            idx,
+            p.code,
+            order_code,
+            user_name,
+            user_uname,
+            user_phone,
+            p.get_purpose_display(),
+            p.provider.upper(),
+            float(p.amount),
+            p.get_status_display(),
+            p.transaction_id or "—",
+            paid_date,
+            created_date
+        ]
+        ws.append(row)
+
+        for col_num in range(1, len(row) + 1):
+            cell = ws.cell(row=idx + 1, column=col_num)
+            cell.font = data_font
+            cell.border = thin_border
+            if col_num in (1, 9):
+                cell.alignment = Alignment(horizontal="right")
+
+    for col in ws.columns:
+        max_len = max(len(str(cell.value or '')) for cell in col)
+        col_letter = get_column_letter(col[0].column)
+        ws.column_dimensions[col_letter].width = max(max_len + 4, 12)
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    filename = f"chimyon_bozor_tolovlar_{now().strftime('%Y%m%d_%H%M')}.xlsx"
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
     wb.save(response)
     return response

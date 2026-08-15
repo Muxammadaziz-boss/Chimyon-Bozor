@@ -14,11 +14,83 @@
       </div>
       <div>
         <a href="{% url 'd_export_orders' %}" class="btn btn-success mr-2"><i class="fas fa-file-excel mr-1"></i>Buyurtmalar Excel</a>
+        <a href="{% url 'd_export_payments' %}" class="btn btn-info mr-2"><i class="fas fa-file-excel mr-1"></i>To'lovlar Excel</a>
         <a href="{% url 'd_export_products' %}" class="btn btn-primary"><i class="fas fa-file-excel mr-1"></i>Mahsulotlar & Ombor Excel</a>
       </div>
     </div>
 
-    <!-- Umumiy Hisobot Kartalari -->
+    <!-- Moliyaviy va To'lovlar Hisoboti Kartalari -->
+    <div class="row">
+      <div class="col-lg-3 col-md-6 col-12">
+        <div class="card card-statistic-1 shadow-sm border-0">
+          <div class="card-icon bg-primary" style="background-color: #1e40af !important;">
+            <i class="fas fa-wallet text-white"></i>
+          </div>
+          <div class="card-wrap">
+            <div class="card-header">
+              <h4 style="color: #475569; font-weight: 600;">Jami Yig'ilgan Tushum</h4>
+            </div>
+            <div class="card-body font-weight-bold" style="font-size: 1.25rem; color: #1e40af !important;">
+              {{ total_revenue_collected|uz_price }}
+              <div class="small font-weight-normal text-muted mt-1" style="font-size: 0.82rem;">(Tasdiqlangan to'lovlar)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-3 col-md-6 col-12">
+        <div class="card card-statistic-1 shadow-sm border-0">
+          <div class="card-icon bg-purple" style="background-color: #7c3aed !important;">
+            <i class="fas fa-percentage text-white"></i>
+          </div>
+          <div class="card-wrap">
+            <div class="card-header">
+              <h4 style="color: #475569; font-weight: 600;">Oldindan To'lovlar (Avans)</h4>
+            </div>
+            <div class="card-body font-weight-bold" style="font-size: 1.25rem; color: #6d28d9 !important;">
+              {{ prepayment_collected|uz_price }}
+              <div class="small font-weight-normal text-muted mt-1" style="font-size: 0.82rem;">(Prepayments)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-3 col-md-6 col-12">
+        <div class="card card-statistic-1 shadow-sm border-0">
+          <div class="card-icon bg-success">
+            <i class="fas fa-hand-holding-usd text-white"></i>
+          </div>
+          <div class="card-wrap">
+            <div class="card-header">
+              <h4 style="color: #475569; font-weight: 600;">Yig'ilgan Qoldiqlar</h4>
+            </div>
+            <div class="card-body font-weight-bold" style="font-size: 1.25rem; color: #15803d !important;">
+              {{ balance_collected|uz_price }}
+              <div class="small font-weight-normal text-muted mt-1" style="font-size: 0.8rem;">Naqd: {{ cash_balance_collected|uz_price }} | Online: {{ online_balance_collected|uz_price }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-3 col-md-6 col-12">
+        <div class="card card-statistic-1 shadow-sm border-0">
+          <div class="card-icon bg-warning" style="background-color: #d97706 !important;">
+            <i class="fas fa-clock text-white"></i>
+          </div>
+          <div class="card-wrap">
+            <div class="card-header">
+              <h4 style="color: #475569; font-weight: 600;">Kutilayotgan Qoldiqlar</h4>
+            </div>
+            <div class="card-body font-weight-bold" style="font-size: 1.25rem; color: #b45309 !important;">
+              {{ outstanding_balances|uz_price }}
+              <div class="small font-weight-normal text-muted mt-1" style="font-size: 0.82rem;">(Yetkazilganda olinadi)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Umumiy Ombor Kartalari -->
     <div class="row">
       <div class="col-lg-4 col-md-6 col-12">
         <div class="card card-statistic-1 shadow-sm border-0">

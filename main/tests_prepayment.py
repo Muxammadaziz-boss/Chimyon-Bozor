@@ -642,3 +642,160 @@ class PartialPrepaymentAndBalanceTests(TestCase):
         # Should still be 1 active balance payment, not duplicated!
         self.assertEqual(models.Payment.objects.filter(order=self.cart, purpose=models.Payment.Purpose.BALANCE, status__in=[models.Payment.Status.INITIATED, models.Payment.Status.PENDING]).count(), 1)
 
+    # -------------------------------------------------------------
+    # 27. Delivery-Time Cash Balance Payment as Real Payment Record
+    # -------------------------------------------------------------
+    def test_delivery_cash_balance_creates_real_payment_record_and_ledger(self):
+        staff_user = models.User.objects.create_user(username='courier_admin', phone='+998901112233', password='adminpass123', is_staff=True)
+        self.cart.status = 3  # In delivery
+        self.cart.prepayment_percent = 30
+        self.cart.prepayment_amount = Decimal('290280.00')
+        self.cart.financial_status = models.Cart.FinancialStatus.PARTIALLY_PAID
+        self.cart.save()
+
+        # 1. Prepayment Record (Paid)
+        models.Payment.objects.create(
+            order=self.cart,
+            provider='click',
+            purpose=models.Payment.Purpose.PREPAYMENT,
+            amount=Decimal('290280.00'),
+            status=models.Payment.Status.PAID,
+            paid_at=timezone.now()
+        )
+
+        self.assertEqual(self.cart.paid_amount, Decimal('290280.00'))
+        self.assertEqual(self.cart.remaining_amount, Decimal('677320.00'))
+
+        # 2. Staff collects cash balance at delivery time
+        self.client.force_login(staff_user)
+        response = self.client.post(reverse('d_settle_order_balance', kwargs={'code': self.cart.code}), {
+            'amount': '677320.00',
+            'provider': 'cash',
+            'comment': 'Mijozdan yetkazish vaqtida to\'liq qabul qilindi'
+        })
+        self.assertEqual(response.status_code, 302)
+
+        # 3. Verify Payment Ledger contains 2 real records
+        payments = models.Payment.objects.filter(order=self.cart).order_by('created_at')
+        self.assertEqual(payments.count(), 2)
+
+        prep_p = payments[0]
+        self.assertEqual(prep_p.purpose, models.Payment.Purpose.PREPAYMENT)
+        self.assertEqual(prep_p.provider, 'click')
+        self.assertEqual(prep_p.amount, Decimal('290280.00'))
+        self.assertEqual(prep_p.status, models.Payment.Status.PAID)
+
+        bal_p = payments[1]
+        self.assertEqual(bal_p.purpose, models.Payment.Purpose.BALANCE)
+        self.assertEqual(bal_p.provider, 'cash')
+        self.assertEqual(bal_p.amount, Decimal('677320.00'))
+        self.assertEqual(bal_p.status, models.Payment.Status.PAID)
+
+        # 4. Verify Financial Totals
+        self.cart.refresh_from_db()
+        self.assertEqual(self.cart.paid_amount, Decimal('967600.00'))
+        self.assertEqual(self.cart.remaining_amount, Decimal('0.00'))
+        self.assertEqual(self.cart.financial_status, models.Cart.FinancialStatus.FULLY_PAID)
+        self.assertTrue(self.cart.is_fully_paid)
+
+    # -------------------------------------------------------------
+    # 28. Delivery Status Does Not Automatically Mark Payment as Paid
+    # -------------------------------------------------------------
+    def test_delivery_status_does_not_auto_mark_payment_paid(self):
+        staff_user = models.User.objects.create_user(username='courier2', phone='+998902223344', password='adminpass123', is_staff=True)
+        self.cart.status = 3  # In delivery
+        self.cart.prepayment_percent = 30
+        self.cart.prepayment_amount = Decimal('290280.00')
+        self.cart.financial_status = models.Cart.FinancialStatus.PARTIALLY_PAID
+        self.cart.save()
+
+        # Prepayment paid
+        models.Payment.objects.create(
+            order=self.cart,
+            provider='click',
+            purpose=models.Payment.Purpose.PREPAYMENT,
+            amount=Decimal('290280.00'),
+            status=models.Payment.Status.PAID,
+            paid_at=timezone.now()
+        )
+
+        # Admin marks order as Delivered (status=4)
+        self.client.force_login(staff_user)
+        res = self.client.get(reverse('d_update_status', kwargs={'code': self.cart.code}), {
+            'status': '4',
+            'comment': 'Yetkazildi lekin qoldiq hali olinmadi'
+        })
+        self.assertEqual(res.status_code, 302)
+
+        self.cart.refresh_from_db()
+        self.assertEqual(self.cart.status, 4)  # Delivered
+        # Financial status MUST still be PARTIALLY_PAID because balance wasn't paid yet!
+        self.assertEqual(self.cart.financial_status, models.Cart.FinancialStatus.PARTIALLY_PAID)
+        self.assertEqual(self.cart.paid_amount, Decimal('290280.00'))
+        self.assertEqual(self.cart.remaining_amount, Decimal('677320.00'))
+
+    # -------------------------------------------------------------
+    # 29. Customer Cannot Settle Cash Balance Via Dashboard Endpoint
+    # -------------------------------------------------------------
+    def test_customer_cannot_settle_cash_balance(self):
+        self.cart.status = 3
+        self.cart.save()
+
+        self.client.force_login(self.customer)  # Non-staff customer
+        response = self.client.post(reverse('d_settle_order_balance', kwargs={'code': self.cart.code}), {
+            'amount': '677320.00',
+            'provider': 'cash'
+        })
+        # Should redirect to login or deny permission
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue('login' in response.url or 'd_index' in response.url)
+
+    # -------------------------------------------------------------
+    # 30. Delivery Cash Balance Overpayment Rejected
+    # -------------------------------------------------------------
+    def test_cash_balance_overpayment_rejected(self):
+        staff_user = models.User.objects.create_user(username='staff_overpay', phone='+998903334455', password='adminpass123', is_staff=True)
+        self.cart.status = 3
+        self.cart.prepayment_percent = 30
+        self.cart.prepayment_amount = Decimal('290280.00')
+        self.cart.financial_status = models.Cart.FinancialStatus.PARTIALLY_PAID
+        self.cart.save()
+
+        models.Payment.objects.create(
+            order=self.cart,
+            provider='click',
+            purpose=models.Payment.Purpose.PREPAYMENT,
+            amount=Decimal('290280.00'),
+            status=models.Payment.Status.PAID,
+            paid_at=timezone.now()
+        )
+
+        self.client.force_login(staff_user)
+        # Remaining is 677,320, admin inputs 700,000
+        response = self.client.post(reverse('d_settle_order_balance', kwargs={'code': self.cart.code}), {
+            'amount': '700000.00',
+            'provider': 'cash'
+        }, follow=True)
+
+        self.assertEqual(response.status_code, 200)
+        messages_list = list(response.context['messages'])
+        self.assertTrue(any("ortiq bo'lishi mumkin emas" in m.message for m in messages_list))
+        # No extra payment created
+        self.assertEqual(models.Payment.objects.filter(order=self.cart, purpose=models.Payment.Purpose.BALANCE).count(), 0)
+
+    # -------------------------------------------------------------
+    # 31. Export Payments Excel Endpoint Test
+    # -------------------------------------------------------------
+    def test_export_payments_excel_view(self):
+        staff_user = models.User.objects.create_user(username='staff_export', phone='+998904445566', password='adminpass123', is_staff=True)
+        self.client.force_login(staff_user)
+
+        response = self.client.get(reverse('d_export_payments'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response['Content-Type'],
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        self.assertIn('chimyon_bozor_tolovlar_', response['Content-Disposition'])
+
+

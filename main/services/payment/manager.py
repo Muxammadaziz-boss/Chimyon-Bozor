@@ -254,56 +254,63 @@ class PaymentManager:
         cls,
         order: models.Cart,
         amount: Optional[Decimal] = None,
+        provider: str = models.Payment.Provider.CASH,
+        payment_method: str = "cash_on_delivery",
         user: Optional[models.User] = None,
         comment: str = ""
     ) -> models.Payment:
         """
-        Yetkazib berish vaqtida qoldiq summani naqd (yoki kuryer terminali) orqali to'langan deb rasmiylashtirish.
+        Yetkazib berish vaqtida qoldiq summani naqd (yoki kuryer terminali/online provayder) orqali to'langan deb rasmiylashtirish.
         """
         remaining = order.remaining_amount
-        if remaining <= 0:
+        if remaining <= Decimal('0.00'):
             raise ValueError("Ushbu buyurtmada to'lanmagan qoldiq mavjud emas (Buyurtma to'liq to'langan).")
 
         settle_amount = amount if amount is not None else remaining
-        if settle_amount <= 0:
+        if settle_amount <= Decimal('0.00'):
             raise ValueError("Qoldiq to'lov summasi 0 dan katta bo'lishi kerak.")
         if settle_amount > remaining:
             raise ValueError(f"Kiritilgan summa ({settle_amount} UZS) mavjud qoldiqdan ({remaining} UZS) ortiq bo'lishi mumkin emas.")
 
+        provider_key = (provider or models.Payment.Provider.CASH).strip().lower()
+        if provider_key not in [models.Payment.Provider.CASH, models.Payment.Provider.CLICK, models.Payment.Provider.PAYME, models.Payment.Provider.UZUM]:
+            provider_key = models.Payment.Provider.CASH
+
         with transaction.atomic():
             locked_order = models.Cart.objects.select_for_update().get(pk=order.pk)
             current_remaining = locked_order.remaining_amount
-            if current_remaining <= 0:
+            if current_remaining <= Decimal('0.00'):
                 raise ValueError("Buyurtma allaqachon to'liq to'langan.")
             if settle_amount > current_remaining:
-                settle_amount = current_remaining
+                raise ValueError(f"Kiritilgan summa ({settle_amount} UZS) mavjud qoldiqdan ({current_remaining} UZS) ortiq bo'lishi mumkin emas.")
 
             payment = models.Payment.objects.create(
                 order=locked_order,
-                provider=models.Payment.Provider.CASH,
+                provider=provider_key,
                 purpose=models.Payment.Purpose.BALANCE,
                 amount=settle_amount,
                 currency='UZS',
                 status=models.Payment.Status.PAID,
                 paid_at=timezone.now(),
-                payment_method='cash_on_delivery'
+                payment_method=payment_method or ('cash_on_delivery' if provider_key == models.Payment.Provider.CASH else 'online_balance')
             )
 
             # Sync financial status
             cls.sync_order_financial_status(locked_order)
 
+            prov_label = provider_key.upper()
             models.OrderStatusHistory.objects.create(
                 order=locked_order,
                 old_status=locked_order.status,
                 new_status=locked_order.status,
                 changed_by=user,
-                comment=comment or f"Yetkazib berishda qoldiq to'lov qabul qilindi: {settle_amount} UZS (Naqd/Terminal)"
+                comment=comment or f"Yetkazib berishda qoldiq to'lov qabul qilindi: {settle_amount} UZS ({prov_label})"
             )
 
             models.AuditLog.objects.create(
                 user=user or locked_order.user,
                 action="BALANCE_PAYMENT_SETTLED",
-                details=f"Buyurtma #{str(locked_order.code)[:8]} uchun qoldiq to'landi: {settle_amount} UZS. Yangi holat: {locked_order.get_financial_status_display()}"
+                details=f"Buyurtma #{str(locked_order.code)[:8]} uchun qoldiq to'landi: {settle_amount} UZS ({prov_label}). Yangi holat: {locked_order.get_financial_status_display()}"
             )
 
         return payment
