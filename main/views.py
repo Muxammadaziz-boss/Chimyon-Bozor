@@ -892,6 +892,14 @@ def checkout(request):
 
     # GET request
     default_provider = 'click' if financials['prepayment_percent'] > 0 else 'cash'
+    valid_address_names = list(addresses.values_list('name', flat=True))
+    if user.address and user.address in valid_address_names:
+        initial_address = user.address
+    elif addresses.exists():
+        initial_address = addresses.first().name
+    else:
+        initial_address = ''
+
     context = {
         'cart': cart,
         'cart_products': cart_products,
@@ -901,7 +909,7 @@ def checkout(request):
         'addresses': addresses,
         'selected_provider': default_provider,
         'input_phone': user.phone or '+998',
-        'selected_address': user.address or (addresses.first().name if addresses.exists() else ''),
+        'selected_address': initial_address,
     }
     return render(request, 'front/checkout.html', context)
 

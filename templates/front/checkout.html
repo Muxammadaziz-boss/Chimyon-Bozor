@@ -387,14 +387,14 @@
                                 
                                 {% if addresses %}
                                 <div class="checkout-select-wrapper" id="checkoutAddressDropdown">
-                                    <input type="hidden" name="address" id="checkoutAddressInput" value="{{ selected_address|default:request.user.address|default:addresses.first.name }}" required>
+                                    <input type="hidden" name="address" id="checkoutAddressInput" value="{{ selected_address|default:addresses.first.name }}" required>
                                     
                                     <div class="checkout-select-trigger" id="checkoutSelectTrigger">
                                         <i class="fas fa-map-marker-alt checkout-select-address-icon"></i>
                                         <div class="checkout-select-label-wrap">
                                             <span class="checkout-select-floating-label">Yetkazib berish hududi</span>
                                             <span class="checkout-select-current-value" id="checkoutSelectValue">
-                                                {{ selected_address|default:request.user.address|default:addresses.first.name }}
+                                                {{ selected_address|default:addresses.first.name }}
                                             </span>
                                         </div>
                                         <i class="fas fa-chevron-down checkout-select-chevron"></i>
@@ -402,7 +402,7 @@
                                     
                                     <div class="checkout-select-options" id="checkoutSelectOptions">
                                         {% for addr in addresses %}
-                                        <div class="checkout-custom-option {% if selected_address == addr.name or not selected_address and user.address == addr.name or not selected_address and not user.address and forloop.first %}selected{% endif %}" data-value="{{ addr.name }}">
+                                        <div class="checkout-custom-option {% if selected_address == addr.name or not selected_address and forloop.first %}selected{% endif %}" data-value="{{ addr.name }}">
                                             <div class="d-flex align-items-center justify-content-between w-100">
                                                 <span><i class="fas fa-map-pin text-primary option-pin-icon mr-2"></i>{{ addr.name }}</span>
                                                 <i class="fas fa-check check-mark"></i>
