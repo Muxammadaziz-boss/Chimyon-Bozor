@@ -209,17 +209,29 @@
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label font-weight-bold text-dark">Qabul qiluvchi ismi</label>
-                                <input type="text" class="form-control" value="{{ request.user.get_full_name|default:request.user.username }}" readonly style="background-color: #f8fafc;">
+                                <label class="form-label font-weight-bold text-dark"><i class="fas fa-user text-primary mr-1"></i> Qabul qiluvchi ismi</label>
+                                <input type="text" class="form-control font-weight-bold" value="{{ request.user.get_full_name|default:request.user.username }}" readonly style="background-color: #f8fafc; height: 50px; border-radius: 12px;">
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label font-weight-bold text-dark">Telefon raqam <span class="text-danger">*</span></label>
-                                <input type="text" name="phone" class="form-control" value="{{ request.user.phone|default:'' }}" placeholder="+998 90 123 45 67" required>
-                                <small class="text-muted">Kuryer yetkazishdan oldin ushbu raqamga bog'lanadi</small>
+                                <label class="form-label font-weight-bold text-dark"><i class="fas fa-phone-alt text-primary mr-1"></i> Telefon raqam <span class="text-danger">*</span></label>
+                                <input type="tel" name="phone" id="checkoutPhone" class="form-control font-weight-bold" value="{{ input_phone|default:request.user.phone|default:'+998' }}" placeholder="+998901234567" required maxlength="13" style="height: 50px; border-radius: 12px; border: 2px solid #e5e7eb;">
+                                <small class="text-muted"><i class="fas fa-shield-alt text-success mr-1"></i> Format: +998901234567 (Kuryer bog'lanishi uchun)</small>
                             </div>
                             <div class="col-12 mb-2">
-                                <label class="form-label font-weight-bold text-dark">Yetkazib berish manzili <span class="text-danger">*</span></label>
-                                <textarea name="address" class="form-control" rows="2" placeholder="Shahar, tuman, ko'cha, uy, xonadon..." required>{{ request.user.address|default:'' }}</textarea>
+                                <label class="form-label font-weight-bold text-dark"><i class="fas fa-map-marker-alt text-danger mr-1"></i> Yetkazib berish manzili <span class="text-danger">*</span></label>
+                                {% if addresses %}
+                                <select name="address" id="checkoutAddress" class="form-control font-weight-bold" required style="height: 50px; border-radius: 12px; border: 2px solid #e5e7eb; background-color: #fff;">
+                                    <option value="" disabled {% if not selected_address and not user.address %}selected{% endif %}>Manzilni tanlang...</option>
+                                    {% for addr in addresses %}
+                                    <option value="{{ addr.name }}" {% if selected_address == addr.name or user.address == addr.name or not selected_address and not user.address and forloop.first %}selected{% endif %}>
+                                        📍 {{ addr.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <small class="text-muted mt-1 d-block"><i class="fas fa-info-circle text-primary mr-1"></i> Admin tomonidan qo'shilgan tasdiqlangan hududlardan birini tanlang</small>
+                                {% else %}
+                                <input type="text" name="address" class="form-control font-weight-bold" value="{{ selected_address|default:request.user.address|default:'' }}" placeholder="Shahar, tuman, ko'cha, uy..." required style="height: 50px; border-radius: 12px; border: 2px solid #e5e7eb;">
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -518,6 +530,39 @@ document.addEventListener('DOMContentLoaded', function() {
             updateSubmitButtonText();
         });
     });
+
+    // Phone Input Sanitizer & Formatter
+    const phoneInput = document.getElementById('checkoutPhone');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function() {
+            // Strip any non-digit character except initial +
+            let val = this.value.replace(/[^\d+]/g, '');
+            if (!val.startsWith('+')) {
+                val = '+' + val.replace(/\+/g, '');
+            } else {
+                val = '+' + val.slice(1).replace(/\+/g, '');
+            }
+            if (!val.startsWith('+998')) {
+                if (val === '+' || val === '') {
+                    val = '+998';
+                } else if (val.startsWith('+99')) {
+                    val = '+998';
+                } else if (val.length >= 4) {
+                    val = '+998' + val.slice(4);
+                }
+            }
+            if (val.length > 13) {
+                val = val.slice(0, 13);
+            }
+            this.value = val;
+        });
+
+        phoneInput.addEventListener('focus', function() {
+            if (!this.value || this.value.trim() === '') {
+                this.value = '+998';
+            }
+        });
+    }
 
     // Handle provider cards selection
     optionCards.forEach(card => {

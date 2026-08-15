@@ -383,3 +383,51 @@ class PartialPrepaymentAndBalanceTests(TestCase):
         self.assertEqual(response.status_code, 200)
         messages_list = list(response.context['messages'])
         self.assertTrue(any("Ruxsat etilmagan" in m.message for m in messages_list))
+
+    # -------------------------------------------------------------
+    # 18. Phone Validation Test (Rejects letters like '+998917914881das')
+    # -------------------------------------------------------------
+    def test_checkout_post_invalid_phone_with_letters_rejected(self):
+        self.client.force_login(self.customer)
+        response = self.client.post(reverse('checkout'), {
+            'phone': '+998917914881das',
+            'address': 'Yunusobod',
+            'provider': 'click',
+            'prepayment_percent': '30'
+        })
+        self.assertEqual(response.status_code, 200)
+        messages_list = list(response.context['messages'])
+        self.assertTrue(any("Telefon raqami noto'g'ri kiritildi" in m.message for m in messages_list))
+
+    # -------------------------------------------------------------
+    # 19. Admin Address List Selection & Validation Test
+    # -------------------------------------------------------------
+    def test_checkout_address_selection_from_admin_list(self):
+        models.Address.objects.create(name="Chimyon", is_active=True)
+        models.Address.objects.create(name="Farg'ona", is_active=True)
+
+        self.client.force_login(self.customer)
+        
+        # Valid address selection
+        response = self.client.post(reverse('checkout'), {
+            'phone': '+998901234567',
+            'address': "Farg'ona",
+            'provider': 'click',
+            'prepayment_percent': '30'
+        })
+        self.assertEqual(response.status_code, 302)
+        self.customer.refresh_from_db()
+        self.assertEqual(self.customer.address, "Farg'ona")
+
+        # Invalid address not in admin list
+        self.cart.status = 1
+        self.cart.save()
+        bad_response = self.client.post(reverse('checkout'), {
+            'phone': '+998901234567',
+            'address': "Noma'lum qishloq 123",
+            'provider': 'click',
+            'prepayment_percent': '30'
+        })
+        self.assertEqual(bad_response.status_code, 200)
+        messages_list = list(bad_response.context['messages'])
+        self.assertTrue(any("admin tomonidan qo'shilgan" in m.message for m in messages_list))

@@ -690,6 +690,7 @@ def checkout(request):
     """
     Checkout sahifasi (GET) va Buyurtma/To'lov yaratish (POST).
     Partial Prepayment (0%, 30%, 50%, 100%) tizimi bilan to'liq integratsiya qilingan.
+    Telefon raqami qat'iy tekshiriladi va manzil admin qo'shgan manzillardan tanlanadi.
     """
     user = request.user
     cart = models.Cart.objects.filter(user=user, status=1).first()
@@ -700,12 +701,87 @@ def checkout(request):
     cart_products = list(cart.cart_products.filter(product__isnull=False).select_related('product', 'product__category'))
     cart_count = sum(item.count for item in cart_products)
     financials = PaymentManager.calculate_order_financials(cart)
+    addresses = models.Address.objects.filter(is_active=True).order_by('name')
 
     if request.method == 'POST':
-        phone = request.POST.get('phone', '').strip()
+        raw_phone = request.POST.get('phone', '').strip()
+        if not raw_phone and user.phone:
+            raw_phone = str(user.phone).strip()
+
         address = request.POST.get('address', '').strip()
+        if not address and user.address:
+            address = str(user.address).strip()
+
         prepayment_percent_raw = request.POST.get('prepayment_percent')
         chosen_percent = None
+
+        # Check if phone contains illegal characters (letters, etc.)
+        if not raw_phone or not re.match(r'^\+?[0-9\s\-()]+$', raw_phone):
+            messages.error(request, "Telefon raqami noto'g'ri kiritildi. Iltimos, to'g'ri O'zbekiston raqamini kiriting (masalan: +998 90 123 45 67).")
+            return render(request, 'front/checkout.html', {
+                'cart': cart,
+                'cart_products': cart_products,
+                'cart_total': financials['grand_total'],
+                'cart_count': cart_count,
+                'financials': financials,
+                'addresses': addresses,
+                'selected_provider': request.POST.get('provider', 'click').strip().lower(),
+                'input_phone': raw_phone,
+                'selected_address': address,
+            })
+
+        # Clean and normalize phone
+        clean_phone_digits = re.sub(r'[^\d]', '', raw_phone)
+        if clean_phone_digits.startswith('998') and len(clean_phone_digits) == 12:
+            phone = '+' + clean_phone_digits
+        elif len(clean_phone_digits) == 9:
+            phone = '+998' + clean_phone_digits
+        else:
+            phone = '+' + clean_phone_digits if clean_phone_digits else ''
+
+        if not phone or not PHONE_RE.match(phone):
+            messages.error(request, "Telefon raqami noto'g'ri kiritildi. Iltimos, to'g'ri O'zbekiston raqamini kiriting (masalan: +998 90 123 45 67).")
+            return render(request, 'front/checkout.html', {
+                'cart': cart,
+                'cart_products': cart_products,
+                'cart_total': financials['grand_total'],
+                'cart_count': cart_count,
+                'financials': financials,
+                'addresses': addresses,
+                'selected_provider': request.POST.get('provider', 'click').strip().lower(),
+                'input_phone': raw_phone,
+                'selected_address': address,
+            })
+
+        # Validate Address
+        if not address:
+            messages.error(request, "Iltimos, yetkazib berish manzilini tanlang.")
+            return render(request, 'front/checkout.html', {
+                'cart': cart,
+                'cart_products': cart_products,
+                'cart_total': financials['grand_total'],
+                'cart_count': cart_count,
+                'financials': financials,
+                'addresses': addresses,
+                'selected_provider': request.POST.get('provider', 'click').strip().lower(),
+                'input_phone': phone,
+                'selected_address': address,
+            })
+
+        if addresses.exists() and not addresses.filter(name=address).exists():
+            messages.error(request, "Iltimos, admin tomonidan qo'shilgan tasdiqlangan manzillardan birini tanlang.")
+            return render(request, 'front/checkout.html', {
+                'cart': cart,
+                'cart_products': cart_products,
+                'cart_total': financials['grand_total'],
+                'cart_count': cart_count,
+                'financials': financials,
+                'addresses': addresses,
+                'selected_provider': request.POST.get('provider', 'click').strip().lower(),
+                'input_phone': phone,
+                'selected_address': address,
+            })
+
         if prepayment_percent_raw is not None and str(prepayment_percent_raw).strip() != '':
             try:
                 chosen_percent = int(str(prepayment_percent_raw).strip())
@@ -717,7 +793,10 @@ def checkout(request):
                     'cart_total': financials['grand_total'],
                     'cart_count': cart_count,
                     'financials': financials,
+                    'addresses': addresses,
                     'selected_provider': request.POST.get('provider', 'click').strip().lower(),
+                    'input_phone': phone,
+                    'selected_address': address,
                 })
 
         try:
@@ -730,30 +809,19 @@ def checkout(request):
                 'cart_total': financials['grand_total'],
                 'cart_count': cart_count,
                 'financials': financials,
+                'addresses': addresses,
                 'selected_provider': request.POST.get('provider', 'click').strip().lower(),
+                'input_phone': phone,
+                'selected_address': address,
             })
 
         provider = request.POST.get('provider', models.Payment.Provider.CLICK if financials['prepayment_percent'] > 0 else models.Payment.Provider.CASH).strip().lower()
         payment_method = request.POST.get('payment_method', 'card').strip()
 
-        # Update user profile details if provided
-        if phone:
-            user.phone = phone
-        if address:
-            user.address = address
-        if phone or address:
-            user.save(update_fields=['phone', 'address'] if phone and address else ['phone'] if phone else ['address'])
-
-        if not (user.phone and user.address):
-            messages.warning(request, "Buyurtmani rasmiylashtirish uchun telefon raqamingiz va yetkazish manzilini kiriting.")
-            return render(request, 'front/checkout.html', {
-                'cart': cart,
-                'cart_products': cart_products,
-                'cart_total': financials['grand_total'],
-                'cart_count': cart_count,
-                'financials': financials,
-                'selected_provider': provider,
-            })
+        # Update user profile details
+        user.phone = phone
+        user.address = address
+        user.save(update_fields=['phone', 'address'])
 
         # Validate stock availability
         for item in cart_products:
@@ -770,7 +838,10 @@ def checkout(request):
                 'cart_total': financials['grand_total'],
                 'cart_count': cart_count,
                 'financials': financials,
+                'addresses': addresses,
                 'selected_provider': provider,
+                'input_phone': phone,
+                'selected_address': address,
             })
 
         try:
@@ -799,7 +870,10 @@ def checkout(request):
                 'cart_total': financials['grand_total'],
                 'cart_count': cart_count,
                 'financials': financials,
+                'addresses': addresses,
                 'selected_provider': provider,
+                'input_phone': phone,
+                'selected_address': address,
             })
         except Exception as e:
             logger.error("Checkout payment creation error: %s", e, exc_info=True)
@@ -810,7 +884,10 @@ def checkout(request):
                 'cart_total': financials['grand_total'],
                 'cart_count': cart_count,
                 'financials': financials,
+                'addresses': addresses,
                 'selected_provider': provider,
+                'input_phone': phone,
+                'selected_address': address,
             })
 
     # GET request
@@ -821,7 +898,10 @@ def checkout(request):
         'cart_total': financials['grand_total'],
         'cart_count': cart_count,
         'financials': financials,
+        'addresses': addresses,
         'selected_provider': default_provider,
+        'input_phone': user.phone or '+998',
+        'selected_address': user.address or (addresses.first().name if addresses.exists() else ''),
     }
     return render(request, 'front/checkout.html', context)
 
