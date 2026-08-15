@@ -364,4 +364,77 @@ class AuthAndCartFlowTestCase(TestCase):
         self.assertEqual(user1.phone, '+998907778899')
         self.assertEqual(user1.first_name, 'Ali')
 
+    def test_profile_image_crop_modal_rendered(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('profile'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode('utf-8')
+
+        # Check crop modal and UI elements
+        self.assertIn('id="avatarCropModal"', content)
+        self.assertIn('id="cropCanvas"', content)
+        self.assertIn('id="cropZoomSlider"', content)
+        self.assertIn('id="btnCropRotate"', content)
+        self.assertIn('id="btnCropReset"', content)
+        self.assertIn('id="btnCropConfirm"', content)
+        self.assertIn('id="avatarNewPreviewCard"', content)
+        self.assertIn('id="avatarCroppedPreviewImg"', content)
+        self.assertIn('Profil rasmini sozlash', content)
+
+    def test_profile_avatar_upload_valid_image(self):
+        import io
+        from PIL import Image
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        # Create a genuine 512x512 JPEG test image
+        img = Image.new('RGB', (512, 512), color=(124, 58, 237))
+        img_bytes = io.BytesIO()
+        img.save(img_bytes, format='JPEG')
+        img_bytes.seek(0)
+
+        uploaded_file = SimpleUploadedFile(
+            name='avatar_test.jpg',
+            content=img_bytes.read(),
+            content_type='image/jpeg'
+        )
+
+        self.client.force_login(self.user)
+        response = self.client.post(reverse('profile'), {
+            'first_name': self.user.first_name,
+            'last_name': self.user.last_name,
+            'username': self.user.username,
+            'phone': self.user.phone or '+998901234567',
+            'address': 'Chimyon',
+            'photo': uploaded_file
+        })
+
+        self.assertEqual(response.status_code, 302)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.photo)
+        self.assertTrue(self.user.photo.name.endswith('.jpg'))
+
+    def test_profile_avatar_upload_invalid_file(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        # Fake script file pretending to be an image
+        fake_file = SimpleUploadedFile(
+            name='malicious.php.jpg',
+            content=b'<?php echo "evil"; ?>',
+            content_type='image/jpeg'
+        )
+
+        self.client.force_login(self.user)
+        response = self.client.post(reverse('profile'), {
+            'first_name': self.user.first_name,
+            'last_name': self.user.last_name,
+            'username': self.user.username,
+            'phone': self.user.phone or '+998901234567',
+            'address': 'Chimyon',
+            'photo': fake_file
+        })
+
+        # Should redirect back to profile with error message
+        self.assertEqual(response.status_code, 302)
+
+
 

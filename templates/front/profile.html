@@ -255,6 +255,271 @@
         color: #10b981 !important;
     }
 
+    /* ==========================================================
+       AVATAR CROP MODAL & PREVIEW STYLES
+       ========================================================== */
+    .avatar-crop-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(15, 23, 42, 0.75);
+        backdrop-filter: blur(8px);
+        z-index: 10000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        opacity: 0;
+        transition: opacity 0.25s ease;
+    }
+    .avatar-crop-modal.show {
+        display: flex;
+        opacity: 1;
+    }
+    .avatar-crop-dialog {
+        background: #FFFFFF;
+        border: 1.5px solid #E2E8F0;
+        border-radius: 24px;
+        box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+        width: 100%;
+        max-width: 480px;
+        max-height: 90vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        animation: cropModalSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    @keyframes cropModalSlideIn {
+        from { transform: scale(0.95) translateY(10px); opacity: 0; }
+        to { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    .avatar-crop-header {
+        padding: 18px 24px;
+        border-bottom: 1.5px solid #F1F5F9;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .avatar-crop-header h5 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 800;
+        color: #0F172A;
+    }
+    .avatar-crop-close-btn {
+        background: #F1F5F9;
+        border: none;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        color: #64748B;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+    .avatar-crop-close-btn:hover {
+        background: #E2E8F0;
+        color: #0F172A;
+    }
+    .avatar-crop-body {
+        padding: 20px 24px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .crop-canvas-wrapper {
+        position: relative;
+        width: 320px;
+        height: 320px;
+        max-width: 100%;
+        border-radius: 16px;
+        background: #0F172A;
+        overflow: hidden;
+        user-select: none;
+        touch-action: none;
+        box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+    }
+    @media (max-width: 420px) {
+        .crop-canvas-wrapper {
+            width: 270px;
+            height: 270px;
+        }
+    }
+    #cropCanvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        cursor: grab;
+    }
+    #cropCanvas:active {
+        cursor: grabbing;
+    }
+    .crop-instructions-tip {
+        font-size: 12.5px;
+        color: #64748B;
+        margin-top: 10px;
+        text-align: center;
+    }
+    .crop-controls-row {
+        width: 100%;
+        margin-top: 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .crop-slider-label {
+        font-size: 13px;
+        font-weight: 700;
+        color: #475569;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+    .crop-zoom-slider {
+        flex: 1;
+        accent-color: #7C3AED;
+        cursor: pointer;
+        height: 6px;
+    }
+    .crop-action-btn-group {
+        display: flex;
+        gap: 8px;
+        margin-top: 14px;
+    }
+    .btn-crop-tool {
+        background: #F8FAFC;
+        border: 1.5px solid #E2E8F0;
+        color: #475569;
+        font-size: 13px;
+        font-weight: 700;
+        padding: 6px 14px;
+        border-radius: 999px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .btn-crop-tool:hover {
+        background: #EDE9FE;
+        border-color: #DDD6FE;
+        color: #7C3AED;
+    }
+    .avatar-crop-footer {
+        padding: 16px 24px;
+        border-top: 1.5px solid #F1F5F9;
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+    }
+    .btn-crop-cancel {
+        background: #F1F5F9;
+        border: 1.5px solid #E2E8F0;
+        color: #475569;
+        font-weight: 700;
+        padding: 10px 20px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .btn-crop-cancel:hover {
+        background: #E2E8F0;
+        color: #0F172A;
+    }
+    .btn-crop-confirm {
+        background: linear-gradient(135deg, #7C3AED 0%, #EC4899 100%);
+        border: none;
+        color: #FFFFFF;
+        font-weight: 700;
+        padding: 10px 24px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 14px rgba(124, 58, 237, 0.25);
+    }
+    .btn-crop-confirm:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px rgba(124, 58, 237, 0.35);
+    }
+
+    /* Cropped Preview in Profile Card */
+    .avatar-new-preview-card {
+        background: #FAF5FF;
+        border: 1.5px solid #E9D5FF;
+        border-radius: 16px;
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 12px;
+        transition: all 0.3s ease;
+    }
+    .avatar-preview-img-wrap {
+        width: 68px;
+        height: 68px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 3px solid #7C3AED;
+        box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2);
+        flex-shrink: 0;
+    }
+    .avatar-preview-img-wrap img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .avatar-preview-details {
+        flex: 1;
+    }
+    .avatar-preview-title {
+        font-size: 13.5px;
+        font-weight: 700;
+        color: #6D28D9;
+        margin-bottom: 2px;
+    }
+    .avatar-preview-sub {
+        font-size: 12px;
+        color: #64748B;
+        margin-bottom: 8px;
+    }
+    .avatar-preview-actions {
+        display: flex;
+        gap: 8px;
+    }
+    .btn-re-crop {
+        background: #EDE9FE;
+        border: 1px solid #DDD6FE;
+        color: #7C3AED;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-re-crop:hover {
+        background: #DDD6FE;
+    }
+    .btn-remove-crop {
+        background: #FEE2E2;
+        border: 1px solid #FECACA;
+        color: #DC2626;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-remove-crop:hover {
+        background: #FECACA;
+    }
+
     /* CUSTOM FILE UPLOAD */
     .file-upload-wrapper {
         position: relative;
@@ -810,16 +1075,32 @@
                                     </div>
                                     
                                     <div class="col-md-12">
+                                        <!-- Cropped Avatar Preview Card (shown after crop confirmation) -->
+                                        <div class="avatar-new-preview-card" id="avatarNewPreviewCard" style="display: none;">
+                                            <div class="avatar-preview-img-wrap">
+                                                <img id="avatarCroppedPreviewImg" src="" alt="Yangi avatar">
+                                            </div>
+                                            <div class="avatar-preview-details">
+                                                <div class="avatar-preview-title"><i class="fas fa-check-circle text-success me-1"></i> Yangi rasm tayyor</div>
+                                                <div class="avatar-preview-sub" id="avatarPreviewMeta">512 × 512 px • 1:1 kvadrat format</div>
+                                                <div class="avatar-preview-actions">
+                                                    <button type="button" class="btn-re-crop" id="btnReCrop"><i class="fas fa-crop-alt me-1"></i> Qayta sozlash</button>
+                                                    <button type="button" class="btn-remove-crop" id="btnRemoveCrop"><i class="fas fa-trash-alt me-1"></i> Bekor qilish</button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Main File Upload Drop Zone -->
                                         <div class="file-upload-wrapper locked" id="fileUploadWrap">
                                             <i class="fas fa-cloud-upload-alt font-24"></i>
-                                            <span class="fw-600">Yangi rasm yuklash</span>
-                                            <input type="file" name="photo" id="fileUpload" accept="image/*" disabled>
+                                            <span class="fw-600" id="fileUploadLabel">Yangi rasm yuklash</span>
+                                            <input type="file" name="photo" id="fileUpload" accept="image/png, image/jpeg, image/jpg, image/webp" disabled>
                                         </div>
-                                        <div class="text-muted font-12 mt-2 text-center" id="fileNameDisplay">Hali hech qanday fayl tanlanmagan</div>
+                                        <div class="text-muted font-12 mt-2 text-center" id="fileNameDisplay">Hali hech qanday fayl tanlanmagan (JPG, PNG, WEBP, max 5MB)</div>
                                     </div>
 
                                     <div class="col-12 text-center mt-4" id="saveBtnContainer" style="display: none;">
-                                        <button type="submit" class="btn-gradient w-100">
+                                        <button type="submit" class="btn-gradient w-100" id="profileSubmitBtn">
                                             O'zgarishlarni saqlash <i class="fas fa-check ms-2"></i>
                                         </button>
                                     </div>
@@ -913,6 +1194,48 @@
         </div>
     </div>
 </section>
+
+<!-- Avatar Crop Modal -->
+<div class="avatar-crop-modal" id="avatarCropModal" role="dialog" aria-modal="true" aria-labelledby="cropModalTitle">
+    <div class="avatar-crop-dialog">
+        <div class="avatar-crop-header">
+            <h5 id="cropModalTitle"><i class="fas fa-crop-alt text-main me-2"></i> Profil rasmini sozlash</h5>
+            <button type="button" class="avatar-crop-close-btn" id="cropModalCloseBtn" aria-label="Yopish">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="avatar-crop-body">
+            <div class="crop-canvas-wrapper" id="cropCanvasWrapper">
+                <canvas id="cropCanvas" width="320" height="320"></canvas>
+            </div>
+            <div class="crop-instructions-tip">
+                <i class="fas fa-info-circle text-primary me-1"></i> Rasmni suring, sichqoncha yoki slider orqali yaqinlashtiring
+            </div>
+
+            <!-- Controls -->
+            <div class="crop-controls-row">
+                <span class="crop-slider-label"><i class="fas fa-search-minus font-12"></i> Zoom</span>
+                <input type="range" class="crop-zoom-slider" id="cropZoomSlider" min="0.5" max="3" step="0.01" value="1">
+                <span class="crop-slider-label"><i class="fas fa-search-plus font-12"></i></span>
+            </div>
+
+            <div class="crop-action-btn-group">
+                <button type="button" class="btn-crop-tool" id="btnCropRotate">
+                    <i class="fas fa-redo-alt font-12"></i> 90° Burish
+                </button>
+                <button type="button" class="btn-crop-tool" id="btnCropReset">
+                    <i class="fas fa-undo font-12"></i> Tiklash
+                </button>
+            </div>
+        </div>
+        <div class="avatar-crop-footer">
+            <button type="button" class="btn-crop-cancel" id="btnCropCancel">Bekor qilish</button>
+            <button type="button" class="btn-crop-confirm" id="btnCropConfirm">
+                <i class="fas fa-check me-1"></i> Rasmni tasdiqlash
+            </button>
+        </div>
+    </div>
+</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -1167,23 +1490,6 @@ document.addEventListener('DOMContentLoaded', function() {
         phoneInput.addEventListener('change', checkPhone);
     }
 
-    if (profileForm) {
-        profileForm.addEventListener('submit', function(e) {
-            if (!isUsernameValid) {
-                e.preventDefault();
-                if (usernameInput) usernameInput.focus();
-                alert('Iltimos, to\'g\'ri va band bo\'lmagan foydalanuvchi nomini kiriting!');
-                return false;
-            }
-            if (!isPhoneValid) {
-                e.preventDefault();
-                if (phoneInput) phoneInput.focus();
-                alert('Iltimos, to\'g\'ri va band bo\'lmagan telefon raqamini kiriting!');
-                return false;
-            }
-        });
-    }
-
     // Custom Address Dropdown Controller
     const selectTrigger = document.getElementById('selectTrigger');
     const selectValue = document.getElementById('selectValue');
@@ -1216,19 +1522,389 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // File upload text change
+    // ==========================================================
+    // AVATAR IMAGE CROPPER CONTROLLER
+    // ==========================================================
+    const avatarCropModal = document.getElementById('avatarCropModal');
+    const cropCanvas = document.getElementById('cropCanvas');
+    const cropZoomSlider = document.getElementById('cropZoomSlider');
+    const btnCropRotate = document.getElementById('btnCropRotate');
+    const btnCropReset = document.getElementById('btnCropReset');
+    const btnCropCancel = document.getElementById('btnCropCancel');
+    const btnCropConfirm = document.getElementById('btnCropConfirm');
+    const cropModalCloseBtn = document.getElementById('cropModalCloseBtn');
+
     const fileInput = document.getElementById('fileUpload');
     const fileNameDisplay = document.getElementById('fileNameDisplay');
-    if (fileInput && fileNameDisplay) {
-        fileInput.addEventListener('change', function() {
-            if (this.files && this.files[0]) {
-                fileNameDisplay.textContent = 'Tanlandi: ' + this.files[0].name;
-                fileNameDisplay.style.color = '#7C3AED';
-                fileNameDisplay.style.fontWeight = '600';
-            } else {
-                fileNameDisplay.textContent = 'Hali hech qanday fayl tanlanmagan';
+    const avatarNewPreviewCard = document.getElementById('avatarNewPreviewCard');
+    const avatarCroppedPreviewImg = document.getElementById('avatarCroppedPreviewImg');
+    const btnReCrop = document.getElementById('btnReCrop');
+    const btnRemoveCrop = document.getElementById('btnRemoveCrop');
+    const profileSubmitBtn = document.getElementById('profileSubmitBtn');
+
+    let rawImage = null;
+    let rawFileName = 'avatar.jpg';
+    let croppedBlob = null;
+    let croppedFile = null;
+
+    let imgState = {
+        x: 0,
+        y: 0,
+        scale: 1,
+        minScale: 0.2,
+        maxScale: 4,
+        rotation: 0 // 0, 90, 180, 270
+    };
+
+    let isDragging = false;
+    let dragStart = { x: 0, y: 0 };
+    let initialPinchDistance = null;
+    let initialPinchScale = 1;
+
+    function openCropModal(imgSrc, fileName) {
+        rawFileName = fileName || 'avatar.jpg';
+        rawImage = new Image();
+        rawImage.onload = function() {
+            resetCropState();
+            if (avatarCropModal) {
+                avatarCropModal.classList.add('show');
+                document.body.style.overflow = 'hidden';
+            }
+            renderCanvas();
+        };
+        rawImage.src = imgSrc;
+    }
+
+    function closeCropModal() {
+        if (avatarCropModal) {
+            avatarCropModal.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+    }
+
+    function resetCropState() {
+        if (!rawImage || !cropCanvas) return;
+        const cw = cropCanvas.width;
+        const ch = cropCanvas.height;
+        const iw = rawImage.width;
+        const ih = rawImage.height;
+
+        // Fit image inside 1:1 box
+        const scale = Math.max(cw / iw, ch / ih);
+        imgState.scale = scale;
+        imgState.minScale = scale * 0.5;
+        imgState.maxScale = scale * 3.5;
+        imgState.rotation = 0;
+        imgState.x = cw / 2;
+        imgState.y = ch / 2;
+
+        if (cropZoomSlider) {
+            cropZoomSlider.min = imgState.minScale;
+            cropZoomSlider.max = imgState.maxScale;
+            cropZoomSlider.value = imgState.scale;
+        }
+    }
+
+    function renderCanvas() {
+        if (!cropCanvas || !rawImage) return;
+        const ctx = cropCanvas.getContext('2d');
+        const cw = cropCanvas.width;
+        const ch = cropCanvas.height;
+
+        ctx.clearRect(0, 0, cw, ch);
+        ctx.save();
+
+        // 1. Draw Image with transforms
+        ctx.translate(imgState.x, imgState.y);
+        ctx.rotate((imgState.rotation * Math.PI) / 180);
+        ctx.scale(imgState.scale, imgState.scale);
+        ctx.drawImage(rawImage, -rawImage.width / 2, -rawImage.height / 2);
+        ctx.restore();
+
+        // 2. Dark translucent overlay with 1:1 circular & rounded-square cutout guide
+        ctx.save();
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.55)';
+        ctx.fillRect(0, 0, cw, ch);
+
+        // Cutout 1:1 crop window
+        const pad = 16;
+        const cropSize = cw - pad * 2;
+        const cx = cw / 2;
+        const cy = ch / 2;
+        const radius = cropSize / 2;
+
+        // Destination-out clears the center circle/square
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2, false);
+        ctx.fill();
+
+        ctx.globalCompositeOperation = 'source-over';
+
+        // Circular guide ring
+        ctx.strokeStyle = '#7C3AED';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2, false);
+        ctx.stroke();
+
+        // Subtle crosshair / grid lines
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(cx - radius, cy);
+        ctx.lineTo(cx + radius, cy);
+        ctx.moveTo(cx, cy - radius);
+        ctx.lineTo(cx, cy + radius);
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    // Canvas Mouse & Touch Drag & Zoom
+    if (cropCanvas) {
+        // Mouse Drag
+        cropCanvas.addEventListener('mousedown', function(e) {
+            isDragging = true;
+            dragStart.x = e.clientX - imgState.x;
+            dragStart.y = e.clientY - imgState.y;
+        });
+
+        window.addEventListener('mousemove', function(e) {
+            if (!isDragging) return;
+            imgState.x = e.clientX - dragStart.x;
+            imgState.y = e.clientY - dragStart.y;
+            renderCanvas();
+        });
+
+        window.addEventListener('mouseup', function() {
+            isDragging = false;
+        });
+
+        // Mouse Wheel Zoom
+        cropCanvas.addEventListener('wheel', function(e) {
+            e.preventDefault();
+            const zoomDelta = e.deltaY < 0 ? 1.08 : 0.92;
+            const newScale = Math.min(Math.max(imgState.scale * zoomDelta, imgState.minScale), imgState.maxScale);
+            imgState.scale = newScale;
+            if (cropZoomSlider) cropZoomSlider.value = newScale;
+            renderCanvas();
+        }, { passive: false });
+
+        // Touch Drag & Pinch-Zoom
+        cropCanvas.addEventListener('touchstart', function(e) {
+            if (e.touches.length === 1) {
+                isDragging = true;
+                dragStart.x = e.touches[0].clientX - imgState.x;
+                dragStart.y = e.touches[0].clientY - imgState.y;
+            } else if (e.touches.length === 2) {
+                isDragging = false;
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                initialPinchDistance = Math.hypot(dx, dy);
+                initialPinchScale = imgState.scale;
+            }
+        }, { passive: true });
+
+        cropCanvas.addEventListener('touchmove', function(e) {
+            if (e.touches.length === 1 && isDragging) {
+                imgState.x = e.touches[0].clientX - dragStart.x;
+                imgState.y = e.touches[0].clientY - dragStart.y;
+                renderCanvas();
+            } else if (e.touches.length === 2 && initialPinchDistance) {
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                const dist = Math.hypot(dx, dy);
+                const factor = dist / initialPinchDistance;
+                const newScale = Math.min(Math.max(initialPinchScale * factor, imgState.minScale), imgState.maxScale);
+                imgState.scale = newScale;
+                if (cropZoomSlider) cropZoomSlider.value = newScale;
+                renderCanvas();
+            }
+        }, { passive: true });
+
+        cropCanvas.addEventListener('touchend', function() {
+            isDragging = false;
+            initialPinchDistance = null;
+        });
+    }
+
+    // Zoom Slider
+    if (cropZoomSlider) {
+        cropZoomSlider.addEventListener('input', function() {
+            imgState.scale = parseFloat(this.value);
+            renderCanvas();
+        });
+    }
+
+    // Rotate Button
+    if (btnCropRotate) {
+        btnCropRotate.addEventListener('click', function() {
+            imgState.rotation = (imgState.rotation + 90) % 360;
+            renderCanvas();
+        });
+    }
+
+    // Reset Button
+    if (btnCropReset) {
+        btnCropReset.addEventListener('click', function() {
+            resetCropState();
+            renderCanvas();
+        });
+    }
+
+    // Cancel Button & Close
+    if (btnCropCancel) btnCropCancel.addEventListener('click', closeCropModal);
+    if (cropModalCloseBtn) cropModalCloseBtn.addEventListener('click', closeCropModal);
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && avatarCropModal && avatarCropModal.classList.contains('show')) {
+            closeCropModal();
+        }
+    });
+
+    // Confirm Crop & Generate High-Res 512x512 Blob
+    if (btnCropConfirm) {
+        btnCropConfirm.addEventListener('click', function() {
+            if (!rawImage || !cropCanvas) return;
+
+            const exportCanvas = document.createElement('canvas');
+            const targetSize = 512;
+            exportCanvas.width = targetSize;
+            exportCanvas.height = targetSize;
+            const eCtx = exportCanvas.getContext('2d');
+
+            const cw = cropCanvas.width;
+            const pad = 16;
+            const cropDiameter = cw - pad * 2;
+            const scaleFactor = targetSize / cropDiameter;
+
+            eCtx.save();
+            // Center export canvas
+            eCtx.translate(targetSize / 2, targetSize / 2);
+            // Transform relative to crop center
+            const cropCenterX = cw / 2;
+            const cropCenterY = cw / 2;
+            const relX = (imgState.x - cropCenterX) * scaleFactor;
+            const relY = (imgState.y - cropCenterY) * scaleFactor;
+
+            eCtx.translate(relX, relY);
+            eCtx.rotate((imgState.rotation * Math.PI) / 180);
+            eCtx.scale(imgState.scale * scaleFactor, imgState.scale * scaleFactor);
+            eCtx.drawImage(rawImage, -rawImage.width / 2, -rawImage.height / 2);
+            eCtx.restore();
+
+            exportCanvas.toBlob(function(blob) {
+                if (!blob) {
+                    alert("Rasmni qayta ishlashda xatolik yuz berdi.");
+                    return;
+                }
+                croppedBlob = blob;
+                const fileName = 'avatar_' + Date.now() + '.jpg';
+                croppedFile = new File([blob], fileName, { type: 'image/jpeg', lastModified: Date.now() });
+
+                // Attach file to input using DataTransfer
+                try {
+                    const dt = new DataTransfer();
+                    dt.items.add(croppedFile);
+                    if (fileInput) fileInput.files = dt.files;
+                } catch (err) {
+                    console.warn('DataTransfer fallback:', err);
+                }
+
+                // Show preview in profile page
+                const previewUrl = URL.createObjectURL(blob);
+                if (avatarCroppedPreviewImg) avatarCroppedPreviewImg.src = previewUrl;
+                if (avatarNewPreviewCard) avatarNewPreviewCard.style.display = 'flex';
+                if (fileUploadWrap) fileUploadWrap.style.display = 'none';
+                if (fileNameDisplay) {
+                    fileNameDisplay.textContent = 'Tanlandi va qirqildi: ' + fileName;
+                    fileNameDisplay.style.color = '#7C3AED';
+                    fileNameDisplay.style.fontWeight = '700';
+                }
+
+                closeCropModal();
+            }, 'image/jpeg', 0.92);
+        });
+    }
+
+    // Re-Crop button
+    if (btnReCrop) {
+        btnReCrop.addEventListener('click', function() {
+            if (rawImage) {
+                if (avatarCropModal) {
+                    avatarCropModal.classList.add('show');
+                    document.body.style.overflow = 'hidden';
+                }
+                renderCanvas();
+            }
+        });
+    }
+
+    // Remove Cropped file
+    if (btnRemoveCrop) {
+        btnRemoveCrop.addEventListener('click', function() {
+            croppedBlob = null;
+            croppedFile = null;
+            if (fileInput) fileInput.value = '';
+            if (avatarNewPreviewCard) avatarNewPreviewCard.style.display = 'none';
+            if (fileUploadWrap) fileUploadWrap.style.display = 'flex';
+            if (fileNameDisplay) {
+                fileNameDisplay.textContent = 'Hali hech qanday fayl tanlanmagan (JPG, PNG, WEBP, max 5MB)';
                 fileNameDisplay.style.color = '';
                 fileNameDisplay.style.fontWeight = '';
+            }
+        });
+    }
+
+    // File input change handler: validates format and opens crop modal
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            const file = this.files && this.files[0];
+            if (!file) return;
+
+            // 1. Format check
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+            if (!allowedTypes.includes(file.type.toLowerCase())) {
+                alert("Noto'g'ri fayl formati. Faqat JPG, PNG, WEBP formatlariga ruxsat berilgan.");
+                this.value = '';
+                return;
+            }
+
+            // 2. Size check (5MB max)
+            if (file.size > 5 * 1024 * 1024) {
+                alert("Rasm hajmi 5MB dan oshmasligi kerak.");
+                this.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                openCropModal(evt.target.result, file.name);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // Form submit validation & double submit prevention
+    if (profileForm) {
+        profileForm.addEventListener('submit', function(e) {
+            if (!isUsernameValid) {
+                e.preventDefault();
+                if (usernameInput) usernameInput.focus();
+                alert('Iltimos, to\'g\'ri va band bo\'lmagan foydalanuvchi nomini kiriting!');
+                return false;
+            }
+            if (!isPhoneValid) {
+                e.preventDefault();
+                if (phoneInput) phoneInput.focus();
+                alert('Iltimos, to\'g\'ri va band bo\'lmagan telefon raqamini kiriting!');
+                return false;
+            }
+
+            if (profileSubmitBtn) {
+                profileSubmitBtn.disabled = true;
+                profileSubmitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Saqlanmoqda...';
             }
         });
     }
