@@ -79,3 +79,24 @@ def monthly_price(value, months=12):
     formatted = f"{amount:,.0f}".replace(',', ' ')
     return mark_safe(f"{formatted} so'm/oyiga")
 
+
+@register.simple_tag(takes_context=True)
+def query_transform(context, **kwargs):
+    """
+    Returns updated querystring with specified parameters modified/removed.
+    Usage: {% query_transform page=1 sort='price_asc' %}
+    To remove a parameter, pass param=None or param=''
+    """
+    request = context.get('request')
+    if not request:
+        return ''
+    query_dict = request.GET.copy()
+    for k, v in kwargs.items():
+        if v is None or v == '':
+            query_dict.pop(k, None)
+        else:
+            query_dict[k] = str(v)
+    encoded = query_dict.urlencode()
+    return f"?{encoded}" if encoded else "?"
+
+

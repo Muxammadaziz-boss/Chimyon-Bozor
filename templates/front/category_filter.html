@@ -1,139 +1,795 @@
 {% extends 'base.html' %}
 {% load static shop_extras %}
 
+{% block title %}
+{% if active_category_name %}{{ active_category_name }} | {% elif search_query %}Qidiruv: {{ search_query }} | {% endif %}Mahsulotlar katalogi | {{ site_settings.site_name|default:"Chimyon-bozor" }}
+{% endblock %}
+
 {% block content %}
+<style>
+    /* Catalog Filter System Styles */
+    .catalog-section {
+        background: #F8FAFC;
+        min-height: 800px;
+        padding: 30px 0 80px;
+    }
+    
+    /* Top Toolbar */
+    .catalog-toolbar {
+        background: #FFFFFF;
+        border: 2px solid #E2E8F0;
+        border-radius: 18px;
+        padding: 12px 18px;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
+        margin-bottom: 20px;
+    }
+    .catalog-filter-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 18px;
+        border-radius: 12px;
+        border: 2px solid #7C3AED;
+        background: #F5F3FF;
+        color: #7C3AED !important;
+        font-weight: 700;
+        font-size: 14px;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    .catalog-filter-btn:hover {
+        background: #7C3AED;
+        color: #FFFFFF !important;
+    }
+    .catalog-sort-select {
+        border: 2px solid #CBD5E1;
+        border-radius: 12px;
+        padding: 8px 14px;
+        font-weight: 700;
+        font-size: 14px;
+        color: #0F172A;
+        background-color: #FFFFFF;
+        cursor: pointer;
+        outline: none;
+        transition: all 0.2s ease;
+    }
+    .catalog-sort-select:focus {
+        border-color: #7C3AED;
+        box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+    }
+    .view-mode-btn {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        border: 2px solid #E2E8F0;
+        background: #FFFFFF;
+        color: #64748B;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .view-mode-btn:hover {
+        border-color: #CBD5E1;
+        color: #0F172A;
+    }
+    .view-mode-btn.active {
+        background: #7C3AED;
+        border-color: #7C3AED;
+        color: #FFFFFF;
+    }
 
-<!-- ======================== All Product Section Start ====================== -->
-<section class="all-product pt-4 padding-b-120">
+    /* Active Filter Chips */
+    .active-chips-wrapper {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 20px;
+        padding: 12px 16px;
+        background: #FFFFFF;
+        border: 1.5px solid #E2E8F0;
+        border-radius: 14px;
+    }
+    .filter-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #F3E8FF;
+        border: 1.5px solid #D8B4FE;
+        color: #6D28D9;
+        font-weight: 700;
+        font-size: 13px;
+        padding: 4px 12px;
+        border-radius: 999px;
+        text-decoration: none !important;
+        transition: all 0.2s ease;
+    }
+    .filter-chip:hover {
+        background: #E9D5FF;
+        color: #581C87;
+        border-color: #C084FC;
+    }
+    .filter-chip i {
+        font-size: 11px;
+        color: #7C3AED;
+    }
+    .clear-all-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: #FEE2E2;
+        border: 1.5px solid #FCA5A5;
+        color: #DC2626 !important;
+        font-weight: 700;
+        font-size: 13px;
+        padding: 4px 12px;
+        border-radius: 999px;
+        text-decoration: none !important;
+        transition: all 0.2s ease;
+    }
+    .clear-all-chip:hover {
+        background: #FECACA;
+        color: #991B1B !important;
+    }
+
+    /* Sidebar Filter Panel */
+    .filter-sidebar-card {
+        background: #FFFFFF;
+        border: 2px solid #E2E8F0;
+        border-radius: 20px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+        overflow: hidden;
+        margin-bottom: 24px;
+        position: sticky;
+        top: 20px;
+    }
+    .filter-sidebar-header {
+        padding: 16px 20px;
+        background: #FAF5FF;
+        border-bottom: 2px solid #F3E8FF;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .filter-sidebar-title {
+        font-size: 16px;
+        font-weight: 800;
+        color: #0F172A;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .filter-section {
+        padding: 18px 20px;
+        border-bottom: 1.5px solid #F1F5F9;
+    }
+    .filter-section:last-child {
+        border-bottom: none;
+    }
+    .filter-section-title {
+        font-size: 14px;
+        font-weight: 800;
+        color: #0F172A;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    /* Category List in Sidebar */
+    .filter-cat-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        max-height: 220px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: #CBD5E1 #F1F5F9;
+    }
+    .filter-cat-list::-webkit-scrollbar {
+        width: 4px;
+    }
+    .filter-cat-list::-webkit-scrollbar-thumb {
+        background: #CBD5E1;
+        border-radius: 999px;
+    }
+    .filter-cat-item {
+        margin-bottom: 4px;
+    }
+    .filter-cat-link {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 6px 10px;
+        border-radius: 8px;
+        color: #334155;
+        font-weight: 600;
+        font-size: 13.5px;
+        text-decoration: none !important;
+        transition: all 0.2s ease;
+    }
+    .filter-cat-link:hover {
+        background: #F8FAFC;
+        color: #7C3AED;
+    }
+    .filter-cat-link.active {
+        background: #F5F3FF;
+        color: #7C3AED;
+        font-weight: 800;
+    }
+    .filter-cat-badge {
+        font-size: 11px;
+        font-weight: 700;
+        background: #F1F5F9;
+        color: #64748B;
+        padding: 2px 7px;
+        border-radius: 999px;
+    }
+    .filter-cat-link.active .filter-cat-badge {
+        background: #EDE9FE;
+        color: #7C3AED;
+    }
+
+    /* Price inputs & presets */
+    .price-input-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+    .price-input-control {
+        width: 100%;
+        padding: 7px 10px;
+        border: 2px solid #CBD5E1;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 13px;
+        color: #0F172A;
+        outline: none;
+        transition: all 0.2s ease;
+    }
+    .price-input-control:focus {
+        border-color: #7C3AED;
+        box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+    }
+    .price-preset-pill {
+        display: inline-block;
+        padding: 4px 10px;
+        border: 1px solid #E2E8F0;
+        border-radius: 999px;
+        background: #F8FAFC;
+        font-size: 11.5px;
+        font-weight: 700;
+        color: #475569;
+        margin: 2px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none !important;
+    }
+    .price-preset-pill:hover {
+        border-color: #7C3AED;
+        background: #F5F3FF;
+        color: #7C3AED;
+    }
+
+    /* Checkboxes and Radios */
+    .custom-filter-option {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 5px 0;
+        cursor: pointer;
+        font-size: 13.5px;
+        font-weight: 600;
+        color: #334155;
+        user-select: none;
+    }
+    .custom-filter-option input[type="radio"],
+    .custom-filter-option input[type="checkbox"] {
+        width: 17px;
+        height: 17px;
+        accent-color: #7C3AED;
+        cursor: pointer;
+    }
+    .custom-filter-option:hover {
+        color: #0F172A;
+    }
+
+    /* Sticky Footer Actions */
+    .filter-actions-footer {
+        padding: 16px 20px;
+        background: #FFFFFF;
+        border-top: 2px solid #F1F5F9;
+        display: flex;
+        gap: 10px;
+    }
+    .btn-apply-filters {
+        flex: 1;
+        background: #7C3AED;
+        border: 2px solid #7C3AED;
+        color: #FFFFFF;
+        font-weight: 700;
+        font-size: 14px;
+        padding: 10px;
+        border-radius: 12px;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
+    }
+    .btn-apply-filters:hover {
+        background: #6D28D9;
+        border-color: #6D28D9;
+        color: #FFFFFF;
+    }
+    .btn-reset-filters {
+        background: #F1F5F9;
+        border: 2px solid #E2E8F0;
+        color: #475569;
+        font-weight: 700;
+        font-size: 14px;
+        padding: 10px 16px;
+        border-radius: 12px;
+        text-decoration: none !important;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .btn-reset-filters:hover {
+        background: #E2E8F0;
+        color: #0F172A;
+    }
+
+    /* Mobile Drawer */
+    @media (max-width: 991.98px) {
+        .filter-drawer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.6);
+            z-index: 1050;
+            display: none;
+            backdrop-filter: blur(3px);
+        }
+        .filter-sidebar-card {
+            position: fixed;
+            top: 0;
+            left: -340px;
+            width: 320px;
+            height: 100vh;
+            z-index: 1060;
+            border-radius: 0 20px 20px 0;
+            display: flex;
+            flex-direction: column;
+            transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+            margin: 0;
+        }
+        .filter-sidebar-card.open {
+            left: 0;
+        }
+        .filter-drawer-close-btn {
+            display: block !important;
+        }
+    }
+    .filter-drawer-close-btn {
+        display: none;
+        background: none;
+        border: none;
+        font-size: 20px;
+        color: #64748B;
+        cursor: pointer;
+    }
+
+    /* List View Modifier */
+    .list-mode .product-item-card {
+        flex-direction: row !important;
+        padding: 16px !important;
+    }
+    .list-mode .product-item-img-box {
+        width: 140px !important;
+        min-width: 140px !important;
+        height: 140px !important;
+        margin-bottom: 0 !important;
+        margin-right: 16px;
+    }
+</style>
+
+<section class="catalog-section">
     <div class="container container-two">
-        <div class="row">
-            <div class="col-lg-12">
+        
+        <!-- Breadcrumbs -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb mb-0" style="background:transparent; font-size:14px;">
+                <li class="breadcrumb-item"><a href="{% url 'index' %}" class="text-muted font-weight-600" style="text-decoration:none;"><i class="fas fa-home me-1"></i> Bosh sahifa</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'categories' %}" class="text-muted font-weight-600" style="text-decoration:none;">Kategoriyalar</a></li>
+                <li class="breadcrumb-item active text-dark font-weight-bold" aria-current="page">
+                    {% if active_category_name %}{{ active_category_name }}{% elif search_query %}Qidiruv: "{{ search_query }}"{% else %}Barcha mahsulotlar{% endif %}
+                </li>
+            </ol>
+        </nav>
 
-                <!-- ===== Filter Tab ===== -->
-                <div class="filter-tab gap-3 flx-between">
-                    <button type="button" class="filter-tab__button btn btn-outline-light pill d-flex align-items-center">
-                        <span class="icon icon-left"><img src="{% static 'assets/images/icons/filter.svg' %}" alt=""></span>
-                        <span class="font-18 fw-500">Filtrlar</span>
-                    </button>
+        <!-- Top Toolbar -->
+        <div class="catalog-toolbar d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <!-- Left: Filter Toggle & Total Count -->
+            <div class="d-flex align-items-center gap-3">
+                <button type="button" class="catalog-filter-btn" id="toggleFilterSidebarBtn">
+                    <i class="fas fa-sliders-h"></i> <span>Filtrlar</span>
+                    {% if active_chips_count %}
+                    <span class="badge bg-purple text-white ms-1" style="background:#7C3AED !important; font-size:11px;">{{ active_chips_count }}</span>
+                    {% endif %}
+                </button>
 
-                    <ul class="nav common-tab nav-pills mb-0 gap-lg-2 gap-1 ms-lg-auto" id="pills-tab" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <a href="{% url 'all_products' %}" class="nav-link {% if active_category is None or not active_category %}active{% endif %}">
-                                Barcha mahsulotlar
-                            </a>
-                        </li>
-                        {% for cat in top_categories %}
-                        <li class="nav-item" role="presentation">
-                            <a href="{% url 'index_by_category' cat.id %}" class="nav-link {% if active_category == cat.id %}active{% endif %}">
-                                {{ cat.name }}
-                            </a>
-                        </li>
-                        {% endfor %}
-                    </ul>
-
-                    <div class="list-grid d-flex align-items-center gap-2">
-                        <button class="list-grid__button list-button d-sm-flex d-none text-body"><i class="las la-list"></i></button>
-                        <button class="list-grid__button grid-button d-sm-flex d-none active text-body"><i class="las la-border-all"></i></button>
-                        <button class="list-grid__button sidebar-btn text-body d-lg-none d-flex"><i class="las la-bars"></i></button>
-                    </div>
-                </div>
-
-                <!-- ===== Filter Form ===== -->
-                <form action="" method="get" class="filter-form pb-4">
-                    <div class="row gy-3">
-                        <div class="col-sm-4 col-xs-6">
-                            <div class="flx-between gap-1">
-                                <label for="tag" class="form-label font-16">Qidiruv</label>
-                                <a href="{% if active_category %}{% url 'index_by_category' active_category %}{% else %}{% url 'all_products' %}{% endif %}" class="text-body font-14">Tozalash</a>
-                            </div>
-                            <div class="position-relative">
-                                <input type="text" name="q" value="{{ search_query }}" class="common-input border-gray-five common-input--withLeftIcon" id="tag" placeholder="Nom bo'yicha qidirish...">
-                                <span class="input-icon input-icon--left"><img src="{% static 'assets/images/icons/search-two.svg' %}" alt=""></span>
-                            </div>
-                        </div>
-                        <div class="col-sm-4 col-xs-6 d-flex align-items-end">
-                            <button type="submit" class="btn btn-main pill w-100">Qidirish</button>
-                        </div>
-                    </div>
-                </form>
-
+                <span class="text-dark font-weight-700 font-14 d-none d-sm-inline">
+                    Topildi: <strong class="text-primary">{{ total_products }} ta</strong> mahsulot
+                </span>
             </div>
 
-            <!-- ===== Left Sidebar ===== -->
-            <div class="col-xl-3 col-lg-4">
-                <div class="filter-sidebar">
-                    <button type="button" class="filter-sidebar__close p-2 position-absolute end-0 top-0 z-index-1 text-body hover-text-main font-20 d-lg-none d-block">
-                        <i class="las la-times"></i>
-                    </button>
+            <!-- Right: Search, Sorting & View Toggle -->
+            <div class="d-flex align-items-center gap-2 ms-auto flex-wrap">
+                <!-- Sorting Dropdown -->
+                <form id="catalogSortForm" method="get" class="d-inline-flex align-items-center">
+                    <!-- Preserve existing filters -->
+                    {% if active_category %}<input type="hidden" name="category" value="{{ active_category }}">{% endif %}
+                    {% if search_query %}<input type="hidden" name="q" value="{{ search_query }}">{% endif %}
+                    {% if min_price_raw %}<input type="hidden" name="min_price" value="{{ min_price_raw }}">{% endif %}
+                    {% if max_price_raw %}<input type="hidden" name="max_price" value="{{ max_price_raw }}">{% endif %}
+                    {% if discount_filter %}<input type="hidden" name="discount" value="{{ discount_filter }}">{% endif %}
+                    {% if stock_filter %}<input type="hidden" name="stock" value="{{ stock_filter }}">{% endif %}
+                    {% if rating_filter %}<input type="hidden" name="rating" value="{{ rating_filter }}">{% endif %}
+                    <input type="hidden" name="view" id="sortFormViewMode" value="{{ view_mode }}">
 
-                    <div class="filter-sidebar__item">
-                        <button type="button" class="filter-sidebar__button font-16 text-capitalize fw-500">Kategoriya</button>
-                        <div class="filter-sidebar__content">
-                            <ul class="filter-sidebar-list">
-                                <li class="filter-sidebar-list__item">
-                                    <a href="{% url 'all_products' %}" class="filter-sidebar-list__text {% if not active_category %}fw-bold{% endif %}">
-                                        Barcha kategoriyalar
-                                        <span class="qty">{{ total_products }}</span>
-                                    </a>
+                    <select name="sort" class="catalog-sort-select" onchange="document.getElementById('catalogSortForm').submit();" aria-label="Saralash tartibi">
+                        <option value="recommended" {% if sort == 'recommended' %}selected{% endif %}>Tavsiya etilgan</option>
+                        <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Eng yangi</option>
+                        <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Eng arzon (narx o'sishi)</option>
+                        <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>Eng qimmat (narx kamayishi)</option>
+                        <option value="popular" {% if sort == 'popular' %}selected{% endif %}>Eng ko'p sotilgan</option>
+                        <option value="rating" {% if sort == 'rating' %}selected{% endif %}>Reytingi yuqori</option>
+                    </select>
+                </form>
+
+                <!-- Grid / List Switchers -->
+                <div class="d-none d-sm-flex align-items-center gap-1">
+                    <button type="button" class="view-mode-btn {% if view_mode == 'grid' %}active{% endif %}" id="gridViewBtn" title="Katakcha ko'rinishi">
+                        <i class="fas fa-th"></i>
+                    </button>
+                    <button type="button" class="view-mode-btn {% if view_mode == 'list' %}active{% endif %}" id="listViewBtn" title="Ro'yxat ko'rinishi">
+                        <i class="fas fa-list"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Filter Chips (Removable) -->
+        {% if active_chips %}
+        <div class="active-chips-wrapper">
+            <span class="text-muted font-weight-700 font-12 text-uppercase me-1"><i class="fas fa-filter text-primary me-1"></i> Faol filtrlar:</span>
+            {% for chip in active_chips %}
+                {% if chip.remove_key == 'category' %}
+                <a href="{% query_transform category=None page=1 %}" class="filter-chip" title="Filtrni olib tashlash">
+                    {{ chip.label }} <i class="fas fa-times"></i>
+                </a>
+                {% elif chip.remove_key == 'q' %}
+                <a href="{% query_transform q=None query=None search=None page=1 %}" class="filter-chip" title="Qidiruvni tozalash">
+                    {{ chip.label }} <i class="fas fa-times"></i>
+                </a>
+                {% elif chip.remove_key == 'price' %}
+                <a href="{% query_transform min_price=None max_price=None page=1 %}" class="filter-chip" title="Narx filtrini tozalash">
+                    {{ chip.label }} <i class="fas fa-times"></i>
+                </a>
+                {% elif chip.remove_key == 'discount' %}
+                <a href="{% query_transform discount=None page=1 %}" class="filter-chip" title="Chegirma filtrini tozalash">
+                    {{ chip.label }} <i class="fas fa-times"></i>
+                </a>
+                {% elif chip.remove_key == 'stock' %}
+                <a href="{% query_transform stock=None page=1 %}" class="filter-chip" title="Ombor filtrini tozalash">
+                    {{ chip.label }} <i class="fas fa-times"></i>
+                </a>
+                {% elif chip.remove_key == 'rating' %}
+                <a href="{% query_transform rating=None page=1 %}" class="filter-chip" title="Reyting filtrini tozalash">
+                    {{ chip.label }} <i class="fas fa-times"></i>
+                </a>
+                {% endif %}
+            {% endfor %}
+            <a href="{% url 'all_products' %}" class="clear-all-chip">
+                <i class="fas fa-trash-alt"></i> Barchasini tozalash
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Main Layout: Sidebar & Products Grid -->
+        <div class="row g-4">
+            
+            <!-- Filter Overlay for Mobile -->
+            <div class="filter-drawer-overlay" id="filterDrawerOverlay"></div>
+
+            <!-- Left Sidebar Filter Form -->
+            <div class="col-xl-3 col-lg-4">
+                <form method="get" action="{% if active_category %}{% url 'category_filter' active_category %}{% else %}{% url 'all_products' %}{% endif %}" id="mainFilterForm">
+                    <!-- Hidden inputs -->
+                    {% if search_query %}<input type="hidden" name="q" value="{{ search_query }}">{% endif %}
+                    <input type="hidden" name="sort" value="{{ sort }}">
+                    <input type="hidden" name="view" id="filterFormViewMode" value="{{ view_mode }}">
+
+                    <div class="filter-sidebar-card" id="filterSidebarCard">
+                        <!-- Sidebar Header -->
+                        <div class="filter-sidebar-header">
+                            <h3 class="filter-sidebar-title">
+                                <i class="fas fa-filter text-primary"></i> Filtrlar
+                            </h3>
+                            <button type="button" class="filter-drawer-close-btn" id="closeFilterDrawerBtn">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+
+                        <!-- 1. Categories Filter Section -->
+                        <div class="filter-section">
+                            <div class="filter-section-title">
+                                <span>Kategoriya</span>
+                                <a href="{% url 'categories' %}" class="text-primary font-12" style="text-transform:none;">Barchasi &rarr;</a>
+                            </div>
+                            <ul class="filter-cat-list">
+                                <li class="filter-cat-item">
+                                    <label class="custom-filter-option">
+                                        <input type="radio" name="category" value="" {% if not active_category %}checked{% endif %}>
+                                        <span class="flex-grow-1">Barcha kategoriyalar</span>
+                                        <span class="filter-cat-badge">{{ total_categories_count|default:"22" }}</span>
+                                    </label>
                                 </li>
                                 {% for cat in categories %}
-                                <li class="filter-sidebar-list__item">
-                                    <a href="{% url 'index_by_category' cat.id %}" class="filter-sidebar-list__text {% if active_category == cat.id %}fw-bold{% endif %}">
-                                        {{ cat.name }}
-                                        <span class="qty">{{ cat.product_set.count }}</span>
-                                    </a>
+                                <li class="filter-cat-item">
+                                    <label class="custom-filter-option">
+                                        <input type="radio" name="category" value="{{ cat.id }}" {% if active_category == cat.id %}checked{% endif %}>
+                                        <span class="flex-grow-1 text-truncate">{{ cat.name }}</span>
+                                        <span class="filter-cat-badge">{{ cat.product_count }}</span>
+                                    </label>
                                 </li>
                                 {% endfor %}
                             </ul>
                         </div>
+
+                        <!-- 2. Price Range Filter Section -->
+                        <div class="filter-section">
+                            <div class="filter-section-title">
+                                <span>Narx (so'm)</span>
+                            </div>
+                            <div class="price-input-group">
+                                <input type="number" name="min_price" id="minPriceInput" class="price-input-control" placeholder="0" value="{{ min_price_raw|default:'' }}" min="0" step="1000">
+                                <span class="text-muted font-weight-bold">-</span>
+                                <input type="number" name="max_price" id="maxPriceInput" class="price-input-control" placeholder="1 000 000" value="{{ max_price_raw|default:'' }}" min="0" step="1000">
+                            </div>
+
+                            <!-- Price Quick Presets -->
+                            <div class="d-flex flex-wrap gap-1 mt-2">
+                                <span class="price-preset-pill" onclick="setPricePreset(0, 100000)">0–100k</span>
+                                <span class="price-preset-pill" onclick="setPricePreset(100000, 500000)">100k–500k</span>
+                                <span class="price-preset-pill" onclick="setPricePreset(500000, 1000000)">500k–1mln</span>
+                                <span class="price-preset-pill" onclick="setPricePreset(1000000, '')">1mln+</span>
+                            </div>
+                        </div>
+
+                        <!-- 3. Discount Filter Section -->
+                        <div class="filter-section">
+                            <div class="filter-section-title">
+                                <span>Chegirmalar</span>
+                            </div>
+                            <label class="custom-filter-option">
+                                <input type="radio" name="discount" value="" {% if not discount_filter %}checked{% endif %}>
+                                <span>Barcha mahsulotlar</span>
+                            </label>
+                            <label class="custom-filter-option">
+                                <input type="radio" name="discount" value="1" {% if discount_filter == '1' or discount_filter == 'only' or discount_filter == 'true' %}checked{% endif %}>
+                                <span>Faqat chegirmali</span>
+                            </label>
+                            <label class="custom-filter-option">
+                                <input type="radio" name="discount" value="10" {% if discount_filter == '10' %}checked{% endif %}>
+                                <span>10% va undan yuqori</span>
+                            </label>
+                            <label class="custom-filter-option">
+                                <input type="radio" name="discount" value="20" {% if discount_filter == '20' %}checked{% endif %}>
+                                <span>20% va undan yuqori</span>
+                            </label>
+                            <label class="custom-filter-option">
+                                <input type="radio" name="discount" value="50" {% if discount_filter == '50' %}checked{% endif %}>
+                                <span>50% va undan yuqori</span>
+                            </label>
+                        </div>
+
+                        <!-- 4. Stock Availability Filter Section -->
+                        <div class="filter-section">
+                            <div class="filter-section-title">
+                                <span>Ombor holati</span>
+                            </div>
+                            <label class="custom-filter-option">
+                                <input type="radio" name="stock" value="" {% if not stock_filter or stock_filter == 'all' %}checked{% endif %}>
+                                <span>Barchasi</span>
+                            </label>
+                            <label class="custom-filter-option">
+                                <input type="radio" name="stock" value="in_stock" {% if stock_filter == 'in_stock' %}checked{% endif %}>
+                                <span>Mavjud mahsulotlar</span>
+                            </label>
+                            <label class="custom-filter-option">
+                                <input type="radio" name="stock" value="low_stock" {% if stock_filter == 'low_stock' %}checked{% endif %}>
+                                <span>Kam qolgan (1–5 dona)</span>
+                            </label>
+                        </div>
+
+                        <!-- 5. Rating Filter Section -->
+                        <div class="filter-section">
+                            <div class="filter-section-title">
+                                <span>Mijozlar reytingi</span>
+                            </div>
+                            <label class="custom-filter-option">
+                                <input type="radio" name="rating" value="" {% if not rating_filter %}checked{% endif %}>
+                                <span>Barcha reytinglar</span>
+                            </label>
+                            <label class="custom-filter-option">
+                                <input type="radio" name="rating" value="4" {% if rating_filter == '4' %}checked{% endif %}>
+                                <span class="text-warning"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="far fa-star"></i></span>
+                                <span class="ms-1 font-weight-700">4.0 va undan yuqori</span>
+                            </label>
+                            <label class="custom-filter-option">
+                                <input type="radio" name="rating" value="3" {% if rating_filter == '3' %}checked{% endif %}>
+                                <span class="text-warning"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i></span>
+                                <span class="ms-1 font-weight-700">3.0 va undan yuqori</span>
+                            </label>
+                        </div>
+
+                        <!-- Sticky Footer Actions -->
+                        <div class="filter-actions-footer">
+                            <a href="{% url 'all_products' %}" class="btn-reset-filters" title="Barcha filtrlarni tozalash">
+                                <i class="fas fa-redo-alt"></i>
+                            </a>
+                            <button type="submit" class="btn-apply-filters">
+                                <i class="fas fa-check me-1"></i> Natijalarni ko'rish
+                            </button>
+                        </div>
+
                     </div>
-
-                </div>
+                </form>
             </div>
-            <!-- ===== Left Sidebar End ===== -->
 
-            <!-- ===== Products Grid ===== -->
+            <!-- Right Products Grid Container -->
             <div class="col-xl-9 col-lg-8">
-                <div class="row gy-4 list-grid-wrapper row-cols-xl-5 row-cols-lg-4 row-cols-md-3 row-cols-sm-2 row-cols-1">
+                
+                <!-- Products Grid -->
+                <div class="row g-3 g-md-4 row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-xl-4 {% if view_mode == 'list' %}list-mode row-cols-1 row-cols-sm-1 row-cols-md-1 row-cols-xl-1{% endif %}" id="productsContainer">
                     {% for product in products %}
                     <div class="col">
                         {% include 'front/partials/product_card.html' %}
                     </div>
                     {% empty %}
                     <div class="col-12 text-center py-5">
-                        <h5>Mahsulotlar topilmadi</h5>
+                        <div class="p-5 bg-white rounded-4 border">
+                            <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                            <h4 class="font-weight-bold text-dark mb-2">Mahsulotlar topilmadi</h4>
+                            <p class="text-muted mb-4 font-15">Tanlangan filtrlar yoki qidiruv so‘rovi bo‘yicha mos mahsulot topilmadi.</p>
+                            <a href="{% url 'all_products' %}" class="btn btn-primary rounded-pill font-weight-bold px-4 py-2">
+                                <i class="fas fa-sync-alt me-2"></i> Barcha filtrlarni tozalash
+                            </a>
+                        </div>
                     </div>
                     {% endfor %}
                 </div>
 
-                <!-- ===== Pagination ===== -->
+                <!-- Pagination -->
                 {% if page_obj.has_other_pages %}
                 <div class="pagination-wrapper mt-5 text-center">
-                    <ul class="pagination justify-content-center">
+                    <ul class="pagination justify-content-center flex-wrap gap-1">
                         {% if page_obj.has_previous %}
-                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}">Oldingi</a></li>
+                        <li class="page-item">
+                            <a class="page-link rounded-pill px-3 font-weight-700" href="{% query_transform page=page_obj.previous_page_number %}">
+                                <i class="fas fa-chevron-left me-1"></i> Oldingi
+                            </a>
+                        </li>
                         {% endif %}
 
                         {% for num in page_obj.paginator.page_range %}
                             {% if page_obj.number == num %}
-                            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                            <li class="page-item active"><span class="page-link rounded-circle font-weight-800" style="background:#7C3AED; border-color:#7C3AED; width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center;">{{ num }}</span></li>
                             {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                            <li class="page-item"><a class="page-link" href="?page={{ num }}{% if search_query %}&q={{ search_query }}{% endif %}">{{ num }}</a></li>
+                            <li class="page-item">
+                                <a class="page-link rounded-circle font-weight-700" style="width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center;" href="{% query_transform page=num %}">{{ num }}</a>
+                            </li>
                             {% endif %}
                         {% endfor %}
 
                         {% if page_obj.has_next %}
-                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}">Keyingi</a></li>
+                        <li class="page-item">
+                            <a class="page-link rounded-pill px-3 font-weight-700" href="{% query_transform page=page_obj.next_page_number %}">
+                                Keyingi <i class="fas fa-chevron-right ms-1"></i>
+                            </a>
+                        </li>
                         {% endif %}
                     </ul>
                 </div>
                 {% endif %}
 
             </div>
-            <!-- ===== Products Grid End ===== -->
+
         </div>
+
     </div>
 </section>
-<!-- ======================== All Product Section End ====================== -->
 
+<!-- Filter Interactivity Script -->
+<script>
+function setPricePreset(min, max) {
+    const minInput = document.getElementById('minPriceInput');
+    const maxInput = document.getElementById('maxPriceInput');
+    if (minInput) minInput.value = min !== '' ? min : '';
+    if (maxInput) maxInput.value = max !== '' ? max : '';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleBtn = document.getElementById('toggleFilterSidebarBtn');
+    const closeBtn = document.getElementById('closeFilterDrawerBtn');
+    const sidebarCard = document.getElementById('filterSidebarCard');
+    const overlay = document.getElementById('filterDrawerOverlay');
+    const gridViewBtn = document.getElementById('gridViewBtn');
+    const listViewBtn = document.getElementById('listViewBtn');
+    const productsContainer = document.getElementById('productsContainer');
+    const sortViewInput = document.getElementById('sortFormViewMode');
+    const filterViewInput = document.getElementById('filterFormViewMode');
+
+    function openDrawer() {
+        if (sidebarCard) sidebarCard.classList.add('open');
+        if (overlay) overlay.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeDrawer() {
+        if (sidebarCard) sidebarCard.classList.remove('open');
+        if (overlay) overlay.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    if (toggleBtn) toggleBtn.addEventListener('click', openDrawer);
+    if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
+    if (overlay) overlay.addEventListener('click', closeDrawer);
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeDrawer();
+        }
+    });
+
+    // Grid / List View Toggle
+    if (gridViewBtn && listViewBtn && productsContainer) {
+        gridViewBtn.addEventListener('click', function() {
+            productsContainer.classList.remove('list-mode', 'row-cols-1', 'row-cols-sm-1', 'row-cols-md-1', 'row-cols-xl-1');
+            productsContainer.classList.add('row-cols-2', 'row-cols-sm-2', 'row-cols-md-3', 'row-cols-xl-4');
+            gridViewBtn.classList.add('active');
+            listViewBtn.classList.remove('active');
+            if (sortViewInput) sortViewInput.value = 'grid';
+            if (filterViewInput) filterViewInput.value = 'grid';
+            localStorage.setItem('chimyon_catalog_view', 'grid');
+        });
+
+        listViewBtn.addEventListener('click', function() {
+            productsContainer.classList.add('list-mode', 'row-cols-1', 'row-cols-sm-1', 'row-cols-md-1', 'row-cols-xl-1');
+            productsContainer.classList.remove('row-cols-2', 'row-cols-sm-2', 'row-cols-md-3', 'row-cols-xl-4');
+            listViewBtn.classList.add('active');
+            gridViewBtn.classList.remove('active');
+            if (sortViewInput) sortViewInput.value = 'list';
+            if (filterViewInput) filterViewInput.value = 'list';
+            localStorage.setItem('chimyon_catalog_view', 'list');
+        });
+
+        // Restore view preference from localStorage if set
+        const savedView = localStorage.getItem('chimyon_catalog_view');
+        if (savedView === 'list') {
+            listViewBtn.click();
+        }
+    }
+});
+</script>
 {% endblock %}

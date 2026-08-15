@@ -7,7 +7,7 @@ from decimal import Decimal
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import F, Count, Q
+from django.db.models import F, Count, Q, Avg, Case, When, DecimalField, Min, Max
 from django.shortcuts import get_object_or_404, render, redirect
 from django.http import JsonResponse, HttpResponse
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -199,27 +199,230 @@ def add_review(request, product_code):
 
 
 def _build_catalog_context(request, products_qs, active_category=None):
+    """
+    Advanced multi-criteria filtering, sorting, price range, stock, rating, and chips pipeline.
+    """
+    # 1. Search Query
     search_query = (request.GET.get('q') or request.GET.get('query') or request.GET.get('search') or '').strip()
-    query = request.GET.get('query')
-    if query:
-        products_qs = products_qs.filter(name__icontains=query)
     if search_query:
-        from django.db.models import Q
-        products_qs = products_qs.filter(Q(name__icontains=search_query) | Q(category__name__icontains=search_query) | Q(code__icontains=search_query))
+        products_qs = products_qs.filter(
+            Q(name__icontains=search_query) |
+            Q(category__name__icontains=search_query) |
+            Q(code__icontains=search_query) |
+            Q(description__icontains=search_query)
+        )
 
-    products_qs = products_qs.select_related('category').order_by('-created_at')
+    # 2. Category selection from GET param if not directly passed
+    selected_category_id = request.GET.get('category')
+    if selected_category_id and not active_category:
+        try:
+            cat_id_int = int(selected_category_id)
+            active_category = models.Category.objects.filter(id=cat_id_int, is_active=True).first()
+            if active_category:
+                products_qs = products_qs.filter(category=active_category)
+        except (ValueError, TypeError):
+            pass
+
+    # 3. Price Filtering
+    min_price_raw = request.GET.get('min_price', '').strip()
+    max_price_raw = request.GET.get('max_price', '').strip()
+    min_price = None
+    max_price = None
+
+    if min_price_raw:
+        try:
+            min_price_val = Decimal(min_price_raw.replace(' ', ''))
+            if min_price_val >= 0:
+                min_price = min_price_val
+        except Exception:
+            pass
+
+    if max_price_raw:
+        try:
+            max_price_val = Decimal(max_price_raw.replace(' ', ''))
+            if max_price_val >= 0:
+                max_price = max_price_val
+        except Exception:
+            pass
+
+    # Swap if min > max
+    if min_price is not None and max_price is not None and min_price > max_price:
+        min_price, max_price = max_price, min_price
+
+    if min_price is not None:
+        products_qs = products_qs.filter(
+            Q(discount_status=True, discount_price__isnull=False, discount_price__gte=min_price) |
+            Q(Q(discount_status=False) | Q(discount_price__isnull=True), price__gte=min_price)
+        )
+
+    if max_price is not None:
+        products_qs = products_qs.filter(
+            Q(discount_status=True, discount_price__isnull=False, discount_price__lte=max_price) |
+            Q(Q(discount_status=False) | Q(discount_price__isnull=True), price__lte=max_price)
+        )
+
+    # 4. Discount Filter
+    discount_filter = request.GET.get('discount', '').strip()
+    if discount_filter in ('1', 'only', 'true'):
+        products_qs = products_qs.filter(discount_status=True, discount_price__isnull=False)
+    elif discount_filter == '10':
+        products_qs = products_qs.filter(
+            discount_status=True,
+            discount_price__isnull=False,
+            discount_price__lte=F('price') * Decimal('0.90')
+        )
+    elif discount_filter == '20':
+        products_qs = products_qs.filter(
+            discount_status=True,
+            discount_price__isnull=False,
+            discount_price__lte=F('price') * Decimal('0.80')
+        )
+    elif discount_filter == '50':
+        products_qs = products_qs.filter(
+            discount_status=True,
+            discount_price__isnull=False,
+            discount_price__lte=F('price') * Decimal('0.50')
+        )
+
+    # 5. Stock Filter
+    stock_filter = request.GET.get('stock', '').strip()
+    if stock_filter == 'in_stock':
+        products_qs = products_qs.filter(count__gt=0)
+    elif stock_filter == 'low_stock':
+        products_qs = products_qs.filter(count__gt=0, count__lte=5)
+    elif stock_filter == 'out_of_stock':
+        products_qs = products_qs.filter(count__lte=0)
+
+    # 6. Rating Filter & Price/Rating Annotations
+    rating_filter = request.GET.get('rating', '').strip()
+    products_qs = products_qs.annotate(
+        avg_rating=Avg('reviews__rating'),
+        reviews_count=Count('reviews'),
+        effective_price=Case(
+            When(discount_status=True, discount_price__isnull=False, then='discount_price'),
+            default='price',
+            output_field=DecimalField(max_digits=10, decimal_places=2)
+        )
+    )
+
+    if rating_filter == '4':
+        products_qs = products_qs.filter(avg_rating__gte=4.0)
+    elif rating_filter == '3':
+        products_qs = products_qs.filter(avg_rating__gte=3.0)
+
+    # 7. Sorting
+    sort = request.GET.get('sort', 'recommended').strip()
+    if sort == 'newest':
+        products_qs = products_qs.order_by('-created_at', '-id')
+    elif sort == 'price_asc':
+        products_qs = products_qs.order_by('effective_price', 'price', '-id')
+    elif sort == 'price_desc':
+        products_qs = products_qs.order_by('-effective_price', '-price', '-id')
+    elif sort == 'popular':
+        products_qs = products_qs.order_by('-count', '-created_at')
+    elif sort == 'rating':
+        products_qs = products_qs.order_by('-avg_rating', '-created_at')
+    else:  # recommended
+        products_qs = products_qs.order_by('-created_at', '-id')
+
+    # View Mode (Grid vs List)
+    view_mode = request.GET.get('view', 'grid').strip()
+    if view_mode not in ('grid', 'list'):
+        view_mode = 'grid'
+
+    # 8. Active Filter Chips
+    active_chips = []
+    if active_category:
+        active_chips.append({
+            'type': 'category',
+            'label': f"Kategoriya: {active_category.name}",
+            'remove_key': 'category',
+        })
+    if search_query:
+        active_chips.append({
+            'type': 'q',
+            'label': f"Qidiruv: \"{search_query}\"",
+            'remove_key': 'q',
+        })
+    if min_price is not None or max_price is not None:
+        min_label = f"{min_price:,.0f}".replace(',', ' ') if min_price is not None else "0"
+        max_label = f"{max_price:,.0f}".replace(',', ' ') if max_price is not None else "∞"
+        active_chips.append({
+            'type': 'price',
+            'label': f"Narx: {min_label} - {max_label} so'm",
+            'remove_key': 'price',
+        })
+    if discount_filter:
+        disc_labels = {
+            '1': 'Chegirmali',
+            'only': 'Chegirmali',
+            'true': 'Chegirmali',
+            '10': '10%+ chegirma',
+            '20': '20%+ chegirma',
+            '50': '50%+ chegirma'
+        }
+        active_chips.append({
+            'type': 'discount',
+            'label': f"Chegirma: {disc_labels.get(discount_filter, discount_filter)}",
+            'remove_key': 'discount',
+        })
+    if stock_filter:
+        stock_labels = {
+            'in_stock': 'Mavjud mahsulotlar',
+            'low_stock': 'Kam qolgan (1-5 ta)',
+            'out_of_stock': 'Tugagan mahsulotlar'
+        }
+        if stock_filter in stock_labels:
+            active_chips.append({
+                'type': 'stock',
+                'label': f"Holat: {stock_labels[stock_filter]}",
+                'remove_key': 'stock',
+            })
+    if rating_filter:
+        active_chips.append({
+            'type': 'rating',
+            'label': f"Reyting: {rating_filter}+ yulduz",
+            'remove_key': 'rating',
+        })
+
+    # Global Price Range for sliders
+    price_aggregate = models.Product.objects.aggregate(min_p=Min('price'), max_p=Max('price'))
+    global_min_price = int(price_aggregate['min_p'] or 0)
+    global_max_price = int(price_aggregate['max_p'] or 2000000)
+
+    # Categories with count for sidebar
+    sidebar_categories = list(
+        models.Category.objects.filter(is_active=True)
+        .annotate(product_count=Count('product'))
+        .order_by('name')
+    )
+
+    products_qs = products_qs.select_related('category')
+    total_matching_products = products_qs.count()
     page_obj = paginate_queryset(request, products_qs, per_page=20)
 
     context = {
-        'categories': models.Category.objects.all(),
-        'top_categories': models.Category.objects.filter(is_active=True)[:7],
+        'categories': sidebar_categories,
+        'top_categories': sidebar_categories[:7],
         'products': page_obj.object_list,
         'page_obj': page_obj,
         'active_category': active_category.id if active_category else None,
         'active_category_name': active_category.name if active_category else None,
-        'total_products': products_qs.count(),
+        'total_products': total_matching_products,
         'search_query': search_query,
-        'query': query,
+        'min_price': min_price,
+        'max_price': max_price,
+        'min_price_raw': min_price_raw,
+        'max_price_raw': max_price_raw,
+        'global_min_price': global_min_price,
+        'global_max_price': global_max_price,
+        'discount_filter': discount_filter,
+        'stock_filter': stock_filter,
+        'rating_filter': rating_filter,
+        'sort': sort,
+        'view_mode': view_mode,
+        'active_chips': active_chips,
+        'active_chips_count': len(active_chips),
     }
     _attach_cart_wishlist_context(request, context)
     return context
