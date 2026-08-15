@@ -1103,6 +1103,135 @@ class AvatarAndProfileImageQATests(TestCase):
         self.assertEqual(self.user.last_name, 'Karimov')
 
 
+class CategoryAndFilterCountConsistencyTests(TestCase):
+    def setUp(self):
+        Category.objects.all().delete()
+        Product.objects.all().delete()
+
+        # Create categories: 2 active, 1 inactive
+        self.cat1 = Category.objects.create(name='Smartfonlar', is_active=True)
+        self.cat2 = Category.objects.create(name='Kiyimlar', is_active=True)
+        self.cat_inactive = Category.objects.create(name='Yashirin Kategoriya', is_active=False)
+
+        # Create products in cat1
+        self.p1 = Product.objects.create(
+            name='iPhone 15 Pro', category=self.cat1, price=Decimal('15000000.00'),
+            discount_price=Decimal('13500000.00'), discount_status=True, count=10
+        )
+        self.p2 = Product.objects.create(
+            name='Samsung S24 Ultra', category=self.cat1, price=Decimal('14000000.00'),
+            discount_price=Decimal('10000000.00'), discount_status=True, count=3 # low stock
+        )
+        self.p3 = Product.objects.create(
+            name='Redmi Note 13', category=self.cat1, price=Decimal('3000000.00'),
+            discount_status=False, count=0 # out of stock
+        )
+
+        # Create products in cat2
+        self.p4 = Product.objects.create(
+            name='Qishki Kurtka', category=self.cat2, price=Decimal('800000.00'),
+            discount_status=False, count=15
+        )
+
+        # Create product in inactive category
+        self.p_inactive = Product.objects.create(
+            name='Yashirin Mahsulot', category=self.cat_inactive, price=Decimal('500000.00'),
+            discount_status=False, count=5
+        )
+
+    # 1. Category count accuracy in /categories/ page
+    def test_categories_page_counts(self):
+        response = self.client.get(reverse('categories'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['total_categories'], 2) # only active categories
+        self.assertEqual(response.context['total_products'], 4) # 4 products in active categories
+        self.assertContains(response, 'Smartfonlar')
+        self.assertContains(response, 'Kiyimlar')
+        self.assertNotContains(response, 'Yashirin Kategoriya')
+
+    # 2. Inactive category excluded from public listing & search
+    def test_inactive_category_excluded_from_public_listing(self):
+        response = self.client.get(reverse('all_products'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['total_products'], 4)
+        self.assertNotContains(response, 'Yashirin Mahsulot')
+
+        # Direct access to inactive category should return 404
+        resp_inactive = self.client.get(reverse('category_filter', kwargs={'category_id': self.cat_inactive.id}))
+        self.assertEqual(resp_inactive.status_code, 404)
+
+    # 3. Category Filter Result Count
+    def test_category_filter_count(self):
+        response = self.client.get(reverse('category_filter', kwargs={'category_id': self.cat1.id}))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['total_products'], 3)
+        self.assertContains(response, 'iPhone 15 Pro')
+        self.assertNotContains(response, 'Qishki Kurtka')
+
+    # 4. Search + Category Intersection Count
+    def test_search_plus_category_count(self):
+        response = self.client.get(reverse('all_products'), {'q': 'iPhone', 'category': self.cat1.id})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['total_products'], 1)
+        self.assertContains(response, 'iPhone 15 Pro')
+        self.assertNotContains(response, 'Samsung S24 Ultra')
+
+    # 5. Discount Filter Count
+    def test_discount_filter_count(self):
+        # All discounted products (p1, p2)
+        response = self.client.get(reverse('all_products'), {'discount': '1'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['total_products'], 2)
+
+        # 20%+ discount (p2: 14m -> 10m is 28.5% discount)
+        response_20 = self.client.get(reverse('all_products'), {'discount': '20'})
+        self.assertEqual(response_20.status_code, 200)
+        self.assertEqual(response_20.context['total_products'], 1)
+        self.assertContains(response_20, 'Samsung S24 Ultra')
+
+    # 6. Stock Filter Counts (in_stock, low_stock, out_of_stock)
+    def test_stock_filter_counts(self):
+        # In stock: count > 0 (p1=10, p2=3, p4=15 => 3 items)
+        resp_in = self.client.get(reverse('all_products'), {'stock': 'in_stock'})
+        self.assertEqual(resp_in.status_code, 200)
+        self.assertEqual(resp_in.context['total_products'], 3)
+
+        # Low stock: 0 < count <= 5 (p2=3 => 1 item)
+        resp_low = self.client.get(reverse('all_products'), {'stock': 'low_stock'})
+        self.assertEqual(resp_low.status_code, 200)
+        self.assertEqual(resp_low.context['total_products'], 1)
+        self.assertContains(resp_low, 'Samsung S24 Ultra')
+
+        # Out of stock: count <= 0 (p3=0 => 1 item)
+        resp_out = self.client.get(reverse('all_products'), {'stock': 'out_of_stock'})
+        self.assertEqual(resp_out.status_code, 200)
+        self.assertEqual(resp_out.context['total_products'], 1)
+        self.assertContains(resp_out, 'Redmi Note 13')
+
+    # 7. Zero Result Empty State Consistency
+    def test_zero_result_empty_state(self):
+        response = self.client.get(reverse('all_products'), {'q': 'MavjudBolmaganQidiruv12345'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['total_products'], 0)
+        self.assertContains(response, 'Topildi: <strong class="text-primary">0 ta</strong>')
+        self.assertContains(response, 'mos mahsulot topilmadi')
+
+    # 8. Live Search active category filter
+    def test_live_search_consistency(self):
+        response = self.client.get(reverse('live_search'), {'q': 'iPhone'})
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(len(data['results']), 1)
+        self.assertEqual(data['results'][0]['name'], 'iPhone 15 Pro')
+
+        # Inactive category product should NOT appear in live search
+        resp_hidden = self.client.get(reverse('live_search'), {'q': 'Yashirin'})
+        self.assertEqual(resp_hidden.status_code, 200)
+        data_hidden = resp_hidden.json()
+        self.assertEqual(len(data_hidden['results']), 0)
+
+
+
 
 
 

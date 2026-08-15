@@ -8,7 +8,7 @@ def site_settings(request):
     # Query only top 9 active categories for the header dropdown to prevent viewport clutter
     nav_categories = (
         Category.objects.filter(is_active=True)
-        .annotate(active_products_count=Count('product', filter=Q(product__count__gte=0)))
+        .annotate(active_products_count=Count('product'))
         .order_by('-active_products_count', 'name')[:9]
     )
     

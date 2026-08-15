@@ -132,7 +132,7 @@ def product_detail(request, code):
     related_products_count = related_base_qs.count()
     related_products = related_base_qs[:10]
     
-    similar_category = models.Category.objects.exclude(id=product.category.id).order_by('?').first()
+    similar_category = models.Category.objects.filter(is_active=True).exclude(id=product.category.id).order_by('?').first()
     similar_category_products = models.Product.objects.filter(category=similar_category)[:10] if similar_category else []
 
     context = {
@@ -398,8 +398,8 @@ def _build_catalog_context(request, products_qs, active_category=None):
             'remove_key': 'rating',
         })
 
-    # Global Price Range for sliders
-    price_aggregate = models.Product.objects.aggregate(min_p=Min('price'), max_p=Max('price'))
+    # Global Price Range for sliders (active categories only)
+    price_aggregate = models.Product.objects.filter(category__is_active=True).aggregate(min_p=Min('price'), max_p=Max('price'))
     global_min_price = int(price_aggregate['min_p'] or 0)
     global_max_price = int(price_aggregate['max_p'] or 2000000)
 
@@ -442,14 +442,14 @@ def _build_catalog_context(request, products_qs, active_category=None):
 
 
 def category_filter(request, category_id):
-    active_category = get_object_or_404(models.Category, id=category_id)
+    active_category = get_object_or_404(models.Category, id=category_id, is_active=True)
     products_qs = models.Product.objects.filter(category=active_category)
     context = _build_catalog_context(request, products_qs, active_category=active_category)
     return render(request, 'front/category_filter.html', context)
 
 
 def all_products(request):
-    products_qs = models.Product.objects.all()
+    products_qs = models.Product.objects.filter(category__is_active=True)
     context = _build_catalog_context(request, products_qs)
     return render(request, 'front/category_filter.html', context)
 
@@ -463,7 +463,7 @@ def categories_page(request):
     categories_qs = (
         models.Category.objects.filter(is_active=True)
         .annotate(
-            product_count=Count('product', filter=Q(product__count__gte=0))
+            product_count=Count('product')
         )
         .order_by('-product_count', 'name')
     )
@@ -541,7 +541,7 @@ def categories_page(request):
             'categories': other_cats,
         })
 
-    total_products = sum(cat.product_count for cat in categories_list)
+    total_products = models.Product.objects.filter(category__is_active=True).count()
 
     return render(request, 'front/categories.html', {
         'categories': categories_list,
@@ -1408,7 +1408,7 @@ def live_search(request):
         return JsonResponse({'results': []})
 
     from django.db.models import Q
-    products = models.Product.objects.filter(
+    products = models.Product.objects.filter(category__is_active=True).filter(
         Q(name__icontains=q) | Q(category__name__icontains=q) | Q(code__icontains=q)
     ).select_related('category').distinct()[:8]
 

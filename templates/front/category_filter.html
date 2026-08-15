@@ -686,7 +686,7 @@
                                     <label class="custom-filter-option w-100" title="Barcha kategoriyalar">
                                         <input type="radio" name="category" value="" {% if not active_category %}checked{% endif %}>
                                         <span class="flex-grow-1 filter-cat-text">Barcha kategoriyalar</span>
-                                        <span class="filter-cat-badge">{{ total_categories_count|default:"22" }} ta</span>
+                                        <span class="filter-cat-badge">{{ total_categories_count }} ta</span>
                                     </label>
                                 </li>
                                 {% for cat in categories %}
