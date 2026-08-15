@@ -154,7 +154,7 @@
           <li class="dropdown"><a href="#" data-toggle="dropdown"
               class="nav-link dropdown-toggle nav-link-lg nav-link-user">
               <img alt="image" src="{% if request.user.photo %}{{ request.user.photo.url }}{% else %}{% static 'assets2/assets/img/user.png' %}{% endif %}"
-                class="user-img-radious-style"> <span class="d-sm-none d-lg-inline-block"></span></a>
+                class="user-img-radious-style"> <span class="d-sm-none d-lg-inline-block font-weight-600 text-white ml-1">{{ request.user.username|default:"Admin" }}</span></a>
             <div class="dropdown-menu dropdown-menu-right pullDown">
               <div class="dropdown-title">Salom, {{ request.user.username }}</div>
               <a href="{% url 'profile' %}" class="dropdown-item has-icon"> <i class="far fa-user"></i> Sayt profili

@@ -555,9 +555,7 @@
   // ========================== Increment & Decrement Js End =====================
 
   // ========================== Cart Item Delete Js Start =====================
-  $('.delete-btn').on('click', function() {
-    $(this).closest('tr').addClass('d-none')
-  }); 
+  // Real cart deletion is handled via authenticated POST requests with rollback
   // ========================== Cart Item Delete Js End =====================
 
   // ========================== Password Show Hide Js Start =====================

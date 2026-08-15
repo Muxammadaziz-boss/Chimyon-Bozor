@@ -575,6 +575,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var rowControls = row ? row.querySelectorAll('button, input') : [];
         rowControls.forEach(function(el) { el.disabled = true; });
 
+        var previousQty = qtyInput ? (qtyInput.getAttribute('data-last-valid-qty') || qtyInput.defaultValue || 1) : 1;
         var url = "{% url 'update_cart_quantity' 'PRODUCT_PLACEHOLDER' %}".replace('PRODUCT_PLACEHOLDER', productCode);
 
         fetch(url, {
@@ -589,6 +590,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!response.ok && response.status === 401) {
                 window.location.href = '/login/';
                 return;
+            }
+            if (!response.ok) {
+                throw new Error('Server returned HTTP ' + response.status);
             }
             return response.json();
         })
@@ -609,17 +613,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 if (qtyInput && data.count !== undefined) {
                     qtyInput.value = data.count;
+                    qtyInput.setAttribute('data-last-valid-qty', data.count);
                 }
                 if (data.stock_warning) {
                     showToast(data.stock_warning, true);
                 }
                 updateCartSummary(data.cart_total, data.cart_count);
             } else if (data.status === 'error') {
+                if (qtyInput) {
+                    qtyInput.value = previousQty;
+                }
                 showToast(data.message || "Xatolik yuz berdi", true);
             }
         })
         .catch(function(error) {
             console.error('Cart quantity update error:', error);
+            if (qtyInput) {
+                qtyInput.value = previousQty;
+            }
             showToast("Server bilan bog'lanishda xatolik", true);
         })
         .finally(function() {

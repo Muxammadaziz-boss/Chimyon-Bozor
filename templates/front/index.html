@@ -568,16 +568,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         this.innerHTML = originalText;
 
                         if (!data.has_more) {
-                            this.innerHTML = 'Barcha mahsulotlar ko\'rsatildi <i class="fas fa-check ms-1"></i>';
+                            this.innerHTML = 'Barcha mahsulotlar ko\'rsatildi <i class="fas fa-check ms-1 text-success"></i>';
                             this.disabled = true;
                             this.classList.remove('btn-outline-main');
-                            this.classList.add('btn-light', 'text-muted');
+                            this.classList.add('btn-light', 'text-dark', 'fw-600', 'border');
                         }
                     } else {
-                        this.innerHTML = 'Barcha mahsulotlar ko\'rsatildi <i class="fas fa-check ms-1"></i>';
+                        this.innerHTML = 'Barcha mahsulotlar ko\'rsatildi <i class="fas fa-check ms-1 text-success"></i>';
                         this.disabled = true;
                         this.classList.remove('btn-outline-main');
-                        this.classList.add('btn-light', 'text-muted');
+                        this.classList.add('btn-light', 'text-dark', 'fw-600', 'border');
                     }
                 })
                 .catch(err => {
