@@ -13,7 +13,7 @@ from django.http import HttpRequest, JsonResponse
 from django.utils import timezone
 
 from main import models
-from .base import BasePaymentProvider
+from .base import BasePaymentProvider, PaymentConfigurationError
 
 logger = logging.getLogger(__name__)
 
@@ -22,24 +22,49 @@ class UzumPaymentProvider(BasePaymentProvider):
     provider_name: str = "uzum"
 
     def get_merchant_id(self) -> str:
-        return getattr(settings, 'UZUM_MERCHANT_ID', 'test_uzum_merchant_id')
+        return str(getattr(settings, 'UZUM_MERCHANT_ID', '')).strip()
 
     def get_secret_key(self) -> str:
-        return getattr(settings, 'UZUM_SECRET_KEY', 'test_uzum_secret_key')
+        return str(getattr(settings, 'UZUM_SECRET_KEY', '')).strip()
+
+    def is_configured(self) -> bool:
+        m_id = self.get_merchant_id().lower()
+        s_key = self.get_secret_key().lower()
+        if not m_id or not s_key:
+            return False
+        if m_id in self.PLACEHOLDER_CREDENTIALS or s_key in self.PLACEHOLDER_CREDENTIALS:
+            return False
+        return True
+
+    def validate_configuration(self) -> None:
+        if not self.is_configured():
+            raise PaymentConfigurationError(
+                "Uzum to'lov tizimi sozlamalari (UZUM_MERCHANT_ID, UZUM_SECRET_KEY) "
+                "to'liq kiritilmagan yoki test holatida."
+            )
 
     def generate_checkout_url(self, payment, request: Optional[HttpRequest] = None) -> str:
         """
         Uzum Bank / Uzum Pay Web Checkout Form URL.
         """
+        self.validate_configuration()
+
+        if not payment or payment.amount <= Decimal('0.00'):
+            raise ValueError("To'lov summasi 0 dan katta bo'lishi shart.")
+
         merchant_id = self.get_merchant_id()
         amount = f"{payment.amount:.2f}"
-        return_url = ""
         if request:
             return_url = request.build_absolute_uri(f"/payment/success/{payment.order.code}/")
+            if not getattr(settings, 'DEBUG', False) and return_url.startswith('http://'):
+                return_url = 'https://' + return_url[7:]
+        else:
+            site_url = getattr(settings, 'SITE_URL', 'https://chimyon-bozor.uz').rstrip('/')
+            return_url = f"{site_url}/payment/success/{payment.order.code}/"
 
         params = {
             'merchantId': merchant_id,
-            'orderId': payment.code,
+            'orderId': str(payment.code),
             'amount': amount,
             'currency': 'UZS',
             'returnUrl': return_url,

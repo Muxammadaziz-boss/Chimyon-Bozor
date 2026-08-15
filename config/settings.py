@@ -236,14 +236,19 @@ if not DEBUG:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_AGE = config('SESSION_COOKIE_AGE', default=86400 * 7, cast=int)
 
-# Payment Gateway Settings
-CLICK_SERVICE_ID = config('CLICK_SERVICE_ID', default='test_service_id')
-CLICK_MERCHANT_ID = config('CLICK_MERCHANT_ID', default='test_merchant_id')
-CLICK_SECRET_KEY = config('CLICK_SECRET_KEY', default='test_click_secret')
+# Payment Gateway Settings (Read securely from environment variables)
+CLICK_SERVICE_ID = config('CLICK_SERVICE_ID', default='')
+CLICK_MERCHANT_ID = config('CLICK_MERCHANT_ID', default='')
+CLICK_SECRET_KEY = config('CLICK_SECRET_KEY', default='')
+CLICK_MERCHANT_USER_ID = config('CLICK_MERCHANT_USER_ID', default='')
 
-PAYME_MERCHANT_ID = config('PAYME_MERCHANT_ID', default='test_payme_merchant_id')
-PAYME_SECRET_KEY = config('PAYME_SECRET_KEY', default='test_payme_secret')
+PAYME_MERCHANT_ID = config('PAYME_MERCHANT_ID', default='')
+PAYME_SECRET_KEY = config('PAYME_SECRET_KEY', default='')
 
-UZUM_MERCHANT_ID = config('UZUM_MERCHANT_ID', default='test_uzum_merchant_id')
-UZUM_SECRET_KEY = config('UZUM_SECRET_KEY', default='test_uzum_secret')
+UZUM_MERCHANT_ID = config('UZUM_MERCHANT_ID', default='')
+UZUM_SECRET_KEY = config('UZUM_SECRET_KEY', default='')
 UZUM_API_URL = config('UZUM_API_URL', default='https://pay.uzumbank.uz')
+
+# Site Domain Settings
+SITE_URL = config('SITE_URL', default='https://chimyon-bozor.uz')
+DEFAULT_DOMAIN = config('DEFAULT_DOMAIN', default='chimyon-bozor.uz')

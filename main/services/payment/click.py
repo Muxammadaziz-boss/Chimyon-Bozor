@@ -11,7 +11,7 @@ from django.http import HttpRequest, JsonResponse
 from django.utils import timezone
 
 from main import models
-from .base import BasePaymentProvider
+from .base import BasePaymentProvider, PaymentConfigurationError
 
 logger = logging.getLogger(__name__)
 
@@ -36,38 +36,95 @@ class ClickPaymentProvider(BasePaymentProvider):
     ERROR_TRANSACTION_CANCELLED = -9
 
     def get_service_id(self) -> str:
-        return getattr(settings, 'CLICK_SERVICE_ID', 'test_service_id')
+        return str(getattr(settings, 'CLICK_SERVICE_ID', '')).strip()
 
     def get_merchant_id(self) -> str:
-        return getattr(settings, 'CLICK_MERCHANT_ID', 'test_merchant_id')
+        return str(getattr(settings, 'CLICK_MERCHANT_ID', '')).strip()
 
     def get_secret_key(self) -> str:
-        return getattr(settings, 'CLICK_SECRET_KEY', 'test_secret_key')
+        return str(getattr(settings, 'CLICK_SECRET_KEY', '')).strip()
+
+    def get_merchant_user_id(self) -> str:
+        return str(getattr(settings, 'CLICK_MERCHANT_USER_ID', '')).strip()
+
+    def is_configured(self) -> bool:
+        """
+        Click integratsiyasi uchun zarur bo'lgan barcha credentiallar mavjudligi
+        va placeholder emasligini tekshiradi.
+        """
+        service_id = self.get_service_id().lower()
+        merchant_id = self.get_merchant_id().lower()
+        secret_key = self.get_secret_key().lower()
+
+        if not service_id or not merchant_id or not secret_key:
+            return False
+
+        if (service_id in self.PLACEHOLDER_CREDENTIALS or
+            merchant_id in self.PLACEHOLDER_CREDENTIALS or
+            secret_key in self.PLACEHOLDER_CREDENTIALS):
+            return False
+
+        return True
+
+    def validate_configuration(self) -> None:
+        """
+        Click sozlamalari to'liq va to'g'ri ekanligini tasdiqlaydi.
+        Aks holda PaymentConfigurationError chiqaradi.
+        """
+        if not self.is_configured():
+            raise PaymentConfigurationError(
+                "Click to'lov tizimi sozlamalari (CLICK_SERVICE_ID, CLICK_MERCHANT_ID, CLICK_SECRET_KEY) "
+                "to'liq kiritilmagan yoki test/placeholder holatida. "
+                "Iltimos, server muhitida (Environment variables) haqiqiy merchant parametrlarini sozlang."
+            )
 
     def generate_checkout_url(self, payment, request: Optional[HttpRequest] = None) -> str:
         """
         Click Checkout Redirect URL yaratish (Click Payment Form URL).
+        Faqat haqiqiy va to'g'ri credentiallar mavjud bo'lganda ishlaydi.
         """
+        self.validate_configuration()
+
+        if not payment or payment.amount <= Decimal('0.00'):
+            raise ValueError("To'lov summasi 0 dan katta bo'lishi shart.")
+
         service_id = self.get_service_id()
         merchant_id = self.get_merchant_id()
         amount = f"{payment.amount:.2f}"
-        return_url = ""
+
+        # Production-grade HTTPS Return URL yaratish
         if request:
             return_url = request.build_absolute_uri(f"/payment/success/{payment.order.code}/")
+            if not getattr(settings, 'DEBUG', False) and return_url.startswith('http://'):
+                return_url = 'https://' + return_url[7:]
+        else:
+            site_url = getattr(settings, 'SITE_URL', 'https://chimyon-bozor.uz').rstrip('/')
+            return_url = f"{site_url}/payment/success/{payment.order.code}/"
 
         params = {
             'service_id': service_id,
             'merchant_id': merchant_id,
             'amount': amount,
-            'transaction_param': payment.code,
+            'transaction_param': str(payment.code),
             'return_url': return_url,
         }
-        return f"https://my.click.uz/services/pay?{urlencode(params)}"
+
+        merchant_user_id = self.get_merchant_user_id()
+        if merchant_user_id and merchant_user_id.lower() not in self.PLACEHOLDER_CREDENTIALS:
+            params['merchant_user_id'] = merchant_user_id
+
+        checkout_url = f"https://my.click.uz/services/pay?{urlencode(params)}"
+        logger.info("Generated Click checkout URL for payment #%s: %s", payment.code, checkout_url)
+        return checkout_url
 
     def verify_signature(self, data: Dict[str, Any], is_complete: bool = False) -> bool:
         """
         Click imzosi (sign_string) to'g'riligini MD5 orqali tekshirish.
         """
+        if not self.is_configured():
+            logger.warning("Click verify_signature failed: Provider is not properly configured with secret key.")
+            return False
+
         secret_key = self.get_secret_key()
         click_trans_id = str(data.get('click_trans_id', ''))
         service_id = str(data.get('service_id', ''))
@@ -235,7 +292,7 @@ class ClickPaymentProvider(BasePaymentProvider):
             models.AuditLog.objects.create(
                 user=order.user,
                 action="PAYMENT_SUCCESS_CLICK",
-                details=f"Buyurtma #{order.code[:8]} uchun Click to'lovi: {locked_payment.amount} UZS ({locked_payment.get_purpose_display()}). Tranzaksiya #{click_trans_id}"
+                details=f"Buyurtma #{str(order.code)[:8]} uchun Click to'lovi: {locked_payment.amount} UZS ({locked_payment.get_purpose_display()}). Tranzaksiya #{click_trans_id}"
             )
 
         logger.info("Click payment #%s completed successfully.", payment.code)

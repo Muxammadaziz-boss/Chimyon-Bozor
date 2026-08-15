@@ -3,7 +3,7 @@ import hashlib
 import json
 from decimal import Decimal
 
-from django.test import TestCase, Client
+from django.test import TestCase, Client, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from django.conf import settings
@@ -12,6 +12,15 @@ from main import models
 from main.services.payment import PaymentManager
 
 
+@override_settings(
+    CLICK_SERVICE_ID='54321',
+    CLICK_MERCHANT_ID='12345',
+    CLICK_SECRET_KEY='click_sec_123',
+    PAYME_MERCHANT_ID='payme_123',
+    PAYME_SECRET_KEY='payme_sec_123',
+    UZUM_MERCHANT_ID='uzum_123',
+    UZUM_SECRET_KEY='uzum_sec_123'
+)
 class PaymentIntegrationTestCase(TestCase):
     def setUp(self):
         self.client = Client()

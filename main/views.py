@@ -18,6 +18,7 @@ from .utils import paginate_queryset
 from .sms_service import send_sms_code
 from .validators import validate_image_file
 from .services.payment import PaymentManager
+from .services.payment.base import PaymentConfigurationError
 from django.contrib.auth import authenticate, login, logout
 
 logger = logging.getLogger(__name__)
@@ -759,10 +760,28 @@ def checkout(request):
             else:
                 return redirect(checkout_url)
 
+        except PaymentConfigurationError as e:
+            logger.warning("Checkout payment configuration error: %s", e)
+            messages.error(request, f"{provider.capitalize()} to'lov tizimi sozlamalari hozirda to'liq o'rnatilmagan. Iltimos, ma'muriyatga murojaat qiling yoki boshqa to'lov usulidan foydalaning.")
+            return render(request, 'front/checkout.html', {
+                'cart': cart,
+                'cart_products': cart_products,
+                'cart_total': financials['grand_total'],
+                'cart_count': cart_count,
+                'financials': financials,
+                'selected_provider': provider,
+            })
         except Exception as e:
             logger.error("Checkout payment creation error: %s", e, exc_info=True)
             messages.error(request, f"To'lovni yaratishda xatolik yuz berdi: {str(e)}")
-            return redirect('checkout')
+            return render(request, 'front/checkout.html', {
+                'cart': cart,
+                'cart_products': cart_products,
+                'cart_total': financials['grand_total'],
+                'cart_count': cart_count,
+                'financials': financials,
+                'selected_provider': provider,
+            })
 
     # GET request
     default_provider = 'click' if financials['prepayment_percent'] > 0 else 'cash'
@@ -839,6 +858,9 @@ def retry_payment(request, code):
             request=request
         )
         return redirect(checkout_url)
+    except PaymentConfigurationError as e:
+        messages.error(request, f"{provider.capitalize()} to'lov tizimi sozlanmagan. Iltimos, boshqa to'lov turidan foydalaning.")
+        return redirect('order_detail', code=order.code)
     except Exception as e:
         messages.error(request, f"To'lovni qayta boshlashda xatolik: {str(e)}")
         return redirect('order_detail', code=order.code)
@@ -868,6 +890,9 @@ def pay_balance(request, code):
             request=request
         )
         return redirect(checkout_url)
+    except PaymentConfigurationError as e:
+        messages.error(request, f"{provider.capitalize()} to'lov tizimi sozlanmagan. Iltimos, kuryer yetkazganda naqd to'lang yoki boshqa tizimni tanlang.")
+        return redirect('order_detail', code=order.code)
     except Exception as e:
         messages.error(request, f"Qoldiq to'lovni boshlashda xatolik: {str(e)}")
         return redirect('order_detail', code=order.code)

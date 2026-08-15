@@ -8,7 +8,7 @@ from django.http import HttpRequest, JsonResponse
 from django.utils import timezone
 
 from main import models
-from .base import BasePaymentProvider
+from .base import BasePaymentProvider, PaymentConfigurationError, PaymentError
 from .click import ClickPaymentProvider
 from .payme import PaymePaymentProvider
 from .uzum import UzumPaymentProvider
@@ -38,52 +38,31 @@ class PaymentManager:
         """
         Buyurtma uchun server tomonida aniq Decimal hisob-kitob.
         """
-        cart_products = order.cart_products.filter(product__isnull=False)
-        subtotal = Decimal('0.00')
-        for item in cart_products:
-            unit_price = Decimal(str(item.product.active_price))
-            subtotal += unit_price * Decimal(str(item.count))
+        grand_total = order.grand_total
+        paid = order.paid_amount
+        remaining = order.remaining_amount
+        financial_status = order.financial_status
 
-        discount = Decimal('0.00')
-        delivery_fee = Decimal('0.00')
-        grand_total = max(Decimal('0.00'), subtotal - discount + delivery_fee)
-
-        settings_obj = models.SiteSettings.objects.first()
-        prepayment_percent = 30
+        settings_obj = models.SiteSettings.get_settings()
+        prepayment_percent = 0
         if settings_obj and settings_obj.prepayment_enabled:
             prepayment_percent = int(settings_obj.prepayment_percent)
-        elif settings_obj and not settings_obj.prepayment_enabled:
-            prepayment_percent = 0
+            if prepayment_percent not in (0, 30, 50, 100):
+                prepayment_percent = 30
+        elif order.prepayment_percent:
+            prepayment_percent = int(order.prepayment_percent)
 
-        # Calculate exact prepayment amount
-        if prepayment_percent == 0:
-            prepayment_amount = Decimal('0.00')
-        elif prepayment_percent >= 100:
-            prepayment_amount = grand_total
-        else:
-            prepayment_amount = (grand_total * Decimal(str(prepayment_percent)) / Decimal('100')).quantize(Decimal('1.00'))
-
-        paid_amount = order.paid_amount
-        remaining_amount = max(Decimal('0.00'), grand_total - paid_amount)
-
-        # Financial Status resolution
-        if grand_total > 0 and paid_amount >= grand_total:
-            financial_status = models.Cart.FinancialStatus.FULLY_PAID
-        elif paid_amount > 0:
-            financial_status = models.Cart.FinancialStatus.PARTIALLY_PAID
-        else:
-            financial_status = models.Cart.FinancialStatus.UNPAID
+        prepayment_amount = (grand_total * Decimal(str(prepayment_percent)) / Decimal('100')).quantize(Decimal('0.01'))
 
         return {
-            'subtotal': subtotal,
-            'discount': discount,
-            'delivery_fee': delivery_fee,
             'grand_total': grand_total,
+            'paid_amount': paid,
+            'remaining_amount': remaining,
             'prepayment_percent': prepayment_percent,
             'prepayment_amount': prepayment_amount,
-            'paid_amount': paid_amount,
-            'remaining_amount': remaining_amount,
             'financial_status': financial_status,
+            'is_fully_paid': order.is_fully_paid,
+            'is_partially_paid': order.is_partially_paid,
         }
 
     @classmethod
@@ -92,29 +71,33 @@ class PaymentManager:
         order: models.Cart,
         provider_name: str,
         purpose: Optional[str] = None,
-        custom_amount: Optional[Decimal] = None,
-        payment_method: str = 'card',
+        payment_method: str = "card",
         request: Optional[HttpRequest] = None
     ) -> Tuple[models.Payment, str]:
         """
-        Buyurtma uchun yangi to'lov yozuvi (Payment) yaratadi va to'lov havolasini (checkout URL) qaytaradi.
-        Partial Prepayment va Remaining Balance to'lovlarini to'liq qo'llab-quvvatlaydi.
+        Buyurtma uchun yangi to'lov (avans, qoldiq yoki to'liq) yaratadi.
         """
         provider_key = provider_name.lower()
         provider = cls.get_provider(provider_key)
         if not provider:
             raise ValueError(f"Noma'lum to'lov provayderi: {provider_name}")
 
+        # Provayder sozlamalari (API keys, merchant ID) to'g'riligini oldindan tekshirish
+        provider.validate_configuration()
+
         financials = cls.calculate_order_financials(order)
         grand_total = financials['grand_total']
+        remaining = financials['remaining_amount']
+        prepayment_percent = financials['prepayment_percent']
+
         if grand_total <= 0:
-            raise ValueError("Jami buyurtma summasi 0 dan katta bo'lishi kerak")
+            raise ValueError("Buyurtma summasi 0 dan katta bo'lishi kerak")
 
         # Determine Purpose & Amount
         if purpose == models.Payment.Purpose.BALANCE:
             # Customer paying remaining balance
             payment_purpose = models.Payment.Purpose.BALANCE
-            amount = custom_amount if custom_amount is not None else order.remaining_amount
+            amount = remaining
             if amount <= 0:
                 raise ValueError("To'lash uchun qoldiq summa mavjud emas (Buyurtma to'liq to'langan).")
             if amount > order.remaining_amount:

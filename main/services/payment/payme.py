@@ -11,7 +11,7 @@ from django.http import HttpRequest, JsonResponse
 from django.utils import timezone
 
 from main import models
-from .base import BasePaymentProvider
+from .base import BasePaymentProvider, PaymentConfigurationError
 
 logger = logging.getLogger(__name__)
 
@@ -30,10 +30,26 @@ class PaymePaymentProvider(BasePaymentProvider):
     ERROR_TRANSACTION_NOT_FOUND = -31003
 
     def get_merchant_id(self) -> str:
-        return getattr(settings, 'PAYME_MERCHANT_ID', 'test_payme_merchant_id')
+        return str(getattr(settings, 'PAYME_MERCHANT_ID', '')).strip()
 
     def get_secret_key(self) -> str:
-        return getattr(settings, 'PAYME_SECRET_KEY', 'test_payme_secret_key')
+        return str(getattr(settings, 'PAYME_SECRET_KEY', '')).strip()
+
+    def is_configured(self) -> bool:
+        m_id = self.get_merchant_id().lower()
+        s_key = self.get_secret_key().lower()
+        if not m_id or not s_key:
+            return False
+        if m_id in self.PLACEHOLDER_CREDENTIALS or s_key in self.PLACEHOLDER_CREDENTIALS:
+            return False
+        return True
+
+    def validate_configuration(self) -> None:
+        if not self.is_configured():
+            raise PaymentConfigurationError(
+                "Payme to'lov tizimi sozlamalari (PAYME_MERCHANT_ID, PAYME_SECRET_KEY) "
+                "to'liq kiritilmagan yoki test holatida."
+            )
 
     def generate_checkout_url(self, payment, request: Optional[HttpRequest] = None) -> str:
         """
@@ -41,6 +57,11 @@ class PaymePaymentProvider(BasePaymentProvider):
         m={merchant_id};ac.order_id={payment.code};a={amount_in_tiyin}
         encoded in base64.
         """
+        self.validate_configuration()
+
+        if not payment or payment.amount <= Decimal('0.00'):
+            raise ValueError("To'lov summasi 0 dan katta bo'lishi shart.")
+
         merchant_id = self.get_merchant_id()
         amount_tiyin = int(payment.amount * 100)
         params = f"m={merchant_id};ac.order_id={payment.code};a={amount_tiyin}"

@@ -1,6 +1,6 @@
 import json
 from decimal import Decimal
-from django.test import TestCase, Client, RequestFactory
+from django.test import TestCase, Client, RequestFactory, override_settings
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.urls import reverse
@@ -11,6 +11,15 @@ from main.services.payment import PaymentManager
 User = get_user_model()
 
 
+@override_settings(
+    CLICK_SERVICE_ID='54321',
+    CLICK_MERCHANT_ID='12345',
+    CLICK_SECRET_KEY='click_sec_123',
+    PAYME_MERCHANT_ID='payme_123',
+    PAYME_SECRET_KEY='payme_sec_123',
+    UZUM_MERCHANT_ID='uzum_123',
+    UZUM_SECRET_KEY='uzum_sec_123'
+)
 class PartialPrepaymentAndBalanceTests(TestCase):
     def setUp(self):
         self.client = Client()

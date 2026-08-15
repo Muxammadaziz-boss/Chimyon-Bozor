@@ -280,6 +280,13 @@ class SiteSettings(models.Model):
     allow_cash_balance = models.BooleanField(default=True, verbose_name="Yetkazilganda naqd qoldiq to'loviga ruxsat")
     allow_online_balance_payment = models.BooleanField(default=True, verbose_name="Qoldiqni onlayn to'lashga ruxsat")
 
+    @classmethod
+    def get_settings(cls):
+        settings_obj = cls.objects.first()
+        if not settings_obj:
+            settings_obj = cls.objects.create(site_name="Chimyon-bozor")
+        return settings_obj
+
     def __str__(self):
         return self.site_name
 
