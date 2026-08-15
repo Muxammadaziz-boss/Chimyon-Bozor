@@ -1393,6 +1393,103 @@
             }, 3800);
         };
 
+        // --- Chimyon-Bozor Premium Custom Modal System ---
+        window.showConfirmModal = function(options) {
+            return new Promise((resolve) => {
+                const title = options.title || 'Tasdiqlash';
+                const body = options.body || 'Ushbu amalni bajarishni tasdiqlaysizmi?';
+                const confirmText = options.confirmText || 'Davom etish';
+                const cancelText = options.cancelText || 'Bekor qilish';
+                const type = options.type || 'confirm'; // 'confirm', 'warning', 'danger', 'success'
+
+                let iconHtml = '<div style="width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,rgba(124,58,237,0.12),rgba(236,72,153,0.12));color:#7C3AED;font-size:24px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px;"><i class="fas fa-question"></i></div>';
+                let confirmBtnBg = 'linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%)';
+                
+                if (type === 'danger' || type === 'error') {
+                    iconHtml = '<div style="width:58px;height:58px;border-radius:50%;background:rgba(239,68,68,0.12);color:#EF4444;font-size:24px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px;"><i class="fas fa-exclamation-triangle"></i></div>';
+                    confirmBtnBg = 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)';
+                } else if (type === 'success') {
+                    iconHtml = '<div style="width:58px;height:58px;border-radius:50%;background:rgba(34,197,94,0.12);color:#22C55E;font-size:24px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px;"><i class="fas fa-check"></i></div>';
+                    confirmBtnBg = 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)';
+                }
+
+                const modalBackdrop = document.createElement('div');
+                modalBackdrop.className = 'custom-modal-backdrop';
+                modalBackdrop.setAttribute('role', 'dialog');
+                modalBackdrop.setAttribute('aria-modal', 'true');
+                modalBackdrop.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:9999999;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;transition:opacity 0.22s ease;';
+
+                modalBackdrop.innerHTML = `
+                    <div class="custom-modal-card" style="background:#ffffff;border-radius:24px;padding:32px 28px 24px;max-width:440px;width:100%;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);transform:scale(0.92) translateY(12px);transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);text-align:center;position:relative;">
+                        ${iconHtml}
+                        <h4 style="font-size:20px;font-weight:700;color:#111827;margin-bottom:8px;line-height:1.3;">${title}</h4>
+                        <p style="font-size:14.5px;color:#4B5563;line-height:1.55;margin-bottom:26px;">${body}</p>
+                        <div style="display:flex;gap:12px;">
+                            ${options.hideCancel ? '' : `<button type="button" id="customModalCancelBtn" style="flex:1;height:48px;border-radius:14px;border:1.5px solid #E5E7EB;background:#F9FAFB;color:#374151;font-weight:600;font-size:15px;cursor:pointer;transition:all 0.2s;">${cancelText}</button>`}
+                            <button type="button" id="customModalConfirmBtn" style="flex:1;height:48px;border-radius:14px;border:0;background:${confirmBtnBg};color:#ffffff;font-weight:700;font-size:15px;box-shadow:0 4px 14px rgba(124,58,237,0.3);cursor:pointer;transition:all 0.2s;">${confirmText}</button>
+                        </div>
+                    </div>
+                `;
+
+                document.body.appendChild(modalBackdrop);
+                document.body.style.overflow = 'hidden';
+
+                // Trigger animation
+                requestAnimationFrame(() => {
+                    modalBackdrop.style.opacity = '1';
+                    const card = modalBackdrop.querySelector('.custom-modal-card');
+                    if (card) {
+                        card.style.transform = 'scale(1) translateY(0)';
+                    }
+                });
+
+                function closeModal(result) {
+                    modalBackdrop.style.opacity = '0';
+                    const card = modalBackdrop.querySelector('.custom-modal-card');
+                    if (card) card.style.transform = 'scale(0.92) translateY(12px)';
+                    setTimeout(() => {
+                        document.body.style.overflow = '';
+                        if (modalBackdrop.parentNode) modalBackdrop.parentNode.removeChild(modalBackdrop);
+                        resolve(result);
+                    }, 220);
+                }
+
+                const confirmBtn = modalBackdrop.querySelector('#customModalConfirmBtn');
+                const cancelBtn = modalBackdrop.querySelector('#customModalCancelBtn');
+
+                if (confirmBtn) {
+                    confirmBtn.addEventListener('click', () => closeModal(true));
+                    confirmBtn.focus();
+                }
+                if (cancelBtn) {
+                    cancelBtn.addEventListener('click', () => closeModal(false));
+                }
+
+                function keyHandler(e) {
+                    if (e.key === 'Escape') {
+                        document.removeEventListener('keydown', keyHandler);
+                        closeModal(false);
+                    }
+                }
+                document.addEventListener('keydown', keyHandler);
+
+                modalBackdrop.addEventListener('click', function(e) {
+                    if (e.target === modalBackdrop) {
+                        document.removeEventListener('keydown', keyHandler);
+                        closeModal(false);
+                    }
+                });
+            });
+        };
+
+        window.showAlertModal = function(options) {
+            return window.showConfirmModal({
+                ...options,
+                hideCancel: true,
+                confirmText: options.confirmText || 'Tushundim'
+            });
+        };
+
         // Global Instant (0ms Optimistic UI) for Cart and Wishlist forms
         document.addEventListener('submit', function(e) {
             const form = e.target;

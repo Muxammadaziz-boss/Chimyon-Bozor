@@ -188,19 +188,37 @@ class PaymentManager:
         with transaction.atomic():
             order.save(update_fields=['prepayment_percent', 'prepayment_amount'])
 
-            initial_status = models.Payment.Status.PENDING
-            if provider_key != models.Payment.Provider.CASH:
-                initial_status = models.Payment.Status.INITIATED
+            # Idempotency: cancel any outdated pending payments for this order
+            models.Payment.objects.filter(
+                order=order,
+                status__in=[models.Payment.Status.INITIATED, models.Payment.Status.PENDING]
+            ).exclude(provider=provider_key, amount=amount, purpose=payment_purpose).update(status=models.Payment.Status.CANCELLED)
 
-            payment = models.Payment.objects.create(
+            # Check if an identical initiated/pending payment already exists to prevent duplicate creation
+            existing_payment = models.Payment.objects.filter(
                 order=order,
                 provider=provider_key,
-                purpose=payment_purpose,
                 amount=amount,
-                currency='UZS',
-                status=initial_status,
-                payment_method=payment_method
-            )
+                purpose=payment_purpose,
+                status__in=[models.Payment.Status.INITIATED, models.Payment.Status.PENDING]
+            ).order_by('-created_at').first()
+
+            if existing_payment:
+                payment = existing_payment
+            else:
+                initial_status = models.Payment.Status.PENDING
+                if provider_key != models.Payment.Provider.CASH:
+                    initial_status = models.Payment.Status.INITIATED
+
+                payment = models.Payment.objects.create(
+                    order=order,
+                    provider=provider_key,
+                    purpose=payment_purpose,
+                    amount=amount,
+                    currency='UZS',
+                    status=initial_status,
+                    payment_method=payment_method
+                )
 
             # If 0% prepayment cash on delivery, mark order accepted immediately and deduct stock once
             if provider_key == models.Payment.Provider.CASH and payment_purpose == models.Payment.Purpose.FULL:

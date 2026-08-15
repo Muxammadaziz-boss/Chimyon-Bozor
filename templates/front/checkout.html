@@ -793,6 +793,59 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // 5. Form Submit & Double Submission Protection
+    const checkoutForm = document.getElementById('checkoutForm');
+    let isSubmitting = false;
+
+    if (checkoutForm) {
+        checkoutForm.addEventListener('submit', function(e) {
+            if (isSubmitting) {
+                e.preventDefault();
+                return false;
+            }
+
+            // Client-side phone validation
+            const phoneVal = phoneInput ? phoneInput.value.trim() : '';
+            const phoneRegex = /^\+?998[0-9]{9}$/;
+            if (!phoneRegex.test(phoneVal.replace(/\s+/g, ''))) {
+                e.preventDefault();
+                if (window.showToast) {
+                    window.showToast("Telefon raqami noto'g'ri kiritildi (+998901234567 formatida bo'lishi kerak)", "error");
+                }
+                if (phoneInput) phoneInput.focus();
+                return false;
+            }
+
+            // Client-side address validation
+            const addrVal = checkoutAddressInput ? checkoutAddressInput.value.trim() : '';
+            if (!addrVal) {
+                e.preventDefault();
+                if (window.showToast) {
+                    window.showToast("Iltimos, yetkazib berish manzilini tanlang", "warning");
+                }
+                return false;
+            }
+
+            // Client-side provider validation
+            const selectedProviderRadio = document.querySelector('input[name="provider"]:checked');
+            if (!selectedProviderRadio) {
+                e.preventDefault();
+                if (window.showToast) {
+                    window.showToast("Iltimos, to'lov usulini tanlang", "warning");
+                }
+                return false;
+            }
+
+            isSubmitting = true;
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.style.opacity = '0.85';
+                submitBtn.style.cursor = 'not-allowed';
+                submitBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> To\'lov sahifasi tayyorlanmoqda...';
+            }
+        });
+    }
+
     updateSubmitButtonText();
 });
 </script>

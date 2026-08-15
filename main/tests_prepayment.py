@@ -370,7 +370,7 @@ class PartialPrepaymentAndBalanceTests(TestCase):
         self.assertEqual(self.cart.prepayment_amount, Decimal('483800.00'))
 
     # -------------------------------------------------------------
-    # 17. Checkout Post with Unauthorized Percentage (e.g. 73%) Rejection
+    # 17. Checkout Post with Unauthorized Percentage (e.g. 73%) Rejection (PRG)
     # -------------------------------------------------------------
     def test_checkout_post_unauthorized_percentage_rejected(self):
         self.client.force_login(self.customer)
@@ -379,13 +379,13 @@ class PartialPrepaymentAndBalanceTests(TestCase):
             'address': 'Yunusobod',
             'provider': 'click',
             'prepayment_percent': '73'
-        })
+        }, follow=True)
         self.assertEqual(response.status_code, 200)
         messages_list = list(response.context['messages'])
         self.assertTrue(any("Ruxsat etilmagan" in m.message for m in messages_list))
 
     # -------------------------------------------------------------
-    # 18. Phone Validation Test (Rejects letters like '+998917914881das')
+    # 18. Phone Validation Test (Rejects letters like '+998917914881das' via PRG)
     # -------------------------------------------------------------
     def test_checkout_post_invalid_phone_with_letters_rejected(self):
         self.client.force_login(self.customer)
@@ -394,13 +394,13 @@ class PartialPrepaymentAndBalanceTests(TestCase):
             'address': 'Yunusobod',
             'provider': 'click',
             'prepayment_percent': '30'
-        })
+        }, follow=True)
         self.assertEqual(response.status_code, 200)
         messages_list = list(response.context['messages'])
         self.assertTrue(any("Telefon raqami noto'g'ri kiritildi" in m.message for m in messages_list))
 
     # -------------------------------------------------------------
-    # 19. Admin Address List Selection & Validation Test
+    # 19. Admin Address List Selection & Validation Test (PRG)
     # -------------------------------------------------------------
     def test_checkout_address_selection_from_admin_list(self):
         models.Address.objects.create(name="Chimyon", is_active=True)
@@ -419,7 +419,7 @@ class PartialPrepaymentAndBalanceTests(TestCase):
         self.customer.refresh_from_db()
         self.assertEqual(self.customer.address, "Farg'ona")
 
-        # Invalid address not in admin list
+        # Invalid address not in admin list (PRG Redirects back with error)
         self.cart.status = 1
         self.cart.save()
         bad_response = self.client.post(reverse('checkout'), {
@@ -427,7 +427,34 @@ class PartialPrepaymentAndBalanceTests(TestCase):
             'address': "Noma'lum qishloq 123",
             'provider': 'click',
             'prepayment_percent': '30'
-        })
+        }, follow=True)
         self.assertEqual(bad_response.status_code, 200)
         messages_list = list(bad_response.context['messages'])
         self.assertTrue(any("admin tomonidan qo'shilgan" in m.message for m in messages_list))
+
+    # -------------------------------------------------------------
+    # 20. Idempotent Payment Retry Test (No duplicate payment creation)
+    # -------------------------------------------------------------
+    def test_checkout_idempotency_retry_does_not_duplicate_payments(self):
+        self.client.force_login(self.customer)
+        
+        # First submission
+        res1 = self.client.post(reverse('checkout'), {
+            'phone': '+998901234567',
+            'address': 'Chimyon',
+            'provider': 'click',
+            'prepayment_percent': '30'
+        })
+        self.assertEqual(res1.status_code, 302)
+        self.assertEqual(models.Payment.objects.filter(order=self.cart).count(), 1)
+
+        # Retry / back / re-post with same params
+        res2 = self.client.post(reverse('checkout'), {
+            'phone': '+998901234567',
+            'address': 'Chimyon',
+            'provider': 'click',
+            'prepayment_percent': '30'
+        })
+        self.assertEqual(res2.status_code, 302)
+        # Should still be 1 active payment, no duplicate ghost rows!
+        self.assertEqual(models.Payment.objects.filter(order=self.cart, status__in=[models.Payment.Status.INITIATED, models.Payment.Status.PENDING]).count(), 1)

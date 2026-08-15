@@ -116,7 +116,7 @@ class ClickPaymentIntegrationTests(TestCase):
             'phone': '+998901112233',
             'address': 'Yunusobod',
             'provider': 'click'
-        })
+        }, follow=True)
 
         self.assertEqual(response.status_code, 200)
         messages_list = list(response.context['messages'])

@@ -702,6 +702,7 @@ def checkout(request):
     cart_count = sum(item.count for item in cart_products)
     financials = PaymentManager.calculate_order_financials(cart)
     addresses = models.Address.objects.filter(is_active=True).order_by('name')
+    valid_address_names = list(addresses.values_list('name', flat=True)) if addresses.exists() else []
 
     if request.method == 'POST':
         raw_phone = request.POST.get('phone', '').strip()
@@ -712,23 +713,22 @@ def checkout(request):
         if not address and user.address:
             address = str(user.address).strip()
 
+        provider = request.POST.get('provider', 'click').strip().lower()
         prepayment_percent_raw = request.POST.get('prepayment_percent')
         chosen_percent = None
+
+        # Store draft for PRG redirect
+        request.session['checkout_draft'] = {
+            'phone': raw_phone,
+            'address': address,
+            'provider': provider,
+            'prepayment_percent': prepayment_percent_raw,
+        }
 
         # Check if phone contains illegal characters (letters, etc.)
         if not raw_phone or not re.match(r'^\+?[0-9\s\-()]+$', raw_phone):
             messages.error(request, "Telefon raqami noto'g'ri kiritildi. Iltimos, to'g'ri O'zbekiston raqamini kiriting (masalan: +998 90 123 45 67).")
-            return render(request, 'front/checkout.html', {
-                'cart': cart,
-                'cart_products': cart_products,
-                'cart_total': financials['grand_total'],
-                'cart_count': cart_count,
-                'financials': financials,
-                'addresses': addresses,
-                'selected_provider': request.POST.get('provider', 'click').strip().lower(),
-                'input_phone': raw_phone,
-                'selected_address': address,
-            })
+            return redirect('checkout')
 
         # Clean and normalize phone
         clean_phone_digits = re.sub(r'[^\d]', '', raw_phone)
@@ -741,83 +741,30 @@ def checkout(request):
 
         if not phone or not PHONE_RE.match(phone):
             messages.error(request, "Telefon raqami noto'g'ri kiritildi. Iltimos, to'g'ri O'zbekiston raqamini kiriting (masalan: +998 90 123 45 67).")
-            return render(request, 'front/checkout.html', {
-                'cart': cart,
-                'cart_products': cart_products,
-                'cart_total': financials['grand_total'],
-                'cart_count': cart_count,
-                'financials': financials,
-                'addresses': addresses,
-                'selected_provider': request.POST.get('provider', 'click').strip().lower(),
-                'input_phone': raw_phone,
-                'selected_address': address,
-            })
+            return redirect('checkout')
 
         # Validate Address
         if not address:
             messages.error(request, "Iltimos, yetkazib berish manzilini tanlang.")
-            valid_fallback = addresses.first().name if addresses.exists() else ''
-            return render(request, 'front/checkout.html', {
-                'cart': cart,
-                'cart_products': cart_products,
-                'cart_total': financials['grand_total'],
-                'cart_count': cart_count,
-                'financials': financials,
-                'addresses': addresses,
-                'selected_provider': request.POST.get('provider', 'click').strip().lower(),
-                'input_phone': phone,
-                'selected_address': valid_fallback,
-            })
+            return redirect('checkout')
 
-        if addresses.exists() and not addresses.filter(name=address).exists():
+        if addresses.exists() and address not in valid_address_names:
             messages.error(request, "Iltimos, admin tomonidan qo'shilgan tasdiqlangan manzillardan birini tanlang.")
-            valid_fallback = addresses.first().name if addresses.exists() else ''
-            return render(request, 'front/checkout.html', {
-                'cart': cart,
-                'cart_products': cart_products,
-                'cart_total': financials['grand_total'],
-                'cart_count': cart_count,
-                'financials': financials,
-                'addresses': addresses,
-                'selected_provider': request.POST.get('provider', 'click').strip().lower(),
-                'input_phone': phone,
-                'selected_address': valid_fallback,
-            })
+            return redirect('checkout')
 
         if prepayment_percent_raw is not None and str(prepayment_percent_raw).strip() != '':
             try:
                 chosen_percent = int(str(prepayment_percent_raw).strip())
             except (ValueError, TypeError):
                 messages.error(request, "Noto'g'ri oldindan to'lov foizi kiritildi.")
-                return render(request, 'front/checkout.html', {
-                    'cart': cart,
-                    'cart_products': cart_products,
-                    'cart_total': financials['grand_total'],
-                    'cart_count': cart_count,
-                    'financials': financials,
-                    'addresses': addresses,
-                    'selected_provider': request.POST.get('provider', 'click').strip().lower(),
-                    'input_phone': phone,
-                    'selected_address': address,
-                })
+                return redirect('checkout')
 
         try:
             financials = PaymentManager.calculate_order_financials(cart, chosen_percent=chosen_percent)
         except ValueError as e:
             messages.error(request, str(e))
-            return render(request, 'front/checkout.html', {
-                'cart': cart,
-                'cart_products': cart_products,
-                'cart_total': financials['grand_total'],
-                'cart_count': cart_count,
-                'financials': financials,
-                'addresses': addresses,
-                'selected_provider': request.POST.get('provider', 'click').strip().lower(),
-                'input_phone': phone,
-                'selected_address': address,
-            })
+            return redirect('checkout')
 
-        provider = request.POST.get('provider', models.Payment.Provider.CLICK if financials['prepayment_percent'] > 0 else models.Payment.Provider.CASH).strip().lower()
         payment_method = request.POST.get('payment_method', 'card').strip()
 
         # Update user profile details
@@ -834,17 +781,7 @@ def checkout(request):
         # Check prepayment requirements
         if financials['prepayment_percent'] > 0 and provider == models.Payment.Provider.CASH:
             messages.error(request, f"Ushbu buyurtma uchun {financials['prepayment_percent']}% oldindan to'lov talab qilinadi. Iltimos, onlayn to'lov usulini (Click, Payme, Uzum) tanlang.")
-            return render(request, 'front/checkout.html', {
-                'cart': cart,
-                'cart_products': cart_products,
-                'cart_total': financials['grand_total'],
-                'cart_count': cart_count,
-                'financials': financials,
-                'addresses': addresses,
-                'selected_provider': provider,
-                'input_phone': phone,
-                'selected_address': address,
-            })
+            return redirect('checkout')
 
         try:
             # Create payment & get checkout URL via PaymentManager
@@ -856,7 +793,10 @@ def checkout(request):
                 request=request
             )
 
-            # Redirect to provider checkout or success page
+            # Clear session draft upon successful checkout creation
+            request.session.pop('checkout_draft', None)
+
+            # Redirect to provider checkout or success page (100% PRG)
             if provider == models.Payment.Provider.CASH:
                 messages.success(request, f"Buyurtmangiz muvaffaqiyatli qabul qilindi! Buyurtma kodi: #{str(cart.code)[:8]}")
                 return redirect('payment_success', code=cart.code)
@@ -866,36 +806,27 @@ def checkout(request):
         except PaymentConfigurationError as e:
             logger.warning("Checkout payment configuration error: %s", e)
             messages.error(request, f"{provider.capitalize()} to'lov tizimi sozlamalari hozirda to'liq o'rnatilmagan. Iltimos, ma'muriyatga murojaat qiling yoki boshqa to'lov usulidan foydalaning.")
-            return render(request, 'front/checkout.html', {
-                'cart': cart,
-                'cart_products': cart_products,
-                'cart_total': financials['grand_total'],
-                'cart_count': cart_count,
-                'financials': financials,
-                'addresses': addresses,
-                'selected_provider': provider,
-                'input_phone': phone,
-                'selected_address': address,
-            })
+            return redirect('checkout')
         except Exception as e:
             logger.error("Checkout payment creation error: %s", e, exc_info=True)
             messages.error(request, f"To'lovni yaratishda xatolik yuz berdi: {str(e)}")
-            return render(request, 'front/checkout.html', {
-                'cart': cart,
-                'cart_products': cart_products,
-                'cart_total': financials['grand_total'],
-                'cart_count': cart_count,
-                'financials': financials,
-                'addresses': addresses,
-                'selected_provider': provider,
-                'input_phone': phone,
-                'selected_address': address,
-            })
+            return redirect('checkout')
 
-    # GET request
-    default_provider = 'click' if financials['prepayment_percent'] > 0 else 'cash'
-    valid_address_names = list(addresses.values_list('name', flat=True))
-    if user.address and user.address in valid_address_names:
+    # GET request handler (Pure PRG)
+    draft = request.session.pop('checkout_draft', {})
+    draft_percent = draft.get('prepayment_percent')
+    if draft_percent is not None and str(draft_percent).strip() != '':
+        try:
+            financials = PaymentManager.calculate_order_financials(cart, chosen_percent=int(draft_percent))
+        except ValueError:
+            pass
+
+    default_provider = draft.get('provider') or ('click' if financials['prepayment_percent'] > 0 else 'cash')
+    
+    draft_address = draft.get('address')
+    if draft_address and draft_address in valid_address_names:
+        initial_address = draft_address
+    elif user.address and user.address in valid_address_names:
         initial_address = user.address
     elif addresses.exists():
         initial_address = addresses.first().name
@@ -910,7 +841,7 @@ def checkout(request):
         'financials': financials,
         'addresses': addresses,
         'selected_provider': default_provider,
-        'input_phone': user.phone or '+998',
+        'input_phone': draft.get('phone') or user.phone or '+998',
         'selected_address': initial_address,
     }
     return render(request, 'front/checkout.html', context)
