@@ -1325,12 +1325,31 @@ document.addEventListener('DOMContentLoaded', function() {
     let isUsernameValid = true;
     let isPhoneValid = true;
 
+    // Sequence counters & AbortControllers for Race Condition Prevention
+    let usernameSeq = 0;
+    let usernameAbortController = null;
+    let isUsernameChecking = false;
+
+    let phoneSeq = 0;
+    let phoneAbortController = null;
+    let isPhoneChecking = false;
+
     function checkUsername() {
         if (!isEditing || !usernameInput) return;
+
+        // Cancel previous timer and abort ongoing request
+        clearTimeout(usernameTimer);
+        if (usernameAbortController) {
+            usernameAbortController.abort();
+            usernameAbortController = null;
+        }
+
+        const currentSeq = ++usernameSeq;
         const val = usernameInput.value.trim();
         const currentUsername = (usernameInput.getAttribute('data-current-username') || '').trim();
 
         if (!val) {
+            isUsernameChecking = false;
             usernameFeedback.style.display = 'flex';
             usernameFeedback.className = 'input-feedback invalid';
             usernameFeedback.innerHTML = '<i class="fas fa-times-circle"></i> Foydalanuvchi nomi kiritilmadi';
@@ -1338,11 +1357,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 usernameWrapper.classList.add('is-invalid');
                 usernameWrapper.classList.remove('is-valid');
             }
+            usernameInput.setAttribute('aria-invalid', 'true');
             isUsernameValid = false;
             return;
         }
 
         if (val.length < 4) {
+            isUsernameChecking = false;
             usernameFeedback.style.display = 'flex';
             usernameFeedback.className = 'input-feedback invalid';
             usernameFeedback.innerHTML = '<i class="fas fa-times-circle"></i> Kamida 4 ta belgidan iborat bo\'lishi kerak';
@@ -1350,11 +1371,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 usernameWrapper.classList.add('is-invalid');
                 usernameWrapper.classList.remove('is-valid');
             }
+            usernameInput.setAttribute('aria-invalid', 'true');
             isUsernameValid = false;
             return;
         }
 
         if (val.toLowerCase() === currentUsername.toLowerCase()) {
+            isUsernameChecking = false;
             usernameFeedback.style.display = 'flex';
             usernameFeedback.className = 'input-feedback valid';
             usernameFeedback.innerHTML = '<i class="fas fa-check-circle"></i> Sizning joriy foydalanuvchi nomingiz';
@@ -1362,19 +1385,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 usernameWrapper.classList.remove('is-invalid');
                 usernameWrapper.classList.add('is-valid');
             }
+            usernameInput.setAttribute('aria-invalid', 'false');
             isUsernameValid = true;
             return;
         }
 
+        // Set checking state
+        isUsernameChecking = true;
+        isUsernameValid = false;
         usernameFeedback.style.display = 'flex';
         usernameFeedback.className = 'input-feedback checking';
         usernameFeedback.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Tekshirilmoqda...';
 
-        clearTimeout(usernameTimer);
         usernameTimer = setTimeout(() => {
-            fetch('/api/check-username/?username=' + encodeURIComponent(val))
+            usernameAbortController = new AbortController();
+            fetch('/api/check-username/?username=' + encodeURIComponent(val), {
+                signal: usernameAbortController.signal
+            })
                 .then(res => res.json())
                 .then(data => {
+                    if (currentSeq !== usernameSeq || usernameInput.value.trim() !== val) {
+                        return;
+                    }
+                    isUsernameChecking = false;
+
                     if (data.available) {
                         usernameFeedback.className = 'input-feedback valid';
                         usernameFeedback.innerHTML = '<i class="fas fa-check-circle"></i> ' + (data.message || 'Ushbu nom bo\'sh (ishlatishingiz mumkin)');
@@ -1382,6 +1416,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             usernameWrapper.classList.remove('is-invalid');
                             usernameWrapper.classList.add('is-valid');
                         }
+                        usernameInput.setAttribute('aria-invalid', 'false');
                         isUsernameValid = true;
                     } else {
                         usernameFeedback.className = 'input-feedback invalid';
@@ -1390,11 +1425,24 @@ document.addEventListener('DOMContentLoaded', function() {
                             usernameWrapper.classList.add('is-invalid');
                             usernameWrapper.classList.remove('is-valid');
                         }
+                        usernameInput.setAttribute('aria-invalid', 'true');
                         isUsernameValid = false;
                     }
                 })
                 .catch(err => {
+                    if (err.name === 'AbortError') return;
+                    if (currentSeq !== usernameSeq) return;
+
                     console.error('Username check error:', err);
+                    isUsernameChecking = false;
+                    isUsernameValid = false;
+                    usernameFeedback.className = 'input-feedback invalid';
+                    usernameFeedback.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Tekshirishda xatolik yuz berdi. Qayta urinib ko\'ring.';
+                    if (usernameWrapper) {
+                        usernameWrapper.classList.add('is-invalid');
+                        usernameWrapper.classList.remove('is-valid');
+                    }
+                    usernameInput.setAttribute('aria-invalid', 'true');
                 });
         }, 250);
     }
@@ -1483,6 +1531,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function checkPhone() {
         if (!isEditing || !phoneInput) return;
+
+        // Cancel previous timer and abort ongoing request
+        clearTimeout(phoneTimer);
+        if (phoneAbortController) {
+            phoneAbortController.abort();
+            phoneAbortController = null;
+        }
+
+        const currentSeq = ++phoneSeq;
+
         handlePhoneInputSanitization(phoneInput);
         let val = phoneInput.value.trim();
         const currentPhone = (phoneInput.getAttribute('data-current-phone') || '').trim();
@@ -1492,6 +1550,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let pureDigits = rawDigits.startsWith('998') ? rawDigits.substring(3) : rawDigits;
 
         if (!val || val === '+') {
+            isPhoneChecking = false;
             phoneFeedback.style.display = 'flex';
             phoneFeedback.className = 'input-feedback invalid';
             phoneFeedback.innerHTML = '<i class="fas fa-times-circle"></i> Telefon raqam kiritilmadi';
@@ -1504,7 +1563,8 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        if (!rawDigits.startsWith('998') || pureDigits.length !== 9) {
+        if (pureDigits.length !== 9) {
+            isPhoneChecking = false;
             phoneFeedback.style.display = 'flex';
             phoneFeedback.className = 'input-feedback invalid';
             phoneFeedback.innerHTML = '<i class="fas fa-exclamation-circle"></i> Telefon raqamini to\'g\'ri kiriting (+998XXXXXXXXX)';
@@ -1517,10 +1577,11 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        const normalizedPhone = '+998' + pureDigits;
+        const canonicalPhone = '+998' + pureDigits;
         const normalizedCurrent = currentPhone.startsWith('+') ? currentPhone : (currentPhone.startsWith('998') ? '+' + currentPhone : '+998' + currentPhone.replace(/\D/g, ''));
 
-        if (normalizedPhone === normalizedCurrent) {
+        if (canonicalPhone === normalizedCurrent) {
+            isPhoneChecking = false;
             phoneFeedback.style.display = 'flex';
             phoneFeedback.className = 'input-feedback valid';
             phoneFeedback.innerHTML = '<i class="fas fa-check-circle"></i> Telefon raqami to\'g\'ri (joriy raqamingiz)';
@@ -1533,16 +1594,26 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        // Set checking state
+        isPhoneChecking = true;
+        isPhoneValid = false;
         phoneFeedback.style.display = 'flex';
         phoneFeedback.className = 'input-feedback checking';
         phoneFeedback.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Tekshirilmoqda...';
 
-        clearTimeout(phoneTimer);
         phoneTimer = setTimeout(() => {
-            fetch('/api/check-phone/?phone=' + encodeURIComponent(normalizedPhone))
+            phoneAbortController = new AbortController();
+            fetch('/api/check-phone/?phone=' + encodeURIComponent(canonicalPhone), {
+                signal: phoneAbortController.signal
+            })
                 .then(res => res.json())
                 .then(data => {
-                    if (data.available) {
+                    if (currentSeq !== phoneSeq) {
+                        return;
+                    }
+                    isPhoneChecking = false;
+
+                    if (data.valid && data.available) {
                         phoneFeedback.className = 'input-feedback valid';
                         phoneFeedback.innerHTML = '<i class="fas fa-check-circle"></i> ' + (data.message || 'Telefon raqami to\'g\'ri');
                         if (phoneWrapper) {
@@ -1563,7 +1634,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 })
                 .catch(err => {
+                    if (err.name === 'AbortError') return;
+                    if (currentSeq !== phoneSeq) return;
+
                     console.error('Phone check error:', err);
+                    isPhoneChecking = false;
+                    isPhoneValid = false;
+                    phoneFeedback.className = 'input-feedback invalid';
+                    phoneFeedback.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Tekshirishda xatolik yuz berdi. Qayta urinib ko\'ring.';
+                    if (phoneWrapper) {
+                        phoneWrapper.classList.add('is-invalid');
+                        phoneWrapper.classList.remove('is-valid');
+                    }
+                    phoneInput.setAttribute('aria-invalid', 'true');
                 });
         }, 250);
     }
@@ -2001,6 +2084,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Form submit validation & double submit prevention
     if (profileForm) {
         profileForm.addEventListener('submit', function(e) {
+            if (isUsernameChecking || isPhoneChecking) {
+                e.preventDefault();
+                alert('Iltimos, ma\'lumotlar tekshirilishini kuting...');
+                return false;
+            }
             if (!isUsernameValid) {
                 e.preventDefault();
                 if (usernameInput) usernameInput.focus();
@@ -2012,6 +2100,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (phoneInput) phoneInput.focus();
                 alert('Iltimos, to\'g\'ri va band bo\'lmagan telefon raqamini kiriting!');
                 return false;
+            }
+
+            // Ensure canonical phone format before submit
+            if (phoneInput && phoneInput.value) {
+                let digits = phoneInput.value.replace(/\D/g, '');
+                if (digits.startsWith('998') && digits.length === 12) {
+                    phoneInput.value = '+' + digits;
+                } else if (digits.length === 9) {
+                    phoneInput.value = '+998' + digits;
+                }
             }
 
             if (profileSubmitBtn) {

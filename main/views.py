@@ -1374,9 +1374,9 @@ def category_products_api(request, category_id):
 def check_username_api(request):
     username = request.GET.get('username', '').strip()
     if not username:
-        return JsonResponse({'valid': False, 'message': "Foydalanuvchi nomi kiritilmadi"})
+        return JsonResponse({'valid': False, 'available': False, 'message': "Foydalanuvchi nomi kiritilmadi"})
     if len(username) < 4:
-        return JsonResponse({'valid': False, 'message': "Kamida 4 ta belgidan iborat bo'lishi kerak"})
+        return JsonResponse({'valid': False, 'available': False, 'message': "Kamida 4 ta belgidan iborat bo'lishi kerak"})
 
     qs = models.User.objects.filter(username__iexact=username)
     if request.user.is_authenticated:
@@ -1394,11 +1394,11 @@ def check_username_api(request):
 def check_phone_api(request):
     raw_phone = request.GET.get('phone', '').strip()
     if not raw_phone:
-        return JsonResponse({'valid': False, 'message': "Telefon raqam kiritilmadi"})
+        return JsonResponse({'valid': False, 'available': False, 'message': "Telefon raqam kiritilmadi"})
 
     phone = normalize_uz_phone(raw_phone)
     if not phone:
-        return JsonResponse({'valid': False, 'message': "Telefon raqamini +998XXXXXXXXX formatida kiriting"})
+        return JsonResponse({'valid': False, 'available': False, 'message': "Telefon raqamini +998XXXXXXXXX formatida kiriting"})
 
     qs = models.User.objects.filter(phone=phone)
     if request.user.is_authenticated:

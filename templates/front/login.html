@@ -730,7 +730,9 @@
         // Phone input restriction, auto-formatter and real-time live check
         const phoneInput = document.getElementById('reg-phone');
         const phoneFeedback = document.getElementById('phoneFeedback');
-        let phoneTimer;
+        let phoneTimer = null;
+        let phoneSeq = 0;
+        let phoneAbortController = null;
 
         if (phoneInput) {
             function formatPhoneInput(el) {
@@ -751,6 +753,12 @@
 
             phoneInput.addEventListener('input', function () {
                 clearTimeout(phoneTimer);
+                if (phoneAbortController) {
+                    phoneAbortController.abort();
+                    phoneAbortController = null;
+                }
+                const currentSeq = ++phoneSeq;
+
                 formatPhoneInput(this);
 
                 if (!phoneFeedback) return;
@@ -781,9 +789,14 @@
                 syncHeight();
 
                 phoneTimer = setTimeout(() => {
-                    fetch('/api/check-phone/?phone=' + encodeURIComponent(digits))
+                    phoneAbortController = new AbortController();
+                    fetch('/api/check-phone/?phone=' + encodeURIComponent(digits), {
+                        signal: phoneAbortController.signal
+                    })
                         .then(res => res.json())
                         .then(data => {
+                            if (currentSeq !== phoneSeq) return;
+
                             if (data.available) {
                                 phoneFeedback.className = 'phone-feedback valid';
                                 phoneFeedback.innerHTML = '<i class="fas fa-check-circle"></i> Ushbu telefon raqami bo\'sh (ishlatishingiz mumkin)';
@@ -794,7 +807,13 @@
                             syncHeight();
                         })
                         .catch(err => {
+                            if (err.name === 'AbortError') return;
+                            if (currentSeq !== phoneSeq) return;
+
                             console.error('Phone check error:', err);
+                            phoneFeedback.className = 'phone-feedback invalid';
+                            phoneFeedback.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Tekshirishda xatolik yuz berdi. Qayta urinib ko\'ring.';
+                            syncHeight();
                         });
                 }, 250);
             });
@@ -818,11 +837,19 @@
         // Real-time Username Validator & Availability Check
         const regUsernameInput = document.getElementById('reg-username');
         const usernameFeedback = document.getElementById('usernameFeedback');
-        let usernameTimer;
+        let usernameTimer = null;
+        let usernameSeq = 0;
+        let usernameAbortController = null;
 
         if (regUsernameInput && usernameFeedback) {
             regUsernameInput.addEventListener('input', function() {
                 clearTimeout(usernameTimer);
+                if (usernameAbortController) {
+                    usernameAbortController.abort();
+                    usernameAbortController = null;
+                }
+                const currentSeq = ++usernameSeq;
+
                 const val = this.value.trim();
 
                 if (!val) {
@@ -845,9 +872,14 @@
                 syncHeight();
 
                 usernameTimer = setTimeout(() => {
-                    fetch('/api/check-username/?username=' + encodeURIComponent(val))
+                    usernameAbortController = new AbortController();
+                    fetch('/api/check-username/?username=' + encodeURIComponent(val), {
+                        signal: usernameAbortController.signal
+                    })
                         .then(res => res.json())
                         .then(data => {
+                            if (currentSeq !== usernameSeq) return;
+
                             if (data.available) {
                                 usernameFeedback.className = 'username-feedback valid';
                                 usernameFeedback.innerHTML = '<i class="fas fa-check-circle"></i> Ushbu nom bo\'sh (ishlatishingiz mumkin)';
@@ -858,7 +890,13 @@
                             syncHeight();
                         })
                         .catch(err => {
+                            if (err.name === 'AbortError') return;
+                            if (currentSeq !== usernameSeq) return;
+
                             console.error('Username check error:', err);
+                            usernameFeedback.className = 'username-feedback invalid';
+                            usernameFeedback.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Tekshirishda xatolik yuz berdi. Qayta urinib ko\'ring.';
+                            syncHeight();
                         });
                 }, 250);
             });

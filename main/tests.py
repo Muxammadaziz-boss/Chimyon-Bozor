@@ -509,6 +509,39 @@ class AuthAndCartFlowTestCase(TestCase):
         self.user.refresh_from_db()
         self.assertEqual(self.user.phone, '+998931234567')
 
+    def test_realtime_validation_rapid_simulation(self):
+        self.client.force_login(self.user)
+
+        # 1. Simulate rapid username keystrokes: 'a' -> 'ab' -> 'abc' -> 'abcd' -> 'abcde'
+        keystrokes = ['a', 'ab', 'abc', 'abcd', 'abcde']
+        responses = []
+        for term in keystrokes:
+            res = self.client.get(reverse('check_username_api'), {'username': term})
+            responses.append(res.json())
+
+        # Sub-length (< 4) should be invalid
+        self.assertFalse(responses[0]['available'])
+        self.assertFalse(responses[1]['available'])
+        self.assertFalse(responses[2]['available'])
+        # Valid length (>= 4) should be valid and available
+        self.assertTrue(responses[3]['available'])
+        self.assertTrue(responses[4]['available'])
+
+        # 2. Simulate rapid phone keystrokes: '+998' -> '+9989' -> '+99890' -> '+998901234567'
+        phone_steps = ['+998', '+9989', '+99890', '+998901', '+998901234567']
+        phone_responses = []
+        for step in phone_steps:
+            res = self.client.get(reverse('check_phone_api'), {'phone': step})
+            phone_responses.append(res.json())
+
+        self.assertFalse(phone_responses[0]['valid'])
+        self.assertFalse(phone_responses[1]['valid'])
+        self.assertFalse(phone_responses[2]['valid'])
+        self.assertFalse(phone_responses[3]['valid'])
+        self.assertTrue(phone_responses[4]['valid'])
+        self.assertEqual(phone_responses[4]['canonical'], '+998901234567')
+
+
 
 
 
