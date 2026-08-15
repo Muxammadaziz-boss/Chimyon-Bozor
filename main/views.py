@@ -238,6 +238,104 @@ def all_products(request):
     return render(request, 'front/category_filter.html', context)
 
 
+def categories_page(request):
+    """
+    Barcha kategoriyalar katalogi, qidiruv va guruhlash sahifasi.
+    """
+    search_query = (request.GET.get('q') or request.GET.get('search') or request.GET.get('query') or '').strip()
+    
+    categories_qs = (
+        models.Category.objects.filter(is_active=True)
+        .annotate(
+            product_count=Count('product', filter=Q(product__count__gte=0))
+        )
+        .order_by('-product_count', 'name')
+    )
+
+    if search_query:
+        categories_qs = categories_qs.filter(name__icontains=search_query)
+
+    categories_list = list(categories_qs)
+
+    # Category Groupings mapping helper
+    GROUP_MAPPING = [
+        {
+            'id': 'clothing',
+            'title': 'Kiyim-kechak & Moda',
+            'icon': 'fas fa-tshirt',
+            'keywords': ['kiyim', 'ko\'ylak', 'libos', 'poyabzal', 'shim', 'kostyum', 'aksessuar', 'zargarlik', 'soat']
+        },
+        {
+            'id': 'tech',
+            'title': 'Elektronika & Gadjetlar',
+            'icon': 'fas fa-mobile-alt',
+            'keywords': ['smartfon', 'telefon', 'gadjet', 'noutbuk', 'kompyuter', 'elektronika', 'texnika', 'maishiy']
+        },
+        {
+            'id': 'home',
+            'title': "Uy, Ro'zg'or & Ta'mirlash",
+            'icon': 'fas fa-home',
+            'keywords': ['uy', 'ro\'zg\'or', 'oshxona', 'mebel', 'interyer', 'qurilish', 'ta\'mirlash', 'anjom']
+        },
+        {
+            'id': 'beauty',
+            'title': "Go'zallik & Parvarish",
+            'icon': 'fas fa-heart',
+            'keywords': ['kosmetika', 'parvarish', 'parfyumeriya', 'atir', 'go\'zallik', 'shaxsiy']
+        },
+        {
+            'id': 'sport_kids',
+            'title': "Sport, Bolalar & Hordiq",
+            'icon': 'fas fa-futbol',
+            'keywords': ['sport', 'hordiq', 'bolalar', 'o\'yinchoq', 'o\'yin', 'shirinlik']
+        },
+        {
+            'id': 'auto_books',
+            'title': "Avto, Kitoblar & Kantselyariya",
+            'icon': 'fas fa-book',
+            'keywords': ['avto', 'kitob', 'darslik', 'kantselyariya', 'daftar', 'qalam']
+        }
+    ]
+
+    grouped_categories = []
+    categorized_ids = set()
+
+    for group_meta in GROUP_MAPPING:
+        matched = []
+        for cat in categories_list:
+            cat_name_lower = cat.name.lower()
+            if any(kw in cat_name_lower for kw in group_meta['keywords']):
+                matched.append(cat)
+                categorized_ids.add(cat.id)
+        if matched:
+            grouped_categories.append({
+                'id': group_meta['id'],
+                'title': group_meta['title'],
+                'icon': group_meta['icon'],
+                'categories': matched,
+            })
+
+    # Any remaining categories
+    other_cats = [cat for cat in categories_list if cat.id not in categorized_ids]
+    if other_cats:
+        grouped_categories.append({
+            'id': 'others',
+            'title': 'Boshqa Kategoriyalar',
+            'icon': 'fas fa-boxes',
+            'categories': other_cats,
+        })
+
+    total_products = sum(cat.product_count for cat in categories_list)
+
+    return render(request, 'front/categories.html', {
+        'categories': categories_list,
+        'grouped_categories': grouped_categories,
+        'search_query': search_query,
+        'total_categories': len(categories_list),
+        'total_products': total_products,
+    })
+
+
 def register(request):
     if request.method == "POST":
         username = request.POST.get('username', '').strip()

@@ -252,21 +252,33 @@
             color: #c4b5fd;
         }
         .category-dropdown-menu {
-            min-width: 260px;
-            border-radius: 18px;
-            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(124, 58, 237, 0.08);
-            border: 1.5px solid #F3F4F6;
+            min-width: 275px;
+            max-width: 320px;
+            max-height: 70vh;
+            overflow-y: auto;
+            border-radius: 20px;
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.14), 0 4px 16px rgba(124, 58, 237, 0.08);
+            border: 1.5px solid #F1F5F9;
             padding: 8px;
             margin-top: 12px;
+            scrollbar-width: thin;
+            scrollbar-color: #E2E8F0 transparent;
+        }
+        .category-dropdown-menu::-webkit-scrollbar {
+            width: 5px;
+        }
+        .category-dropdown-menu::-webkit-scrollbar-thumb {
+            background-color: #E2E8F0;
+            border-radius: 999px;
         }
         .category-dropdown-item {
-            padding: 10px 16px;
+            padding: 9px 14px;
             display: flex;
             align-items: center;
             gap: 12px;
             color: #1F2937 !important;
             font-weight: 600;
-            font-size: 14.5px;
+            font-size: 14px;
             border-radius: 12px;
             transition: all 0.2s ease;
             text-decoration: none !important;
@@ -279,6 +291,37 @@
         }
         .category-dropdown-item img {
             border-radius: 6px;
+        }
+        .category-dropdown-divider {
+            height: 1px;
+            background: #F1F5F9;
+            margin: 8px 4px 6px;
+            list-style: none;
+        }
+        .category-dropdown-all-btn {
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #FAF5FF 0%, #FDF4FF 100%);
+            color: #7C3AED !important;
+            font-weight: 700;
+            font-size: 13.5px;
+            border-radius: 12px;
+            border: 1px solid #E9D5FF;
+            transition: all 0.2s ease;
+            text-decoration: none !important;
+            margin-top: 4px;
+        }
+        .category-dropdown-all-btn:hover {
+            background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%);
+            color: #FFFFFF !important;
+            border-color: #7C3AED;
+            box-shadow: 0 4px 14px rgba(124, 58, 237, 0.25);
+            transform: translateY(-1px);
+        }
+        .category-dropdown-all-btn:hover i {
+            color: #FFFFFF !important;
         }
         .user-profile-pill {
             display: flex;
@@ -897,6 +940,11 @@
 
                 <a href="{% url 'index' %}" class="nav-menu__link d-block mb-2">Bosh sahifa</a>
 
+                <a href="{% url 'categories' %}" class="nav-menu__link d-flex align-items-center justify-content-between mb-2" style="color: #7C3AED; font-weight: 700;">
+                    <span><i class="fas fa-th-large me-2"></i> Barcha Kategoriyalar</span>
+                    <span class="badge" style="background: #F3E8FF; color: #7C3AED; font-size: 11px; border-radius: 999px;">{{ total_categories_count|default:"20+" }}</span>
+                </a>
+
                 <a href="{% url 'all_products' %}" class="nav-menu__link d-block mb-2">Mahsulotlar</a>
 
                 <a href="{% url 'cart' %}" class="nav-submenu__link d-block mb-2">Savat</a>
@@ -984,12 +1032,20 @@
                                         {% else %}
                                         <i class="fas fa-box text-main font-14"></i>
                                         {% endif %}
-                                        <span>{{ cat.name }}</span>
+                                        <span class="text-truncate">{{ cat.name }}</span>
                                     </a>
                                 </li>
                                 {% empty %}
                                 <li><a class="dropdown-item text-muted font-14 px-3" href="{% url 'all_products' %}">Barcha mahsulotlar</a></li>
                                 {% endfor %}
+                                <li class="category-dropdown-divider"></li>
+                                <li>
+                                    <a href="{% url 'categories' %}" class="category-dropdown-all-btn">
+                                        <i class="fas fa-th-large"></i>
+                                        <span>Barcha kategoriyalar {% if total_categories_count %}({{ total_categories_count }}){% endif %}</span>
+                                        <i class="fas fa-arrow-right font-12 ms-auto"></i>
+                                    </a>
+                                </li>
                             </ul>
                         </div>
                     </div>
@@ -1660,6 +1716,17 @@
             document.addEventListener('click', function(e) {
                 if (!headerSearchInput.contains(e.target) && !headerSearchResults.contains(e.target)) {
                     headerSearchResults.style.display = 'none';
+                }
+            });
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    headerSearchResults.style.display = 'none';
+                    const katalogDropdown = document.getElementById('katalogHeaderDropdown');
+                    if (katalogDropdown && typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+                        const instance = bootstrap.Dropdown.getInstance(katalogDropdown);
+                        if (instance) instance.hide();
+                    }
                 }
             });
         }
