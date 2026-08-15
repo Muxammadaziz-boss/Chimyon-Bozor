@@ -7,8 +7,9 @@
 <style>
     .order-detail-shell {
         display: grid;
-        grid-template-columns: 340px 1fr;
+        grid-template-columns: 1fr 380px;
         gap: 28px;
+        align-items: start;
     }
     @media (max-width: 991px) {
         .order-detail-shell {
@@ -18,20 +19,24 @@
     .info-card {
         background: #ffffff;
         border: 1px solid #e2e8f0;
-        border-radius: 16px;
+        border-radius: 20px;
         padding: 24px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.03);
     }
     .info-card__title {
-        font-size: 1.1rem;
+        font-size: 1.15rem;
         font-weight: 700;
         color: #0f172a;
-        margin-bottom: 18px;
-        padding-bottom: 12px;
+        margin-bottom: 20px;
+        padding-bottom: 14px;
         border-bottom: 1px solid #f1f5f9;
         display: flex;
         align-items: center;
         gap: 10px;
+    }
+    .sidebar-sticky {
+        position: sticky;
+        top: 100px;
     }
     .status-badge {
         display: inline-flex;
@@ -43,11 +48,91 @@
         font-weight: 700;
         letter-spacing: 0.2px;
     }
-    .status-badge--paid { background-color: #dcfce7; color: #15803d; border: 1px solid #86efac; }
-    .status-badge--partial { background-color: #e0f2fe; color: #0369a1; border: 1px solid #7dd3fc; }
-    .status-badge--unpaid { background-color: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
-    .status-badge--refunded { background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
-    .status-badge--failed { background-color: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+    .status-badge--paid { background-color: #dcfce7; color: #15803d !important; border: 1px solid #86efac; }
+    .status-badge--partial { background-color: #e0f2fe; color: #0369a1 !important; border: 1px solid #7dd3fc; }
+    .status-badge--unpaid { background-color: #fef3c7; color: #92400e !important; border: 1px solid #fcd34d; }
+    .status-badge--refunded { background-color: #f1f5f9; color: #334155 !important; border: 1px solid #cbd5e1; }
+    .status-badge--failed { background-color: #fee2e2; color: #b91c1c !important; border: 1px solid #fca5a5; }
+
+    .badge-purpose {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+    }
+    .badge-purpose--prepay {
+        background-color: #f3e8ff;
+        color: #7c3aed !important;
+        border: 1.5px solid #d8b4fe;
+    }
+    .badge-purpose--full {
+        background-color: #dcfce7;
+        color: #15803d !important;
+        border: 1.5px solid #86efac;
+    }
+    .badge-purpose--balance {
+        background-color: #e0f2fe;
+        color: #0369a1 !important;
+        border: 1.5px solid #7dd3fc;
+    }
+
+    .badge-provider {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+    .badge-provider--click {
+        background-color: #e0f2fe;
+        color: #0284c7 !important;
+        border: 1px solid #bae6fd;
+    }
+    .badge-provider--payme {
+        background-color: #ccfbf1;
+        color: #0d9488 !important;
+        border: 1px solid #99f6e4;
+    }
+    .badge-provider--uzum {
+        background-color: #f3e8ff;
+        color: #7c3aed !important;
+        border: 1px solid #d8b4fe;
+    }
+    .badge-provider--cash {
+        background-color: #fef3c7;
+        color: #d97706 !important;
+        border: 1px solid #fde68a;
+    }
+
+    .badge-count {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: #f8fafc;
+        color: #0f172a !important;
+        font-weight: 700;
+        font-size: 13px;
+        padding: 5px 12px;
+        border-radius: 8px;
+        border: 1.5px solid #e2e8f0;
+    }
+
+    .table-custom-head th {
+        background: #f8fafc !important;
+        color: #475569 !important;
+        font-weight: 700 !important;
+        font-size: 13px !important;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #e2e8f0 !important;
+        padding: 12px 16px !important;
+    }
 
     .balance-box {
         background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
@@ -142,10 +227,157 @@
 <section class="padding-y-80">
     <div class="container container-two">
         <div class="order-detail-shell">
-            <!-- Chap Panel: Moliyaviy va Yetkazish Xulosasi -->
+            <!-- Chap Panel: Buyurtma Tarkibi, To'lovlar Tarixi va Yetkazish -->
             <div>
-                <!-- Moliyaviy Xulosa -->
+                <!-- 1. Mahsulotlar Jadvali -->
                 <div class="info-card mb-4">
+                    <div class="info-card__title">
+                        <i class="fas fa-shopping-bag text-primary"></i> Buyurtma Tarkibi ({{ cart_products|length }} xil)
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead class="table-custom-head">
+                                <tr>
+                                    <th>Mahsulot</th>
+                                    <th>Narx</th>
+                                    <th>Soni</th>
+                                    <th class="text-right">Jami</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in cart_products %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-3">
+                                            {% if item.product.image %}
+                                            <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" style="width:54px;height:54px;object-fit:cover;border-radius:10px;">
+                                            {% endif %}
+                                            <div>
+                                                <h6 class="mb-0 font-weight-bold text-dark">{{ item.product.name }}</h6>
+                                                <small class="text-muted">{{ item.product.category.name }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><strong class="text-dark">{{ item.unit_price|uz_price }}</strong></td>
+                                    <td><span class="badge-count"><i class="fas fa-cubes text-muted"></i> {{ item.count }} dona</span></td>
+                                    <td class="text-right font-weight-bold text-dark" style="font-size: 1.05rem;">{{ item.total_price|uz_price }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 2. To'lovlar Tarixi (Payment Ledger) -->
+                <div class="info-card mb-4">
+                    <div class="info-card__title">
+                        <i class="fas fa-receipt text-success"></i> To'lovlar Tarixi (Ledger)
+                    </div>
+
+                    {% if payments %}
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0" style="font-size: 14px;">
+                            <thead class="table-custom-head">
+                                <tr>
+                                    <th>Maqsad</th>
+                                    <th>Provayder</th>
+                                    <th>Summa</th>
+                                    <th>Holati</th>
+                                    <th>Tranzaksiya ID</th>
+                                    <th>Sana</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in payments %}
+                                <tr>
+                                    <td>
+                                        {% if p.purpose == 'prepayment' or p.purpose == 'PREPAYMENT' %}
+                                            <span class="badge-purpose badge-purpose--prepay"><i class="fas fa-percentage"></i> Oldindan to'lov</span>
+                                        {% elif p.purpose == 'balance' or p.purpose == 'BALANCE' %}
+                                            <span class="badge-purpose badge-purpose--balance"><i class="fas fa-coins"></i> Qoldiq to'lov</span>
+                                        {% else %}
+                                            <span class="badge-purpose badge-purpose--full"><i class="fas fa-check-circle"></i> To'liq to'lov</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if p.provider == 'click' %}
+                                            <span class="badge-provider badge-provider--click"><i class="fas fa-bolt"></i> CLICK</span>
+                                        {% elif p.provider == 'payme' %}
+                                            <span class="badge-provider badge-provider--payme"><i class="fas fa-wallet"></i> PAYME</span>
+                                        {% elif p.provider == 'uzum' %}
+                                            <span class="badge-provider badge-provider--uzum"><i class="fas fa-university"></i> UZUM</span>
+                                        {% elif p.provider == 'cash' %}
+                                            <span class="badge-provider badge-provider--cash"><i class="fas fa-hand-holding-usd"></i> NAQD</span>
+                                        {% else %}
+                                            <strong>{{ p.get_provider_display }}</strong>
+                                        {% endif %}
+                                    </td>
+                                    <td class="font-weight-bold text-dark">{{ p.amount|uz_price }}</td>
+                                    <td>
+                                        {% if p.status == 'paid' %}
+                                            <span class="status-badge status-badge--paid py-1 px-2" style="font-size:12px;"><i class="fas fa-check-circle"></i> To'landi</span>
+                                        {% elif p.status == 'initiated' %}
+                                            <span class="status-badge status-badge--partial py-1 px-2" style="font-size:12px;"><i class="fas fa-spinner fa-spin"></i> Boshlandi</span>
+                                        {% elif p.status == 'failed' %}
+                                            <span class="status-badge status-badge--failed py-1 px-2" style="font-size:12px;"><i class="fas fa-times-circle"></i> Xatolik</span>
+                                        {% elif p.status == 'refunded' %}
+                                            <span class="status-badge status-badge--refunded py-1 px-2" style="font-size:12px;"><i class="fas fa-undo"></i> Qaytarildi</span>
+                                        {% else %}
+                                            <span class="status-badge status-badge--unpaid py-1 px-2" style="font-size:12px;">{{ p.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td><code>{{ p.transaction_id|default:"—" }}</code></td>
+                                    <td class="text-muted">{{ p.created_at|date:"d.m.Y H:i" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">Ushbu buyurtma bo'yicha to'lovlar yozuvi mavjud emas.</p>
+                    {% endif %}
+                </div>
+
+                <!-- 3. Yetkazish Ma'lumoti -->
+                <div class="info-card mb-4">
+                    <div class="info-card__title">
+                        <i class="fas fa-map-marker-alt text-info"></i> Yetkazish Ma'lumoti
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <p class="mb-1 text-muted">Qabul qiluvchi:</p>
+                            <h6 class="font-weight-bold text-dark mb-0">{{ order.user.get_full_name|default:order.user.username }}</h6>
+                        </div>
+                        <div class="col-sm-6">
+                            <p class="mb-1 text-muted">Telefon raqam:</p>
+                            <h6 class="font-weight-bold text-dark mb-0">{{ order.user.phone|default:"Kiritilmagan" }}</h6>
+                        </div>
+                        <div class="col-sm-6">
+                            <p class="mb-1 text-muted">Yetkazish manzili:</p>
+                            <h6 class="font-weight-bold text-dark mb-0">{{ order.user.address|default:"Manzil ko'rsatilmagan" }}</h6>
+                        </div>
+                        <div class="col-sm-6">
+                            <p class="mb-1 text-muted">Buyurtma sanasi:</p>
+                            <h6 class="font-weight-bold text-dark mb-0">{{ order.date|date:"d.m.Y H:i" }}</h6>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Harakat tugmalari -->
+                <div class="d-flex gap-3 flex-wrap align-items-center mt-3">
+                    <a href="{% url 'order_history' %}" class="btn-orders-back">
+                        <i class="fas fa-arrow-left mr-1"></i> Barcha Buyurtmalar
+                    </a>
+                    <a href="{% url 'all_products' %}" class="btn-catalog-action">
+                        <i class="fas fa-shopping-bag mr-1"></i> Katalogga Qaytish
+                    </a>
+                </div>
+            </div>
+
+            <!-- O'ng Panel: To'lov Holati (Sticky Sidebar) -->
+            <div>
+                <div class="info-card sidebar-sticky">
                     <div class="info-card__title">
                         <i class="fas fa-wallet text-primary"></i> To'lov Holati
                     </div>
@@ -174,12 +406,12 @@
 
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span class="text-muted font-weight-600">Jami buyurtma:</span>
-                        <strong class="text-dark font-weight-bold" style="color: #0f172a !important;">{{ financials.grand_total|uz_price }}</strong>
+                        <strong class="text-dark font-weight-bold" style="color: #0f172a !important; font-size: 1.1rem;">{{ financials.grand_total|uz_price }}</strong>
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span class="text-muted font-weight-600">To'langan summa:</span>
-                        <strong class="text-success font-weight-bold">{{ financials.paid_amount|uz_price }}</strong>
+                        <strong class="text-success font-weight-bold" style="font-size: 1.1rem;">{{ financials.paid_amount|uz_price }}</strong>
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center mb-2">
@@ -205,121 +437,6 @@
                     </div>
                     {% endif %}
                 </div>
-
-                <!-- Yetkazish Ma'lumoti -->
-                <div class="info-card">
-                    <div class="info-card__title">
-                        <i class="fas fa-map-marker-alt text-info"></i> Yetkazish Ma'lumoti
-                    </div>
-                    <p class="mb-2"><strong>Qabul qiluvchi:</strong> {{ order.user.get_full_name|default:order.user.username }}</p>
-                    <p class="mb-2"><strong>Telefon:</strong> {{ order.user.phone|default:"Kiritilmagan" }}</p>
-                    <p class="mb-2"><strong>Manzil:</strong> {{ order.user.address|default:"Manzil ko'rsatilmagan" }}</p>
-                    <p class="mb-0"><strong>Sana:</strong> {{ order.date|date:"d.m.Y H:i" }}</p>
-                </div>
-            </div>
-
-            <!-- O'ng Panel: Mahsulotlar va To'lovlar Jurnali -->
-            <div>
-                <!-- Mahsulotlar Jadvali -->
-                <div class="info-card mb-4">
-                    <div class="info-card__title">
-                        <i class="fas fa-shopping-bag text-primary"></i> Buyurtma Tarkibi ({{ cart_products|length }} xil)
-                    </div>
-
-                    <div class="table-responsive">
-                        <table class="table style-two align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Mahsulot</th>
-                                    <th>Narx</th>
-                                    <th>Soni</th>
-                                    <th class="text-right">Jami</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for item in cart_products %}
-                                <tr>
-                                    <td>
-                                        <div class="d-flex align-items-center gap-3">
-                                            {% if item.product.image %}
-                                             <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" style="width:54px;height:54px;object-fit:cover;border-radius:10px;">
-                                            {% endif %}
-                                            <div>
-                                                <h6 class="mb-0 font-weight-bold text-dark">{{ item.product.name }}</h6>
-                                                <small class="text-muted">{{ item.product.category.name }}</small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>{{ item.unit_price|uz_price }}</td>
-                                    <td><span style="background:#f1f5f9; color:#1e293b !important; font-weight:700; padding:4px 10px; border-radius:8px; border:1px solid #e2e8f0; display:inline-block;">{{ item.count }} dona</span></td>
-                                    <td class="text-right font-weight-bold text-dark">{{ item.total_price|uz_price }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- To'lovlar Jurnali (Payment Ledger) -->
-                <div class="info-card mb-4">
-                    <div class="info-card__title">
-                        <i class="fas fa-receipt text-success"></i> To'lovlar Tarixi (Ledger)
-                    </div>
-
-                    {% if payments %}
-                    <div class="table-responsive">
-                        <table class="table table-bordered align-middle mb-0" style="font-size: 14px;">
-                            <thead class="bg-light">
-                                <tr>
-                                    <th>Maqsad</th>
-                                    <th>Provayder</th>
-                                    <th>Summa</th>
-                                    <th>Holati</th>
-                                    <th>Tranzaksiya ID</th>
-                                    <th>Sana</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for p in payments %}
-                                <tr>
-                                    <td>
-                                        <span class="badge badge-primary">{{ p.get_purpose_display }}</span>
-                                    </td>
-                                    <td><strong>{{ p.get_provider_display }}</strong></td>
-                                    <td class="font-weight-bold text-dark">{{ p.amount|uz_price }}</td>
-                                    <td>
-                                        {% if p.status == 'paid' %}
-                                            <span class="status-badge status-badge--paid py-1 px-2" style="font-size:12px;"><i class="fas fa-check-circle"></i> To'landi</span>
-                                        {% elif p.status == 'initiated' %}
-                                            <span class="status-badge status-badge--partial py-1 px-2" style="font-size:12px;"><i class="fas fa-spinner fa-spin"></i> Boshlandi</span>
-                                        {% elif p.status == 'failed' %}
-                                            <span class="status-badge status-badge--failed py-1 px-2" style="font-size:12px;"><i class="fas fa-times-circle"></i> Xatolik</span>
-                                        {% elif p.status == 'refunded' %}
-                                            <span class="status-badge status-badge--refunded py-1 px-2" style="font-size:12px;"><i class="fas fa-undo"></i> Qaytarildi</span>
-                                        {% else %}
-                                            <span class="status-badge status-badge--unpaid py-1 px-2" style="font-size:12px;">{{ p.get_status_display }}</span>
-                                        {% endif %}
-                                    </td>
-                                    <td><code>{{ p.transaction_id|default:"—" }}</code></td>
-                                    <td class="text-muted">{{ p.created_at|date:"d.m.Y H:i" }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <p class="text-muted mb-0">Ushbu buyurtma bo'yicha to'lovlar yozuvi mavjud emas.</p>
-                    {% endif %}
-                </div>
-
-                <div class="d-flex gap-3 flex-wrap align-items-center mt-3">
-                    <a href="{% url 'order_history' %}" class="btn-orders-back">
-                        <i class="fas fa-arrow-left mr-1"></i> Barcha Buyurtmalar
-                    </a>
-                    <a href="{% url 'all_products' %}" class="btn-catalog-action">
-                        <i class="fas fa-shopping-bag mr-1"></i> Katalogga Qaytish
-                    </a>
-                </div>
             </div>
         </div>
     </div>
@@ -343,23 +460,23 @@
 
                     <label class="form-label font-weight-bold text-dark mb-2">To'lov provayderini tanlang:</label>
                     <div class="d-flex flex-column gap-2 mb-3">
-                        <label class="d-flex align-items-center p-3 border rounded" style="cursor: pointer;">
+                        <label class="d-flex align-items-center p-3 border rounded" style="cursor: pointer; border-radius: 12px !important;">
                             <input type="radio" name="provider" value="click" checked class="mr-3">
                             <span class="font-weight-bold"><i class="fas fa-bolt text-primary mr-2"></i> CLICK</span>
                         </label>
-                        <label class="d-flex align-items-center p-3 border rounded" style="cursor: pointer;">
+                        <label class="d-flex align-items-center p-3 border rounded" style="cursor: pointer; border-radius: 12px !important;">
                             <input type="radio" name="provider" value="payme" class="mr-3">
                             <span class="font-weight-bold"><i class="fas fa-wallet text-success mr-2"></i> PAYME</span>
                         </label>
-                        <label class="d-flex align-items-center p-3 border rounded" style="cursor: pointer;">
+                        <label class="d-flex align-items-center p-3 border rounded" style="cursor: pointer; border-radius: 12px !important;">
                             <input type="radio" name="provider" value="uzum" class="mr-3">
                             <span class="font-weight-bold"><i class="fas fa-university text-info mr-2"></i> UZUM BANK</span>
                         </label>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Bekor qilish</button>
-                    <button type="submit" class="btn btn-primary font-weight-bold px-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Bekor qilish</button>
+                    <button type="submit" class="btn btn-primary rounded-pill font-weight-bold px-4">
                         <i class="fas fa-shield-alt mr-1"></i> To'lovga O'tish
                     </button>
                 </div>
