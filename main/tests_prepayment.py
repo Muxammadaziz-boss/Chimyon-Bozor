@@ -458,3 +458,187 @@ class PartialPrepaymentAndBalanceTests(TestCase):
         self.assertEqual(res2.status_code, 302)
         # Should still be 1 active payment, no duplicate ghost rows!
         self.assertEqual(models.Payment.objects.filter(order=self.cart, status__in=[models.Payment.Status.INITIATED, models.Payment.Status.PENDING]).count(), 1)
+
+    # -------------------------------------------------------------
+    # 21. Pay Balance View with Decimal Integrity & Click Checkout URL
+    # -------------------------------------------------------------
+    def test_pay_balance_view_creates_balance_payment_with_decimal_integrity(self):
+        # Setup order: 30% prepayment settled
+        self.cart.status = 2  # Accepted / in progress
+        self.cart.prepayment_percent = 30
+        self.cart.prepayment_amount = Decimal('290280.00')
+        self.cart.financial_status = models.Cart.FinancialStatus.PARTIALLY_PAID
+        self.cart.save()
+
+        # Create paid prepayment
+        models.Payment.objects.create(
+            order=self.cart,
+            provider='click',
+            purpose=models.Payment.Purpose.PREPAYMENT,
+            amount=Decimal('290280.00'),
+            status=models.Payment.Status.PAID,
+            paid_at=timezone.now()
+        )
+
+        self.assertEqual(self.cart.paid_amount, Decimal('290280.00'))
+        self.assertEqual(self.cart.remaining_amount, Decimal('677320.00'))
+
+        self.client.force_login(self.customer)
+        response = self.client.post(reverse('pay_balance', kwargs={'code': self.cart.code}), {
+            'provider': 'click'
+        })
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.url.startswith('https://my.click.uz/services/pay?'))
+        self.assertIn('amount=677320.00', response.url)
+
+        # Check balance payment record
+        balance_payment = models.Payment.objects.filter(order=self.cart, purpose=models.Payment.Purpose.BALANCE).first()
+        self.assertIsNotNone(balance_payment)
+        self.assertEqual(balance_payment.amount, Decimal('677320.00'))
+        self.assertEqual(balance_payment.provider, 'click')
+        self.assertEqual(balance_payment.status, models.Payment.Status.INITIATED)
+
+    # -------------------------------------------------------------
+    # 22. Pay Balance Rejects When Order Already Fully Paid (Zero Balance)
+    # -------------------------------------------------------------
+    def test_pay_balance_rejects_when_order_already_fully_paid(self):
+        self.cart.status = 2
+        self.cart.prepayment_percent = 100
+        self.cart.prepayment_amount = Decimal('967600.00')
+        self.cart.financial_status = models.Cart.FinancialStatus.FULLY_PAID
+        self.cart.save()
+
+        # Full payment record
+        models.Payment.objects.create(
+            order=self.cart,
+            provider='click',
+            purpose=models.Payment.Purpose.FULL,
+            amount=Decimal('967600.00'),
+            status=models.Payment.Status.PAID,
+            paid_at=timezone.now()
+        )
+
+        self.assertEqual(self.cart.remaining_amount, Decimal('0.00'))
+
+        self.client.force_login(self.customer)
+        response = self.client.post(reverse('pay_balance', kwargs={'code': self.cart.code}), {
+            'provider': 'click'
+        }, follow=True)
+
+        self.assertEqual(response.status_code, 200)
+        messages_list = list(response.context['messages'])
+        self.assertTrue(any("allaqachon to'liq to'langan" in m.message for m in messages_list))
+        # No balance payment created
+        self.assertEqual(models.Payment.objects.filter(order=self.cart, purpose=models.Payment.Purpose.BALANCE).count(), 0)
+
+    # -------------------------------------------------------------
+    # 23. Complete 967,600 / 30% Lifecycle Scenario Test
+    # -------------------------------------------------------------
+    def test_prepayment_and_balance_full_lifecycle(self):
+        # Scenario: 967,600 UZS Grand Total, 30% Prepayment (290,280 UZS), Remaining (677,320 UZS)
+        self.cart.status = 2
+        self.cart.prepayment_percent = 30
+        self.cart.prepayment_amount = Decimal('290280.00')
+        self.cart.financial_status = models.Cart.FinancialStatus.UNPAID
+        self.cart.save()
+
+        # Step 1: Prepayment is INITIATED
+        prep_payment = models.Payment.objects.create(
+            order=self.cart,
+            provider='click',
+            purpose=models.Payment.Purpose.PREPAYMENT,
+            amount=Decimal('290280.00'),
+            status=models.Payment.Status.INITIATED
+        )
+        self.assertEqual(self.cart.paid_amount, Decimal('0.00'))
+        financials = PaymentManager.calculate_order_financials(self.cart)
+        self.assertEqual(financials['prepayment_amount'], Decimal('290280.00'))
+        self.assertEqual(financials['remaining_amount'], Decimal('677320.00'))
+
+        # Step 2: Prepayment webhook confirms PAID
+        prep_payment.status = models.Payment.Status.PAID
+        prep_payment.paid_at = timezone.now()
+        prep_payment.save()
+        PaymentManager.sync_order_financial_status(self.cart)
+
+        self.cart.refresh_from_db()
+        self.assertEqual(self.cart.financial_status, models.Cart.FinancialStatus.PARTIALLY_PAID)
+        self.assertEqual(self.cart.paid_amount, Decimal('290280.00'))
+        self.assertEqual(self.cart.remaining_amount, Decimal('677320.00'))
+
+        # Step 3: Customer pays remaining balance via online Click
+        bal_payment, checkout_url = PaymentManager.create_payment(
+            order=self.cart,
+            provider_name='click',
+            purpose=models.Payment.Purpose.BALANCE
+        )
+        self.assertEqual(bal_payment.amount, Decimal('677320.00'))
+        self.assertIn('amount=677320.00', checkout_url)
+
+        # Step 4: Balance payment confirmed PAID
+        bal_payment.status = models.Payment.Status.PAID
+        bal_payment.paid_at = timezone.now()
+        bal_payment.save()
+        PaymentManager.sync_order_financial_status(self.cart)
+
+        self.cart.refresh_from_db()
+        self.assertEqual(self.cart.financial_status, models.Cart.FinancialStatus.FULLY_PAID)
+        self.assertEqual(self.cart.paid_amount, Decimal('967600.00'))
+        self.assertEqual(self.cart.remaining_amount, Decimal('0.00'))
+        self.assertTrue(self.cart.is_fully_paid)
+
+    # -------------------------------------------------------------
+    # 24. Pay Balance Unauthorized User Rejection (404)
+    # -------------------------------------------------------------
+    def test_pay_balance_unauthorized_user_rejected(self):
+        other_user = models.User.objects.create_user(username='intruder', phone='+998909998877', password='password123')
+        self.cart.status = 2
+        self.cart.save()
+
+        self.client.force_login(other_user)
+        response = self.client.post(reverse('pay_balance', kwargs={'code': self.cart.code}), {
+            'provider': 'click'
+        })
+        self.assertEqual(response.status_code, 404)
+
+    # -------------------------------------------------------------
+    # 25. Pay Balance Invalid Provider Validation
+    # -------------------------------------------------------------
+    def test_pay_balance_invalid_provider_rejected(self):
+        self.cart.status = 2
+        self.cart.save()
+
+        self.client.force_login(self.customer)
+        response = self.client.post(reverse('pay_balance', kwargs={'code': self.cart.code}), {
+            'provider': 'bitcoin_invalid'
+        }, follow=True)
+
+        self.assertEqual(response.status_code, 200)
+        messages_list = list(response.context['messages'])
+        self.assertTrue(any("Noto'g'ri to'lov provayderi" in m.message for m in messages_list))
+
+    # -------------------------------------------------------------
+    # 26. Pay Balance Idempotency Test (No duplicate balance payments)
+    # -------------------------------------------------------------
+    def test_pay_balance_idempotency_retry_does_not_duplicate_rows(self):
+        self.cart.status = 2
+        self.cart.save()
+
+        self.client.force_login(self.customer)
+        
+        # 1st attempt
+        res1 = self.client.post(reverse('pay_balance', kwargs={'code': self.cart.code}), {
+            'provider': 'click'
+        })
+        self.assertEqual(res1.status_code, 302)
+        self.assertEqual(models.Payment.objects.filter(order=self.cart, purpose=models.Payment.Purpose.BALANCE).count(), 1)
+
+        # 2nd attempt (same provider/amount)
+        res2 = self.client.post(reverse('pay_balance', kwargs={'code': self.cart.code}), {
+            'provider': 'click'
+        })
+        self.assertEqual(res2.status_code, 302)
+        # Should still be 1 active balance payment, not duplicated!
+        self.assertEqual(models.Payment.objects.filter(order=self.cart, purpose=models.Payment.Purpose.BALANCE, status__in=[models.Payment.Status.INITIATED, models.Payment.Status.PENDING]).count(), 1)
+

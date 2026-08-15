@@ -211,6 +211,111 @@
         padding-top: 50px;
         padding-bottom: 120px;
     }
+
+    /* Balance Payment Modal */
+    .balance-modal-content {
+        border-radius: 24px;
+        border: none;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+    }
+    .balance-modal-header {
+        background: #ffffff;
+        border-bottom: 1px solid #f1f5f9;
+        padding: 24px 28px 16px;
+    }
+    .balance-amount-banner {
+        background: linear-gradient(135deg, #f3e8ff 0%, #fae8ff 100%);
+        border: 1.5px solid #d8b4fe;
+        border-radius: 16px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .provider-select-card {
+        border: 2px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 14px 18px;
+        background: #ffffff;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: all 0.2s ease;
+        margin-bottom: 12px;
+        user-select: none;
+    }
+    .provider-select-card:hover {
+        border-color: #cbd5e1;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    .provider-select-card.active {
+        border-color: #7C3AED;
+        background: #faf5ff;
+        box-shadow: 0 4px 16px rgba(124, 58, 237, 0.15);
+    }
+    .provider-icon-box {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+    }
+    .provider-icon-click {
+        background: #e0f2fe;
+        color: #0284c7;
+    }
+    .provider-icon-payme {
+        background: #ccfbf1;
+        color: #0d9488;
+    }
+    .provider-icon-uzum {
+        background: #f3e8ff;
+        color: #7c3aed;
+    }
+    .btn-pay-modal-submit {
+        background: linear-gradient(135deg, #7C3AED, #6D28D9);
+        color: #ffffff !important;
+        font-weight: 700;
+        font-size: 15px;
+        padding: 14px 28px;
+        border-radius: 999px;
+        border: none;
+        flex-grow: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        box-shadow: 0 6px 20px rgba(124, 58, 237, 0.35);
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    .btn-pay-modal-submit:hover {
+        background: linear-gradient(135deg, #6D28D9, #5B21B6);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(124, 58, 237, 0.45);
+    }
+    .btn-modal-cancel {
+        background: #f1f5f9;
+        color: #475569 !important;
+        font-weight: 600;
+        font-size: 15px;
+        padding: 12px 24px;
+        border-radius: 999px;
+        border: none;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    .btn-modal-cancel:hover {
+        background: #e2e8f0;
+        color: #0f172a !important;
+    }
 </style>
 
 <section class="breadcrumb breadcrumb-one padding-y-60 section-bg position-relative z-index-1 overflow-hidden">
@@ -320,9 +425,11 @@
                                     <td class="font-weight-bold text-dark">{{ p.amount|uz_price }}</td>
                                     <td>
                                         {% if p.status == 'paid' %}
-                                            <span class="status-badge status-badge--paid py-1 px-2" style="font-size:12px;"><i class="fas fa-check-circle"></i> To'landi</span>
+                                            <span class="status-badge status-badge--paid py-1 px-2" style="font-size:12px;"><i class="fas fa-check-circle"></i> To'langan</span>
                                         {% elif p.status == 'initiated' %}
-                                            <span class="status-badge status-badge--partial py-1 px-2" style="font-size:12px;"><i class="fas fa-spinner fa-spin"></i> Boshlandi</span>
+                                            <span class="status-badge status-badge--partial py-1 px-2" style="font-size:12px;"><i class="fas fa-spinner fa-spin"></i> Boshlangan</span>
+                                        {% elif p.status == 'pending' %}
+                                            <span class="status-badge status-badge--unpaid py-1 px-2" style="font-size:12px;"><i class="fas fa-clock"></i> Kutilmoqda</span>
                                         {% elif p.status == 'failed' %}
                                             <span class="status-badge status-badge--failed py-1 px-2" style="font-size:12px;"><i class="fas fa-times-circle"></i> Xatolik</span>
                                         {% elif p.status == 'refunded' %}
@@ -414,9 +521,16 @@
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="text-muted font-weight-600">To'langan summa:</span>
+                        <span class="text-muted font-weight-600">To'langan (Tasdiqlangan):</span>
                         <strong class="text-success font-weight-bold" style="font-size: 1.1rem;">{{ financials.paid_amount|uz_price }}</strong>
                     </div>
+
+                    {% if pending_amount > 0 %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-warning-dark font-weight-600" style="color: #d97706;"><i class="fas fa-clock mr-1"></i> Kutilayotgan to'lov:</span>
+                        <strong class="text-warning font-weight-bold" style="color: #d97706 !important;">{{ pending_amount|uz_price }}</strong>
+                    </div>
+                    {% endif %}
 
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span class="text-muted font-weight-600">Oldindan to'lov foizi:</span>
@@ -436,7 +550,7 @@
                         </small>
 
                         <button type="button" class="btn-pay-balance" data-bs-toggle="modal" data-bs-target="#payBalanceModal">
-                            <i class="fas fa-credit-card"></i> Qoldiqni Onlayn To'lash
+                            <i class="fas fa-credit-card mr-2"></i> Qoldiqni Onlayn To'lash
                         </button>
                     </div>
                     {% endif %}
@@ -450,43 +564,128 @@
 {% if financials.remaining_amount > 0 %}
 <div class="modal fade" id="payBalanceModal" tabindex="-1" aria-labelledby="payBalanceModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: 0 20px 40px rgba(0,0,0,0.15);">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title font-weight-bold" id="payBalanceModalLabel">Qoldiq Summani Onlayn To'lash</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal-content balance-modal-content">
+            <div class="modal-header balance-modal-header border-0 pb-0">
+                <h5 class="modal-title font-weight-bold text-dark" id="payBalanceModalLabel">
+                    <i class="fas fa-coins text-warning mr-2"></i> Qoldiq to'lov
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Yopish"></button>
             </div>
-            <form method="POST" action="{% url 'pay_balance' order.code %}">
+            <form method="POST" action="{% url 'pay_balance' order.code %}" id="payBalanceForm">
                 {% csrf_token %}
-                <div class="modal-body py-4">
-                    <div class="alert alert-info border-0 mb-4" style="background:#e0f2fe; color:#0369a1; border-radius:12px;">
-                        To'lanadigan qoldiq summa: <strong class="d-block font-weight-bold" style="font-size:1.3rem;">{{ financials.remaining_amount|uz_price }}</strong>
+                <div class="modal-body px-4 py-4">
+                    <!-- Amount Banner -->
+                    <div class="balance-amount-banner">
+                        <div>
+                            <small class="text-muted font-weight-bold d-block">To'lanadigan summa:</small>
+                            <span class="text-dark font-weight-bold" style="font-size: 1.4rem; color: #7C3AED !important;">{{ financials.remaining_amount|uz_price }}</span>
+                        </div>
+                        <span class="badge" style="background:#7C3AED; color:#ffffff; font-weight:700; padding:6px 14px; border-radius:999px; font-size:12px;">Qoldiq</span>
                     </div>
 
-                    <label class="form-label font-weight-bold text-dark mb-2">To'lov provayderini tanlang:</label>
-                    <div class="d-flex flex-column gap-2 mb-3">
-                        <label class="d-flex align-items-center p-3 border rounded" style="cursor: pointer; border-radius: 12px !important;">
-                            <input type="radio" name="provider" value="click" checked class="mr-3">
-                            <span class="font-weight-bold"><i class="fas fa-bolt text-primary mr-2"></i> CLICK</span>
+                    <label class="form-label font-weight-bold text-dark mb-3">To'lov provayderini tanlang:</label>
+                    <div class="d-flex flex-column mb-3">
+                        <!-- Click Option -->
+                        <label class="provider-select-card active" for="modal_pay_click" id="card_click">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="provider-icon-box provider-icon-click">
+                                    <i class="fas fa-bolt"></i>
+                                </div>
+                                <div>
+                                    <h6 class="font-weight-bold text-dark mb-0">CLICK</h6>
+                                    <small class="text-muted">Uzcard • Humo • Visa • Mastercard</small>
+                                </div>
+                            </div>
+                            <input type="radio" name="provider" value="click" id="modal_pay_click" checked class="form-check-input ms-auto" style="width:20px;height:20px;cursor:pointer;">
                         </label>
-                        <label class="d-flex align-items-center p-3 border rounded" style="cursor: pointer; border-radius: 12px !important;">
-                            <input type="radio" name="provider" value="payme" class="mr-3">
-                            <span class="font-weight-bold"><i class="fas fa-wallet text-success mr-2"></i> PAYME</span>
+
+                        <!-- Payme Option -->
+                        <label class="provider-select-card" for="modal_pay_payme" id="card_payme">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="provider-icon-box provider-icon-payme">
+                                    <i class="fas fa-wallet"></i>
+                                </div>
+                                <div>
+                                    <h6 class="font-weight-bold text-dark mb-0">PAYME</h6>
+                                    <small class="text-muted">Uzcard • Humo</small>
+                                </div>
+                            </div>
+                            <input type="radio" name="provider" value="payme" id="modal_pay_payme" class="form-check-input ms-auto" style="width:20px;height:20px;cursor:pointer;">
                         </label>
-                        <label class="d-flex align-items-center p-3 border rounded" style="cursor: pointer; border-radius: 12px !important;">
-                            <input type="radio" name="provider" value="uzum" class="mr-3">
-                            <span class="font-weight-bold"><i class="fas fa-university text-info mr-2"></i> UZUM BANK</span>
+
+                        <!-- Uzum Option -->
+                        <label class="provider-select-card" for="modal_pay_uzum" id="card_uzum">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="provider-icon-box provider-icon-uzum">
+                                    <i class="fas fa-university"></i>
+                                </div>
+                                <div>
+                                    <h6 class="font-weight-bold text-dark mb-0">UZUM BANK</h6>
+                                    <small class="text-muted">Uzum Pay • bank kartalari</small>
+                                </div>
+                            </div>
+                            <input type="radio" name="provider" value="uzum" id="modal_pay_uzum" class="form-check-input ms-auto" style="width:20px;height:20px;cursor:pointer;">
                         </label>
                     </div>
                 </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Bekor qilish</button>
-                    <button type="submit" class="btn btn-primary rounded-pill font-weight-bold px-4">
-                        <i class="fas fa-shield-alt mr-1"></i> To'lovga O'tish
+                <div class="modal-footer border-0 px-4 pb-4 pt-0 d-flex gap-2">
+                    <button type="button" class="btn-modal-cancel" data-bs-dismiss="modal">Bekor qilish</button>
+                    <button type="submit" class="btn-pay-modal-submit" id="payBalanceSubmitBtn">
+                        <i class="fas fa-shield-alt mr-1"></i> <span id="payBalanceBtnText">{{ financials.remaining_amount|uz_price }} To'lash (CLICK)</span>
                     </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const providerCards = document.querySelectorAll('.provider-select-card');
+    const payBalanceBtnText = document.getElementById('payBalanceBtnText');
+    const payBalanceForm = document.getElementById('payBalanceForm');
+    const payBalanceSubmitBtn = document.getElementById('payBalanceSubmitBtn');
+    const remainingFormatted = "{{ financials.remaining_amount|uz_price }}";
+
+    function updateModalSubmitText() {
+        const checked = document.querySelector('input[name="provider"]:checked');
+        const providerName = checked ? checked.value.toUpperCase() : 'CLICK';
+        if (payBalanceBtnText) {
+            payBalanceBtnText.textContent = remainingFormatted + ' To\'lash (' + providerName + ')';
+        }
+    }
+
+    providerCards.forEach(card => {
+        card.addEventListener('click', function() {
+            providerCards.forEach(c => c.classList.remove('active'));
+            this.classList.add('active');
+            const radio = this.querySelector('input[type="radio"]');
+            if (radio) {
+                radio.checked = true;
+                updateModalSubmitText();
+            }
+        });
+    });
+
+    let isBalanceSubmitting = false;
+    if (payBalanceForm) {
+        payBalanceForm.addEventListener('submit', function(e) {
+            if (isBalanceSubmitting) {
+                e.preventDefault();
+                return false;
+            }
+            isBalanceSubmitting = true;
+            if (payBalanceSubmitBtn) {
+                payBalanceSubmitBtn.disabled = true;
+                payBalanceSubmitBtn.style.opacity = '0.85';
+                payBalanceSubmitBtn.style.cursor = 'not-allowed';
+                payBalanceSubmitBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> To\'lov sahifasi tayyorlanmoqda...';
+            }
+        });
+    }
+
+    updateModalSubmitText();
+});
+</script>
 {% endif %}
 {% endblock %}

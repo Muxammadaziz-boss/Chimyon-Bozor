@@ -2,6 +2,7 @@ import json
 import re
 import random
 import logging
+from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -924,13 +925,24 @@ def pay_balance(request, code):
     Mijoz tomonidan buyurtmaning qolgan qoldiq summasini onlayn to'lash.
     """
     order = get_object_or_404(models.Cart, user=request.user, code=code, status__gt=1)
+    
+    # Qoldiq mavjudligini Decimal asosida tekshirish
     if order.remaining_amount <= Decimal('0.00'):
         messages.info(request, "Ushbu buyurtma allaqachon to'liq to'langan.")
         return redirect('order_detail', code=order.code)
 
-    provider = request.POST.get('provider', models.Payment.Provider.CLICK).strip().lower()
-    if provider == models.Payment.Provider.CASH:
-        messages.info(request, "Qoldiq summa buyurtma yetkazilganda kuryerga naqd yoki karta orqali to'lanadi.")
+    provider = (request.POST.get('provider') or models.Payment.Provider.CLICK).strip().lower()
+    valid_online_providers = [
+        models.Payment.Provider.CLICK,
+        models.Payment.Provider.PAYME,
+        models.Payment.Provider.UZUM
+    ]
+
+    if provider not in valid_online_providers:
+        if provider == models.Payment.Provider.CASH:
+            messages.info(request, "Qoldiq summa buyurtma yetkazilganda kuryerga naqd yoki karta orqali to'lanadi.")
+        else:
+            messages.error(request, "Noto'g'ri to'lov provayderi tanlandi. Iltimos, Click, Payme yoki Uzum tizimlaridan birini tanlang.")
         return redirect('order_detail', code=order.code)
 
     try:
@@ -942,10 +954,12 @@ def pay_balance(request, code):
         )
         return redirect(checkout_url)
     except PaymentConfigurationError as e:
-        messages.error(request, f"{provider.capitalize()} to'lov tizimi sozlanmagan. Iltimos, kuryer yetkazganda naqd to'lang yoki boshqa tizimni tanlang.")
+        logger.warning("Payment configuration error in pay_balance: %s", str(e))
+        messages.error(request, f"{provider.upper()} to'lov tizimi sozlanmagan yoki test rejimida. Iltimos, boshqa to'lov usulini tanlang.")
         return redirect('order_detail', code=order.code)
     except Exception as e:
-        messages.error(request, f"Qoldiq to'lovni boshlashda xatolik: {str(e)}")
+        logger.exception("Error initiating balance payment for order #%s: %s", order.code, str(e))
+        messages.error(request, "Qoldiq to'lovni boshlashda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.")
         return redirect('order_detail', code=order.code)
 
 
@@ -962,12 +976,20 @@ def order_detail(request, code):
     primary_payment = payments.first()
     financials = PaymentManager.calculate_order_financials(order)
 
+    # Kutilayotgan / boshlangan to'lovlarni hisoblash
+    pending_payment = payments.filter(
+        status__in=[models.Payment.Status.INITIATED, models.Payment.Status.PENDING]
+    ).first()
+    pending_amount = pending_payment.amount if pending_payment else Decimal('0.00')
+
     return render(request, 'front/order_detail.html', {
         'order': order,
         'cart_products': cart_products,
         'payment': primary_payment,
         'payments': payments,
         'financials': financials,
+        'pending_payment': pending_payment,
+        'pending_amount': pending_amount,
     })
 
 
