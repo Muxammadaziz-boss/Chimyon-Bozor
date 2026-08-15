@@ -114,3 +114,20 @@ class UIVisibilityAndInteractionTests(TestCase):
         self.assertEqual(res.status_code, 200)
         content = res.content.decode('utf-8')
         self.assertIn("width: 95px; min-width: 95px;", content)
+
+    # 11. Custom Scrollbar rendered in base and dashboard
+    def test_custom_scrollbar_rendered(self):
+        res_front = self.client.get(reverse('index'))
+        self.assertEqual(res_front.status_code, 200)
+        content_front = res_front.content.decode('utf-8')
+        self.assertIn("scrollbar-color: #7C3AED #F8FAFC;", content_front)
+        self.assertIn("::-webkit-scrollbar", content_front)
+        self.assertIn("linear-gradient(180deg, #7C3AED 0%, #EC4899 100%)", content_front)
+
+        self.client.login(username='uitestuser', password='password123')
+        res_dash = self.client.get(reverse('d_index'))
+        self.assertEqual(res_dash.status_code, 200)
+        content_dash = res_dash.content.decode('utf-8')
+        self.assertIn("scrollbar-color: #7C3AED #F8FAFC;", content_dash)
+        self.assertIn("::-webkit-scrollbar", content_dash)
+

@@ -53,6 +53,102 @@
     {% block extra_css %}{% endblock %}
 
     <style>
+        /* ==========================================================
+           CHIMYON-BOZOR PREMIUM GLOBAL CUSTOM SCROLLBAR
+           ========================================================== */
+        /* Firefox Global Scrollbar */
+        html {
+            scrollbar-width: thin;
+            scrollbar-color: #7C3AED #F8FAFC;
+        }
+
+        /* WebKit Global Scrollbar (Chrome, Edge, Safari, Opera) */
+        ::-webkit-scrollbar {
+            width: 9px;
+            height: 9px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #F8FAFC;
+            border-radius: 999px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #7C3AED 0%, #EC4899 100%);
+            border-radius: 999px;
+            border: 2px solid #F8FAFC;
+            transition: background 0.25s ease, border-color 0.25s ease;
+        }
+
+        ::-webkit-scrollbar-thumb:horizontal {
+            background: linear-gradient(90deg, #7C3AED 0%, #EC4899 100%);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #6D28D9 0%, #DB2777 100%);
+            border: 1.5px solid #F1F5F9;
+        }
+
+        ::-webkit-scrollbar-thumb:horizontal:hover {
+            background: linear-gradient(90deg, #6D28D9 0%, #DB2777 100%);
+        }
+
+        ::-webkit-scrollbar-corner {
+            background: #F8FAFC;
+        }
+
+        /* Subtle Nested Scrollbars */
+        .filter-cat-list,
+        .dropdown-menu,
+        .custom-select-options,
+        .checkout-select-options,
+        .table-responsive,
+        .modal-body {
+            scrollbar-width: thin;
+            scrollbar-color: #A78BFA #F8FAFC;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .filter-cat-list::-webkit-scrollbar,
+        .dropdown-menu::-webkit-scrollbar,
+        .custom-select-options::-webkit-scrollbar,
+        .checkout-select-options::-webkit-scrollbar,
+        .table-responsive::-webkit-scrollbar,
+        .modal-body::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .filter-cat-list::-webkit-scrollbar-track,
+        .dropdown-menu::-webkit-scrollbar-track,
+        .custom-select-options::-webkit-scrollbar-track,
+        .checkout-select-options::-webkit-scrollbar-track,
+        .table-responsive::-webkit-scrollbar-track,
+        .modal-body::-webkit-scrollbar-track {
+            background: #F8FAFC;
+            border-radius: 999px;
+        }
+
+        .filter-cat-list::-webkit-scrollbar-thumb,
+        .dropdown-menu::-webkit-scrollbar-thumb,
+        .custom-select-options::-webkit-scrollbar-thumb,
+        .checkout-select-options::-webkit-scrollbar-thumb,
+        .table-responsive::-webkit-scrollbar-thumb,
+        .modal-body::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #8B5CF6 0%, #F472B6 100%);
+            border-radius: 999px;
+            border: 1px solid #F8FAFC;
+        }
+
+        .filter-cat-list::-webkit-scrollbar-thumb:hover,
+        .dropdown-menu::-webkit-scrollbar-thumb:hover,
+        .custom-select-options::-webkit-scrollbar-thumb:hover,
+        .checkout-select-options::-webkit-scrollbar-thumb:hover,
+        .table-responsive::-webkit-scrollbar-thumb:hover,
+        .modal-body::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #7C3AED 0%, #EC4899 100%);
+        }
+
         .header {
             position: sticky !important;
             top: 0 !important;
