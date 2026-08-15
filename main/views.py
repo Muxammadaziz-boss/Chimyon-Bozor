@@ -704,6 +704,35 @@ def checkout(request):
     if request.method == 'POST':
         phone = request.POST.get('phone', '').strip()
         address = request.POST.get('address', '').strip()
+        prepayment_percent_raw = request.POST.get('prepayment_percent')
+        chosen_percent = None
+        if prepayment_percent_raw is not None and str(prepayment_percent_raw).strip() != '':
+            try:
+                chosen_percent = int(str(prepayment_percent_raw).strip())
+            except (ValueError, TypeError):
+                messages.error(request, "Noto'g'ri oldindan to'lov foizi kiritildi.")
+                return render(request, 'front/checkout.html', {
+                    'cart': cart,
+                    'cart_products': cart_products,
+                    'cart_total': financials['grand_total'],
+                    'cart_count': cart_count,
+                    'financials': financials,
+                    'selected_provider': request.POST.get('provider', 'click').strip().lower(),
+                })
+
+        try:
+            financials = PaymentManager.calculate_order_financials(cart, chosen_percent=chosen_percent)
+        except ValueError as e:
+            messages.error(request, str(e))
+            return render(request, 'front/checkout.html', {
+                'cart': cart,
+                'cart_products': cart_products,
+                'cart_total': financials['grand_total'],
+                'cart_count': cart_count,
+                'financials': financials,
+                'selected_provider': request.POST.get('provider', 'click').strip().lower(),
+            })
+
         provider = request.POST.get('provider', models.Payment.Provider.CLICK if financials['prepayment_percent'] > 0 else models.Payment.Provider.CASH).strip().lower()
         payment_method = request.POST.get('payment_method', 'card').strip()
 
@@ -749,6 +778,7 @@ def checkout(request):
             payment, checkout_url = PaymentManager.create_payment(
                 order=cart,
                 provider_name=provider,
+                chosen_percent=chosen_percent,
                 payment_method=payment_method,
                 request=request
             )

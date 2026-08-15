@@ -31,6 +31,42 @@
         gap: 10px;
     }
 
+    .prepayment-options-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .prepay-btn {
+        border: 2px solid #e5e7eb;
+        background: #ffffff;
+        color: #374151;
+        font-weight: 700;
+        padding: 12px 22px;
+        border-radius: 14px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 15px;
+    }
+
+    .prepay-btn:hover {
+        border-color: #7c3aed;
+        color: #7c3aed;
+        background: #faf5ff;
+        transform: translateY(-1px);
+    }
+
+    .prepay-btn.active {
+        border-color: #7c3aed;
+        background: #7c3aed;
+        color: #ffffff;
+        box-shadow: 0 6px 18px rgba(124, 58, 237, 0.28);
+    }
+
     .payment-options-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -159,6 +195,9 @@
 
         <form method="POST" action="{% url 'checkout' %}" id="checkoutForm">
             {% csrf_token %}
+            <!-- Selected Prepayment Percent -->
+            <input type="hidden" name="prepayment_percent" id="prepaymentPercentInput" value="{{ financials.prepayment_percent }}">
+
             <div class="checkout-shell">
                 <!-- Chap Qism: Manzil va To'lov usuli -->
                 <div>
@@ -191,19 +230,48 @@
                             <i class="fas fa-credit-card text-success"></i> 2. To'lov Usulini Tanlang
                         </div>
 
-                        {% if financials.prepayment_percent > 0 %}
-                        <div class="alert alert-info border-0 shadow-sm d-flex align-items-center mb-4" style="border-radius: 12px; background: #e0f2fe; color: #0369a1;">
-                            <i class="fas fa-info-circle mr-3" style="font-size: 1.5rem;"></i>
-                            <div>
-                                <strong>Oldindan to'lov sharti:</strong> Ushbu buyurtma uchun <strong>{{ financials.prepayment_percent }}% ({{ financials.prepayment_amount|uz_price }})</strong> oldindan to'lov talab qilinadi.
-                                Qolgan <strong>{{ financials.remaining_amount|uz_price }}</strong> buyurtma yetkazilganda to'lanadi.
+                        <!-- Prepayment Percentage Selector Widget -->
+                        {% if financials.percentage_options|length > 1 %}
+                        <div class="mb-4">
+                            <label class="form-label font-weight-bold text-dark mb-2">
+                                <i class="fas fa-percentage text-primary mr-1"></i> Oldindan to'lov miqdorini tanlang:
+                            </label>
+                            <div class="prepayment-options-grid">
+                                {% for opt in financials.percentage_options %}
+                                <button type="button"
+                                        class="prepay-btn {% if opt.is_selected %}active{% endif %}"
+                                        data-percent="{{ opt.percent }}"
+                                        data-prepay-amount="{{ opt.prepayment_amount }}"
+                                        data-prepay-formatted="{{ opt.prepayment_amount|uz_price }}"
+                                        data-remain-amount="{{ opt.remaining_amount }}"
+                                        data-remain-formatted="{{ opt.remaining_amount|uz_price }}">
+                                    <i class="fas {% if opt.percent == 100 %}fa-check-double{% elif opt.percent == 0 %}fa-truck{% else %}fa-coins{% endif %} mr-1"></i>
+                                    {{ opt.percent }}%
+                                    {% if opt.percent == 100 %}
+                                    <small style="opacity: 0.9;">(To'liq to'lov)</small>
+                                    {% elif opt.percent == 0 %}
+                                    <small style="opacity: 0.9;">(Yetkazilganda)</small>
+                                    {% else %}
+                                    <small style="opacity: 0.9;">({{ opt.prepayment_amount|uz_price }})</small>
+                                    {% endif %}
+                                </button>
+                                {% endfor %}
                             </div>
                         </div>
                         {% endif %}
 
+                        <!-- Info Banner -->
+                        <div class="alert alert-info border-0 shadow-sm d-flex align-items-center mb-4" id="prepaymentBanner" style="border-radius: 12px; background: #e0f2fe; color: #0369a1; {% if financials.prepayment_percent == 0 %}display: none !important;{% endif %}">
+                            <i class="fas fa-info-circle mr-3" style="font-size: 1.5rem;"></i>
+                            <div>
+                                <strong>Oldindan to'lov sharti:</strong> Ushbu buyurtma uchun <strong id="bannerPercentText">{{ financials.prepayment_percent }}% (<span id="bannerPrepayAmount">{{ financials.prepayment_amount|uz_price }}</span>)</strong> oldindan to'lov talab qilinadi.
+                                Qolgan <strong id="bannerRemainingAmount">{{ financials.remaining_amount|uz_price }}</strong> buyurtma yetkazilganda to'lanadi.
+                            </div>
+                        </div>
+
                         <div class="payment-options-grid">
                             <!-- Click -->
-                            <label class="payment-option-card {% if selected_provider == 'click' %}active{% endif %}" for="pay_click">
+                            <label class="payment-option-card {% if selected_provider == 'click' %}active{% endif %}" for="pay_click" id="option_click">
                                 <input type="radio" name="provider" value="click" id="pay_click" {% if selected_provider == 'click' %}checked{% endif %}>
                                 <div>
                                     <div class="payment-badge payment-badge-click mb-2"><i class="fas fa-bolt mr-1"></i> CLICK</div>
@@ -213,7 +281,7 @@
                             </label>
 
                             <!-- Payme -->
-                            <label class="payment-option-card {% if selected_provider == 'payme' %}active{% endif %}" for="pay_payme">
+                            <label class="payment-option-card {% if selected_provider == 'payme' %}active{% endif %}" for="pay_payme" id="option_payme">
                                 <input type="radio" name="provider" value="payme" id="pay_payme" {% if selected_provider == 'payme' %}checked{% endif %}>
                                 <div>
                                     <div class="payment-badge payment-badge-payme mb-2"><i class="fas fa-wallet mr-1"></i> PAYME</div>
@@ -223,7 +291,7 @@
                             </label>
 
                             <!-- Uzum Bank -->
-                            <label class="payment-option-card {% if selected_provider == 'uzum' %}active{% endif %}" for="pay_uzum">
+                            <label class="payment-option-card {% if selected_provider == 'uzum' %}active{% endif %}" for="pay_uzum" id="option_uzum">
                                 <input type="radio" name="provider" value="uzum" id="pay_uzum" {% if selected_provider == 'uzum' %}checked{% endif %}>
                                 <div>
                                     <div class="payment-badge payment-badge-uzum mb-2"><i class="fas fa-university mr-1"></i> UZUM</div>
@@ -232,9 +300,8 @@
                                 </div>
                             </label>
 
-                            {% if financials.prepayment_percent == 0 %}
-                            <!-- Cash on delivery -->
-                            <label class="payment-option-card {% if selected_provider == 'cash' %}active{% endif %}" for="pay_cash">
+                            <!-- Cash on delivery (visible when 0% allowed/selected) -->
+                            <label class="payment-option-card {% if selected_provider == 'cash' %}active{% endif %}" for="pay_cash" id="option_cash" {% if financials.prepayment_percent > 0 %}style="display: none;"{% endif %}>
                                 <input type="radio" name="provider" value="cash" id="pay_cash" {% if selected_provider == 'cash' %}checked{% endif %}>
                                 <div>
                                     <div class="payment-badge payment-badge-cash mb-2"><i class="fas fa-hand-holding-usd mr-1"></i> NAQD</div>
@@ -242,7 +309,6 @@
                                     <small class="text-muted d-block">Kuryerga naqd yoki karta orqali</small>
                                 </div>
                             </label>
-                            {% endif %}
                         </div>
                     </div>
 
@@ -259,7 +325,7 @@
                                     <tr class="border-bottom">
                                         <td style="width: 60px;">
                                             {% if item.product.image %}
-                                            <img src="{{ item.product.image.url }}" width="50" height="50" class="rounded" style="object-fit: cover;">
+                                             <img src="{{ item.product.image.url }}" width="50" height="50" class="rounded" style="object-fit: cover;">
                                             {% else %}
                                             <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width:50px;height:50px;"><i class="fas fa-box text-muted"></i></div>
                                             {% endif %}
@@ -294,29 +360,36 @@
                             <span class="badge badge-success px-2 py-1">Bepul</span>
                         </div>
 
-                        {% if financials.prepayment_percent > 0 %}
-                        <div class="summary-line">
+                        <div class="summary-line" id="summaryPrepayLine" {% if financials.prepayment_percent == 0 %}style="display: none;"{% endif %}>
                             <span>Oldindan to'lov:</span>
-                            <span class="badge badge-primary px-2 py-1">{{ financials.prepayment_percent }}%</span>
+                            <span class="badge badge-primary px-2 py-1" id="summaryPrepayBadge">{{ financials.prepayment_percent }}%</span>
                         </div>
 
                         <hr class="my-2">
 
                         <div class="summary-line summary-total mb-1">
-                            <span style="color: #0f172a;">Hozir to'lanadi:</span>
-                            <span class="text-primary font-weight-bold" style="font-size: 1.3rem;">{{ financials.prepayment_amount|uz_price }}</span>
+                            <span style="color: #0f172a;" id="summaryNowLabel">
+                                {% if financials.prepayment_percent == 100 %}
+                                Jami To'lov:
+                                {% elif financials.prepayment_percent == 0 %}
+                                Yetkazilganda To'lov:
+                                {% else %}
+                                Hozir to'lanadi:
+                                {% endif %}
+                            </span>
+                            <span class="text-primary font-weight-bold" style="font-size: 1.3rem;" id="summaryNowAmount">
+                                {% if financials.prepayment_percent == 0 %}
+                                {{ financials.grand_total|uz_price }}
+                                {% else %}
+                                {{ financials.prepayment_amount|uz_price }}
+                                {% endif %}
+                            </span>
                         </div>
 
-                        <div class="summary-line">
+                        <div class="summary-line" id="summaryRemainingLine" {% if financials.prepayment_percent == 0 or financials.prepayment_percent == 100 %}style="display: none;"{% endif %}>
                             <span class="text-muted">Yetkazilganda to'lanadi:</span>
-                            <span class="font-weight-bold text-dark">{{ financials.remaining_amount|uz_price }}</span>
+                            <span class="font-weight-bold text-dark" id="summaryRemainingAmount">{{ financials.remaining_amount|uz_price }}</span>
                         </div>
-                        {% else %}
-                        <div class="summary-line summary-total">
-                            <span>Jami To'lov:</span>
-                            <span class="text-primary font-weight-bold" style="font-size: 1.3rem;">{{ financials.grand_total|uz_price }}</span>
-                        </div>
-                        {% endif %}
 
                         <button type="submit" class="checkout-submit-btn mt-3" id="submitBtn">
                             {% if financials.prepayment_percent > 0 %}
@@ -338,11 +411,115 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const prepayBtns = document.querySelectorAll('.prepay-btn');
+    const prepayInput = document.getElementById('prepaymentPercentInput');
     const optionCards = document.querySelectorAll('.payment-option-card');
     const submitBtn = document.getElementById('submitBtn');
-    const prepaymentAmount = "{{ financials.prepayment_amount|uz_price }}";
-    const prepaymentPercent = {{ financials.prepayment_percent|default:0 }};
+    const banner = document.getElementById('prepaymentBanner');
+    const bannerPercentText = document.getElementById('bannerPercentText');
+    const bannerPrepayAmount = document.getElementById('bannerPrepayAmount');
+    const bannerRemainingAmount = document.getElementById('bannerRemainingAmount');
+    const summaryPrepayLine = document.getElementById('summaryPrepayLine');
+    const summaryPrepayBadge = document.getElementById('summaryPrepayBadge');
+    const summaryNowLabel = document.getElementById('summaryNowLabel');
+    const summaryNowAmount = document.getElementById('summaryNowAmount');
+    const summaryRemainingLine = document.getElementById('summaryRemainingLine');
+    const summaryRemainingAmount = document.getElementById('summaryRemainingAmount');
+    const cashOption = document.getElementById('option_cash');
 
+    let currentPercent = parseInt(prepayInput ? prepayInput.value : '30', 10);
+    let currentFormattedAmount = "{{ financials.prepayment_amount|uz_price }}";
+
+    function updateSubmitButtonText() {
+        const checkedRadio = document.querySelector('input[name="provider"]:checked');
+        const provider = checkedRadio ? checkedRadio.value : 'click';
+        
+        if (provider === 'cash' || currentPercent === 0) {
+            submitBtn.innerHTML = '<i class="fas fa-check mr-2"></i> Buyurtmani Tasdiqlash';
+        } else {
+            submitBtn.innerHTML = '<i class="fas fa-shield-alt mr-2"></i> ' + currentFormattedAmount + ' To\'lash (' + provider.toUpperCase() + ')';
+        }
+    }
+
+    // Handle percentage selection
+    prepayBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            prepayBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+
+            const percent = parseInt(this.getAttribute('data-percent'), 10);
+            const prepayFormatted = this.getAttribute('data-prepay-formatted');
+            const remainFormatted = this.getAttribute('data-remain-formatted');
+
+            currentPercent = percent;
+            currentFormattedAmount = prepayFormatted;
+            if (prepayInput) prepayInput.value = percent;
+
+            // Update Banner
+            if (percent === 0) {
+                if (banner) banner.style.display = 'none';
+                if (summaryPrepayLine) summaryPrepayLine.style.display = 'none';
+                if (summaryRemainingLine) summaryRemainingLine.style.display = 'none';
+                if (summaryNowLabel) summaryNowLabel.textContent = "Yetkazilganda To'lov:";
+                if (summaryNowAmount) summaryNowAmount.textContent = "{{ financials.grand_total|uz_price }}";
+                if (cashOption) cashOption.style.display = 'flex';
+            } else if (percent === 100) {
+                if (banner) {
+                    banner.style.display = 'flex';
+                    if (bannerPercentText) bannerPercentText.innerHTML = '100% (' + prepayFormatted + ')';
+                    if (bannerRemainingAmount) bannerRemainingAmount.textContent = '0 so\'m';
+                }
+                if (summaryPrepayLine) summaryPrepayLine.style.display = 'flex';
+                if (summaryPrepayBadge) summaryPrepayBadge.textContent = '100%';
+                if (summaryRemainingLine) summaryRemainingLine.style.display = 'none';
+                if (summaryNowLabel) summaryNowLabel.textContent = "Jami To'lov:";
+                if (summaryNowAmount) summaryNowAmount.textContent = prepayFormatted;
+                if (cashOption) cashOption.style.display = 'none';
+                
+                // If cash was selected, fallback to Click
+                const cashRadio = document.getElementById('pay_cash');
+                if (cashRadio && cashRadio.checked) {
+                    const clickRadio = document.getElementById('pay_click');
+                    if (clickRadio) {
+                        clickRadio.checked = true;
+                        optionCards.forEach(c => c.classList.remove('active'));
+                        const clickCard = document.getElementById('option_click');
+                        if (clickCard) clickCard.classList.add('active');
+                    }
+                }
+            } else {
+                // Partial Prepayment (e.g. 30%, 50%)
+                if (banner) {
+                    banner.style.display = 'flex';
+                    if (bannerPercentText) bannerPercentText.innerHTML = percent + '% (<span id="bannerPrepayAmount">' + prepayFormatted + '</span>)';
+                    if (bannerRemainingAmount) bannerRemainingAmount.textContent = remainFormatted;
+                }
+                if (summaryPrepayLine) summaryPrepayLine.style.display = 'flex';
+                if (summaryPrepayBadge) summaryPrepayBadge.textContent = percent + '%';
+                if (summaryRemainingLine) summaryRemainingLine.style.display = 'flex';
+                if (summaryNowLabel) summaryNowLabel.textContent = "Hozir to'lanadi:";
+                if (summaryNowAmount) summaryNowAmount.textContent = prepayFormatted;
+                if (summaryRemainingAmount) summaryRemainingAmount.textContent = remainFormatted;
+                if (cashOption) cashOption.style.display = 'none';
+
+                // If cash was selected, fallback to Click
+                const cashRadio = document.getElementById('pay_cash');
+                if (cashRadio && cashRadio.checked) {
+                    const clickRadio = document.getElementById('pay_click');
+                    if (clickRadio) {
+                        clickRadio.checked = true;
+                        optionCards.forEach(c => c.classList.remove('active'));
+                        const clickCard = document.getElementById('option_click');
+                        if (clickCard) clickCard.classList.add('active');
+                    }
+                }
+            }
+
+            updateSubmitButtonText();
+        });
+    });
+
+    // Handle provider cards selection
     optionCards.forEach(card => {
         card.addEventListener('click', function() {
             optionCards.forEach(c => c.classList.remove('active'));
@@ -350,18 +527,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const radio = this.querySelector('input[type="radio"]');
             if (radio) {
                 radio.checked = true;
-                if (radio.value === 'cash') {
-                    submitBtn.innerHTML = '<i class="fas fa-check mr-2"></i> Buyurtmani Tasdiqlash';
-                } else {
-                    if (prepaymentPercent > 0) {
-                        submitBtn.innerHTML = '<i class="fas fa-shield-alt mr-2"></i> ' + prepaymentAmount + ' To\'lash (' + radio.value.toUpperCase() + ')';
-                    } else {
-                        submitBtn.innerHTML = '<i class="fas fa-shield-alt mr-2"></i> To\'lovga O\'tish (' + radio.value.toUpperCase() + ')';
-                    }
-                }
+                updateSubmitButtonText();
             }
         });
     });
+
+    updateSubmitButtonText();
 });
 </script>
 {% endblock %}

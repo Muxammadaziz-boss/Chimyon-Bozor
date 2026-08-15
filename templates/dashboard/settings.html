@@ -96,13 +96,19 @@
                 </div>
 
                 <div class="form-group col-md-6 mb-2">
-                  <label class="font-weight-bold text-dark">Oldindan To'lov Foizi:</label>
+                  <label class="font-weight-bold text-dark">Standart Oldindan To'lov Foizi (Default %):</label>
                   <select name="prepayment_percent" class="form-control font-weight-bold">
                     <option value="0" {% if settings.prepayment_percent == 0 %}selected{% endif %}>0% (Faqat yetkazilganda to'lash)</option>
                     <option value="30" {% if settings.prepayment_percent == 30 %}selected{% endif %}>30% (Standart oldindan to'lov)</option>
                     <option value="50" {% if settings.prepayment_percent == 50 %}selected{% endif %}>50% (Yarmini oldindan to'lash)</option>
                     <option value="100" {% if settings.prepayment_percent == 100 %}selected{% endif %}>100% (To'liq onlayn to'lov)</option>
                   </select>
+                </div>
+
+                <div class="form-group col-12 mb-2">
+                  <label class="font-weight-bold text-dark">Mijoz Tanlashi Mumkin Bo'lgan Foizlar (Allowed %):</label>
+                  <input type="text" name="allowed_prepayment_percentages" class="form-control font-weight-bold" value="{{ settings.allowed_prepayment_percentages|default:'30,50,100' }}" placeholder="30,50,100">
+                  <small class="text-muted">Mijoz checkout sahifasida tanlashi mumkin bo'lgan foizlar ro'yxati (vergul bilan ajrating, masalan: 30,50,100)</small>
                 </div>
 
                 <div class="form-group col-md-6 mb-0 mt-2">

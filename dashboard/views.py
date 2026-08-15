@@ -1339,6 +1339,7 @@ def site_settings_view(request):
             # Prepayment settings
             settings_obj.prepayment_enabled = 'prepayment_enabled' in request.POST
             settings_obj.prepayment_percent = int(request.POST.get('prepayment_percent', 30))
+            settings_obj.allowed_prepayment_percentages = request.POST.get('allowed_prepayment_percentages', '30,50,100').strip() or '30,50,100'
             settings_obj.allow_cash_balance = 'allow_cash_balance' in request.POST
             settings_obj.allow_online_balance_payment = 'allow_online_balance_payment' in request.POST
 

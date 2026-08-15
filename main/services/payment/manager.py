@@ -34,35 +34,91 @@ class PaymentManager:
         return cls._providers.get(provider_name.lower())
 
     @classmethod
-    def calculate_order_financials(cls, order: models.Cart) -> Dict[str, Any]:
+    def calculate_order_financials(cls, order: models.Cart, chosen_percent: Optional[int] = None) -> Dict[str, Any]:
         """
         Buyurtma uchun server tomonida aniq Decimal hisob-kitob.
+        Ruxsat etilgan foizlar (30%, 50%, 100%) va qoldiq summani to'g'ri hisoblaydi.
         """
-        grand_total = order.grand_total
-        paid = order.paid_amount
-        remaining = order.remaining_amount
+        grand_total = Decimal(str(order.grand_total)).quantize(Decimal('0.01'))
+        paid = Decimal(str(order.paid_amount)).quantize(Decimal('0.01'))
         financial_status = order.financial_status
 
         settings_obj = models.SiteSettings.get_settings()
-        prepayment_percent = 0
-        if settings_obj and settings_obj.prepayment_enabled:
-            prepayment_percent = int(settings_obj.prepayment_percent)
-            if prepayment_percent not in (0, 30, 50, 100):
-                prepayment_percent = 30
-        elif order.prepayment_percent:
-            prepayment_percent = int(order.prepayment_percent)
+        allowed_percentages = settings_obj.get_allowed_percentages()
 
-        prepayment_amount = (grand_total * Decimal(str(prepayment_percent)) / Decimal('100')).quantize(Decimal('0.01'))
+        if settings_obj and settings_obj.prepayment_enabled:
+            # Determine effective prepayment percentage
+            if chosen_percent is not None:
+                try:
+                    chosen_val = int(chosen_percent)
+                except (ValueError, TypeError):
+                    raise ValueError(f"Noto'g'ri oldindan to'lov foizi: {chosen_percent}")
+
+                if chosen_val in allowed_percentages:
+                    prepayment_percent = chosen_val
+                else:
+                    raise ValueError(f"Ruxsat etilmagan oldindan to'lov foizi: {chosen_val}%. Ruxsat etilganlar: {allowed_percentages}")
+            elif order.prepayment_percent and int(order.prepayment_percent) in allowed_percentages:
+                prepayment_percent = int(order.prepayment_percent)
+            else:
+                default_percent = int(settings_obj.prepayment_percent)
+                prepayment_percent = default_percent if default_percent in allowed_percentages else allowed_percentages[0]
+        else:
+            prepayment_percent = 0
+            allowed_percentages = [0]
+
+        # Calculate exact prepayment amount
+        if prepayment_percent == 0:
+            prepayment_amount = Decimal('0.00')
+        elif prepayment_percent >= 100:
+            prepayment_amount = grand_total
+        else:
+            prepayment_amount = (grand_total * Decimal(str(prepayment_percent)) / Decimal('100')).quantize(Decimal('0.01'))
+
+        # Calculate remaining balance on delivery
+        if paid > Decimal('0.00'):
+            # If some payment already settled, remaining is actual unpaid portion
+            remaining = max(Decimal('0.00'), grand_total - paid)
+        else:
+            # Checkout / Pre-payment state: remaining balance to be paid on delivery after paying prepayment
+            remaining = max(Decimal('0.00'), grand_total - prepayment_amount)
+
+        # Build authorized breakdowns for all allowed percentage options
+        options_breakdown = {}
+        percentage_options = []
+        for pct in allowed_percentages:
+            if pct == 0:
+                p_amt = Decimal('0.00')
+                r_amt = grand_total
+            elif pct >= 100:
+                p_amt = grand_total
+                r_amt = Decimal('0.00')
+            else:
+                p_amt = (grand_total * Decimal(str(pct)) / Decimal('100')).quantize(Decimal('0.01'))
+                r_amt = max(Decimal('0.00'), grand_total - p_amt)
+            
+            opt_data = {
+                'percent': pct,
+                'prepayment_amount': p_amt,
+                'remaining_amount': r_amt,
+                'is_selected': (pct == prepayment_percent),
+            }
+            options_breakdown[pct] = opt_data
+            percentage_options.append(opt_data)
 
         return {
             'grand_total': grand_total,
             'paid_amount': paid,
             'remaining_amount': remaining,
+            'remaining_on_delivery': remaining,
             'prepayment_percent': prepayment_percent,
             'prepayment_amount': prepayment_amount,
+            'allowed_percentages': allowed_percentages,
+            'options_breakdown': options_breakdown,
+            'percentage_options': percentage_options,
             'financial_status': financial_status,
-            'is_fully_paid': order.is_fully_paid,
-            'is_partially_paid': order.is_partially_paid,
+            'is_fully_paid': order.is_fully_paid or (grand_total > 0 and paid >= grand_total),
+            'is_partially_paid': order.is_partially_paid or (paid > 0 and paid < grand_total),
         }
 
     @classmethod
@@ -71,11 +127,13 @@ class PaymentManager:
         order: models.Cart,
         provider_name: str,
         purpose: Optional[str] = None,
+        chosen_percent: Optional[int] = None,
         payment_method: str = "card",
         request: Optional[HttpRequest] = None
     ) -> Tuple[models.Payment, str]:
         """
         Buyurtma uchun yangi to'lov (avans, qoldiq yoki to'liq) yaratadi.
+        Faqat server tomonidan hisoblangan Decimal summalarga tayanadi.
         """
         provider_key = provider_name.lower()
         provider = cls.get_provider(provider_key)
@@ -85,9 +143,8 @@ class PaymentManager:
         # Provayder sozlamalari (API keys, merchant ID) to'g'riligini oldindan tekshirish
         provider.validate_configuration()
 
-        financials = cls.calculate_order_financials(order)
+        financials = cls.calculate_order_financials(order, chosen_percent=chosen_percent)
         grand_total = financials['grand_total']
-        remaining = financials['remaining_amount']
         prepayment_percent = financials['prepayment_percent']
 
         if grand_total <= 0:
@@ -97,14 +154,11 @@ class PaymentManager:
         if purpose == models.Payment.Purpose.BALANCE:
             # Customer paying remaining balance
             payment_purpose = models.Payment.Purpose.BALANCE
-            amount = remaining
+            amount = order.remaining_amount
             if amount <= 0:
                 raise ValueError("To'lash uchun qoldiq summa mavjud emas (Buyurtma to'liq to'langan).")
-            if amount > order.remaining_amount:
-                raise ValueError(f"Qoldiq to'lov summasi ({amount} UZS) mavjud qoldiqdan ({order.remaining_amount} UZS) ko'p bo'lishi mumkin emas.")
         else:
             # Initial Order Checkout Payment (Prepayment / Full)
-            prepayment_percent = financials['prepayment_percent']
             if prepayment_percent == 0:
                 # 0% prepayment allowed
                 payment_purpose = models.Payment.Purpose.FULL

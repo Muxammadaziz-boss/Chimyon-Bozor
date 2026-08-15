@@ -280,7 +280,7 @@ class ClickPaymentIntegrationTests(TestCase):
         financials = PaymentManager.calculate_order_financials(self.cart)
         self.assertEqual(financials['grand_total'], Decimal('889000.00'))
         self.assertEqual(financials['prepayment_amount'], Decimal('266700.00'))
-        self.assertEqual(financials['remaining_amount'], Decimal('889000.00'))
+        self.assertEqual(financials['remaining_amount'], Decimal('622300.00'))
 
         prepay_payment, checkout_url = PaymentManager.create_payment(
             order=self.cart,

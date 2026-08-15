@@ -275,10 +275,30 @@ class SiteSettings(models.Model):
             (50, "50% (Yarmi oldindan)"),
             (100, "100% (To'liq onlayn to'lov)")
         ],
-        verbose_name="Oldindan to'lov foizi"
+        verbose_name="Standart oldindan to'lov foizi"
+    )
+    allowed_prepayment_percentages = models.CharField(
+        max_length=100,
+        default="30,50,100",
+        verbose_name="Ruxsat etilgan oldindan to'lov foizlari",
+        help_text="Vergul bilan ajratilgan foizlar ro'yxati, masalan: 30,50,100 yoki 0,30,50,100"
     )
     allow_cash_balance = models.BooleanField(default=True, verbose_name="Yetkazilganda naqd qoldiq to'loviga ruxsat")
     allow_online_balance_payment = models.BooleanField(default=True, verbose_name="Qoldiqni onlayn to'lashga ruxsat")
+
+    def get_allowed_percentages(self):
+        """
+        Ruxsat etilgan foizlar ro'yxatini integer array sifatida qaytaradi.
+        """
+        if not self.prepayment_enabled:
+            return [0]
+        try:
+            raw_str = str(self.allowed_prepayment_percentages or "30,50,100")
+            items = [int(p.strip()) for p in raw_str.split(',') if p.strip().isdigit()]
+            valid = sorted(list(set([p for p in items if 0 <= p <= 100])))
+            return valid if valid else [30, 50, 100]
+        except Exception:
+            return [30, 50, 100]
 
     @classmethod
     def get_settings(cls):

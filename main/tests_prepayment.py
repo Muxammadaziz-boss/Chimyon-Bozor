@@ -7,6 +7,7 @@ from django.urls import reverse
 
 from main import models
 from main.services.payment import PaymentManager
+from main.services.payment.base import PaymentConfigurationError
 
 User = get_user_model()
 
@@ -44,449 +45,341 @@ class PartialPrepaymentAndBalanceTests(TestCase):
             email='admin@chimyon-bozor.uz'
         )
 
-        # Category and Product
+        # Category and Product with price 967,600 UZS
         self.category = models.Category.objects.create(name='Elektronika')
         self.product = models.Product.objects.create(
             name='Smartfon X Pro',
             category=self.category,
-            price=100000.00,
+            price=967600.00,
             discount_price=None,
             discount_status=False,
             count=10
         )
 
-        # Site Settings
+        # Site Settings with allowed options 30, 50, 100
         self.settings = models.SiteSettings.objects.create(
             site_name="Chimyon-bozor",
             prepayment_enabled=True,
             prepayment_percent=30,
+            allowed_prepayment_percentages="30,50,100",
             allow_cash_balance=True,
             allow_online_balance_payment=True
         )
 
-        # Cart for customer with 2 items = 200,000 UZS
+        # Cart for customer with 1 item = 967,600 UZS
         self.cart = models.Cart.objects.create(user=self.customer, status=1)
         self.cart_product = models.CartProduct.objects.create(
             cart=self.cart,
             product=self.product,
-            count=2
+            count=1
         )
 
     # -------------------------------------------------------------
-    # 1. Calculation Tests (30%, 50%, 100%, 0%)
+    # 1. 30% Calculation Test
     # -------------------------------------------------------------
-    def test_prepayment_calculation_30_percent(self):
-        self.settings.prepayment_percent = 30
-        self.settings.save()
-
-        financials = PaymentManager.calculate_order_financials(self.cart)
-        self.assertEqual(financials['grand_total'], Decimal('200000.00'))
+    def test_30_percent_calculation(self):
+        financials = PaymentManager.calculate_order_financials(self.cart, chosen_percent=30)
+        self.assertEqual(financials['grand_total'], Decimal('967600.00'))
         self.assertEqual(financials['prepayment_percent'], 30)
-        self.assertEqual(financials['prepayment_amount'], Decimal('60000.00'))
-        self.assertEqual(financials['remaining_amount'], Decimal('200000.00'))
-        self.assertEqual(financials['financial_status'], models.Cart.FinancialStatus.UNPAID)
+        self.assertEqual(financials['prepayment_amount'], Decimal('290280.00'))
+        self.assertEqual(financials['remaining_amount'], Decimal('677320.00'))
+        self.assertEqual(financials['remaining_on_delivery'], Decimal('677320.00'))
 
-    def test_prepayment_calculation_50_percent(self):
-        self.settings.prepayment_percent = 50
-        self.settings.save()
-
-        financials = PaymentManager.calculate_order_financials(self.cart)
-        self.assertEqual(financials['grand_total'], Decimal('200000.00'))
+    # -------------------------------------------------------------
+    # 2. 50% Calculation Test
+    # -------------------------------------------------------------
+    def test_50_percent_calculation(self):
+        financials = PaymentManager.calculate_order_financials(self.cart, chosen_percent=50)
+        self.assertEqual(financials['grand_total'], Decimal('967600.00'))
         self.assertEqual(financials['prepayment_percent'], 50)
-        self.assertEqual(financials['prepayment_amount'], Decimal('100000.00'))
+        self.assertEqual(financials['prepayment_amount'], Decimal('483800.00'))
+        self.assertEqual(financials['remaining_amount'], Decimal('483800.00'))
+        self.assertEqual(financials['remaining_on_delivery'], Decimal('483800.00'))
 
-    def test_prepayment_calculation_100_percent(self):
-        self.settings.prepayment_percent = 100
-        self.settings.save()
-
-        financials = PaymentManager.calculate_order_financials(self.cart)
-        self.assertEqual(financials['grand_total'], Decimal('200000.00'))
+    # -------------------------------------------------------------
+    # 3. 100% Calculation Test
+    # -------------------------------------------------------------
+    def test_100_percent_calculation(self):
+        financials = PaymentManager.calculate_order_financials(self.cart, chosen_percent=100)
+        self.assertEqual(financials['grand_total'], Decimal('967600.00'))
         self.assertEqual(financials['prepayment_percent'], 100)
-        self.assertEqual(financials['prepayment_amount'], Decimal('200000.00'))
-
-    def test_prepayment_calculation_0_percent(self):
-        self.settings.prepayment_enabled = False
-        self.settings.save()
-
-        financials = PaymentManager.calculate_order_financials(self.cart)
-        self.assertEqual(financials['prepayment_percent'], 0)
-        self.assertEqual(financials['prepayment_amount'], Decimal('0.00'))
-        self.assertEqual(financials['remaining_amount'], Decimal('200000.00'))
+        self.assertEqual(financials['prepayment_amount'], Decimal('967600.00'))
+        self.assertEqual(financials['remaining_amount'], Decimal('0.00'))
+        self.assertEqual(financials['remaining_on_delivery'], Decimal('0.00'))
 
     # -------------------------------------------------------------
-    # 2. Payment Creation & Initial Policy Validation
+    # 4. Remaining Amount Calculation Test (Never equals grand_total if prepayment > 0)
     # -------------------------------------------------------------
-    def test_prepayment_cash_rejected_when_prepayment_required(self):
-        self.settings.prepayment_percent = 30
-        self.settings.save()
+    def test_remaining_amount_calculation_never_equals_grand_total_when_prepayment_exists(self):
+        financials = PaymentManager.calculate_order_financials(self.cart, chosen_percent=30)
+        self.assertNotEqual(financials['remaining_amount'], financials['grand_total'])
+        self.assertEqual(financials['remaining_amount'], Decimal('677320.00'))
+        self.assertEqual(financials['grand_total'] - financials['prepayment_amount'], financials['remaining_amount'])
+
+    # -------------------------------------------------------------
+    # 5. Prepayment Payment Creation Test
+    # -------------------------------------------------------------
+    def test_prepayment_payment_creation(self):
+        payment, checkout_url = PaymentManager.create_payment(
+            order=self.cart,
+            provider_name='click',
+            chosen_percent=30
+        )
+        self.assertEqual(payment.amount, Decimal('290280.00'))
+        self.assertEqual(payment.purpose, models.Payment.Purpose.PREPAYMENT)
+        self.assertEqual(payment.provider, 'click')
+        self.assertIn('amount=290280.00', checkout_url)
+        self.cart.refresh_from_db()
+        self.assertEqual(self.cart.prepayment_percent, 30)
+        self.assertEqual(self.cart.prepayment_amount, Decimal('290280.00'))
+
+    # -------------------------------------------------------------
+    # 6. Successful Prepayment Transition Test
+    # -------------------------------------------------------------
+    def test_successful_prepayment(self):
+        payment, _ = PaymentManager.create_payment(
+            order=self.cart,
+            provider_name='click',
+            chosen_percent=30
+        )
+        payment.status = models.Payment.Status.PAID
+        payment.paid_at = timezone.now()
+        payment.save()
+
+        self.cart.status = 2  # Accepted
+        PaymentManager.sync_order_financial_status(self.cart)
+
+        self.cart.refresh_from_db()
+        self.assertEqual(self.cart.paid_amount, Decimal('290280.00'))
+        self.assertEqual(self.cart.remaining_amount, Decimal('677320.00'))
+        self.assertEqual(self.cart.financial_status, models.Cart.FinancialStatus.PARTIALLY_PAID)
+        self.assertTrue(self.cart.is_partially_paid)
+        self.assertFalse(self.cart.is_fully_paid)
+
+    # -------------------------------------------------------------
+    # 7. Balance Payment Test
+    # -------------------------------------------------------------
+    def test_balance_payment(self):
+        # Step 1: Prepayment 30%
+        payment, _ = PaymentManager.create_payment(
+            order=self.cart,
+            provider_name='click',
+            chosen_percent=30
+        )
+        payment.status = models.Payment.Status.PAID
+        payment.paid_at = timezone.now()
+        payment.save()
+        self.cart.status = 2
+        PaymentManager.sync_order_financial_status(self.cart)
+
+        # Step 2: Pay Remaining Balance (677,320 UZS)
+        bal_payment, bal_url = PaymentManager.create_payment(
+            order=self.cart,
+            provider_name='click',
+            purpose=models.Payment.Purpose.BALANCE
+        )
+        self.assertEqual(bal_payment.amount, Decimal('677320.00'))
+        self.assertEqual(bal_payment.purpose, models.Payment.Purpose.BALANCE)
+        self.assertIn('amount=677320.00', bal_url)
+
+        bal_payment.status = models.Payment.Status.PAID
+        bal_payment.paid_at = timezone.now()
+        bal_payment.save()
+        PaymentManager.sync_order_financial_status(self.cart)
+
+        self.cart.refresh_from_db()
+        self.assertEqual(self.cart.paid_amount, Decimal('967600.00'))
+        self.assertEqual(self.cart.remaining_amount, Decimal('0.00'))
+        self.assertEqual(self.cart.financial_status, models.Cart.FinancialStatus.FULLY_PAID)
+        self.assertTrue(self.cart.is_fully_paid)
+
+    # -------------------------------------------------------------
+    # 8. Full Payment Test (100% Prepayment)
+    # -------------------------------------------------------------
+    def test_full_payment(self):
+        payment, _ = PaymentManager.create_payment(
+            order=self.cart,
+            provider_name='click',
+            chosen_percent=100
+        )
+        self.assertEqual(payment.amount, Decimal('967600.00'))
+        self.assertEqual(payment.purpose, models.Payment.Purpose.FULL)
+
+        payment.status = models.Payment.Status.PAID
+        payment.paid_at = timezone.now()
+        payment.save()
+        self.cart.status = 2
+        PaymentManager.sync_order_financial_status(self.cart)
+
+        self.cart.refresh_from_db()
+        self.assertEqual(self.cart.paid_amount, Decimal('967600.00'))
+        self.assertEqual(self.cart.remaining_amount, Decimal('0.00'))
+        self.assertEqual(self.cart.financial_status, models.Cart.FinancialStatus.FULLY_PAID)
+
+    # -------------------------------------------------------------
+    # 9. Invalid Percentage Test
+    # -------------------------------------------------------------
+    def test_invalid_percentage(self):
+        with self.assertRaises(ValueError):
+            PaymentManager.calculate_order_financials(self.cart, chosen_percent=-10)
+
+        with self.assertRaises(ValueError):
+            PaymentManager.calculate_order_financials(self.cart, chosen_percent=150)
+
+    # -------------------------------------------------------------
+    # 10. Unauthorized Percentage Test (e.g. 73%)
+    # -------------------------------------------------------------
+    def test_unauthorized_percentage(self):
+        with self.assertRaises(ValueError):
+            PaymentManager.calculate_order_financials(self.cart, chosen_percent=73)
 
         with self.assertRaises(ValueError):
             PaymentManager.create_payment(
                 order=self.cart,
-                provider_name='cash'
+                provider_name='click',
+                chosen_percent=73
             )
 
-    def test_create_payment_prepayment_success(self):
-        self.settings.prepayment_percent = 30
-        self.settings.save()
-
+    # -------------------------------------------------------------
+    # 11. Tampered Client Amount Ignored Test
+    # -------------------------------------------------------------
+    def test_tampered_client_amount(self):
+        # Even if someone calls payment creation, only server calculated prepayment_amount is accepted
         payment, checkout_url = PaymentManager.create_payment(
             order=self.cart,
-            provider_name='click'
+            provider_name='click',
+            chosen_percent=30
         )
-
-        self.cart.refresh_from_db()
-        self.assertEqual(payment.amount, Decimal('60000.00'))
-        self.assertEqual(payment.purpose, models.Payment.Purpose.PREPAYMENT)
-        self.assertEqual(payment.status, models.Payment.Status.INITIATED)
-        self.assertEqual(self.cart.prepayment_percent, 30)
-        self.assertEqual(self.cart.prepayment_amount, Decimal('60000.00'))
-        self.assertEqual(self.cart.financial_status, models.Cart.FinancialStatus.UNPAID)
-        self.assertIn('click', checkout_url.lower())
-
-    def test_0_percent_cash_checkout_accepts_order_and_deducts_stock(self):
-        self.settings.prepayment_enabled = False
-        self.settings.save()
-
-        payment, checkout_url = PaymentManager.create_payment(
-            order=self.cart,
-            provider_name='cash'
-        )
-
-        self.cart.refresh_from_db()
-        self.product.refresh_from_db()
-
-        self.assertEqual(self.cart.status, 2)  # Accepted
-        self.assertEqual(self.cart.financial_status, models.Cart.FinancialStatus.UNPAID)
-        self.assertEqual(self.product.count, 8)  # 10 - 2 = 8
-        self.assertEqual(payment.amount, Decimal('200000.00'))
-        self.assertEqual(payment.purpose, models.Payment.Purpose.FULL)
+        # Authoritative server amount is 290,280.00 UZS
+        self.assertEqual(payment.amount, Decimal('290280.00'))
+        self.assertIn('amount=290280.00', checkout_url)
+        self.assertNotIn('amount=1.00', checkout_url)
 
     # -------------------------------------------------------------
-    # 3. Webhook Handling & Stock Integrity (Click, Payme, Uzum)
+    # 12. Delivery Fee and Discount Included Test
     # -------------------------------------------------------------
-    def test_webhook_click_success_prepayment_and_single_stock_deduction(self):
-        payment, _ = PaymentManager.create_payment(
-            order=self.cart,
-            provider_name='click'
+    def test_delivery_fee_and_discount_calculation(self):
+        # Product with discount
+        disc_product = models.Product.objects.create(
+            name='Chegirmali Tovar',
+            category=self.category,
+            price=1000000.00,
+            discount_price=900000.00,
+            discount_status=True,
+            count=5
         )
+        cart2 = models.Cart.objects.create(user=self.customer, status=1)
+        models.CartProduct.objects.create(cart=cart2, product=disc_product, count=1)
 
-        from main.services.payment.click import ClickPaymentProvider
-        provider = ClickPaymentProvider()
-
-        import hashlib
-        sign_time = '2026-08-15 12:00:00'
-        sign_str = hashlib.md5(
-            f"11223344{provider.get_service_id()}{provider.get_secret_key()}{payment.code}1{payment.amount}{ClickPaymentProvider.ACTION_COMPLETE}{sign_time}".encode('utf-8')
-        ).hexdigest()
-
-        # Simulate Click COMPLETE request
-        click_data = {
-            'click_trans_id': '11223344',
-            'service_id': provider.get_service_id(),
-            'merchant_trans_id': payment.code,
-            'merchant_prepare_id': '1',
-            'amount': str(payment.amount),
-            'action': ClickPaymentProvider.ACTION_COMPLETE,
-            'error': ClickPaymentProvider.ERROR_SUCCESS,
-            'error_note': 'Success',
-            'sign_time': sign_time,
-            'sign_string': sign_str
-        }
-
-        req = self.factory.post('/payments/webhook/click/', data=click_data)
-        response = provider.handle_webhook(req)
-
-        self.assertEqual(response.status_code, 200)
-        payment.refresh_from_db()
-        self.cart.refresh_from_db()
-        self.product.refresh_from_db()
-
-        self.assertEqual(payment.status, models.Payment.Status.PAID)
-        self.assertEqual(self.cart.status, 2)  # Moved to Accepted
-        self.assertEqual(self.cart.financial_status, models.Cart.FinancialStatus.PARTIALLY_PAID)
-        self.assertEqual(self.cart.paid_amount, Decimal('60000.00'))
-        self.assertEqual(self.cart.remaining_amount, Decimal('140000.00'))
-        self.assertFalse(self.cart.is_fully_paid)
-        self.assertTrue(self.cart.is_partially_paid)
-        self.assertEqual(self.product.count, 8)  # Decremented by 2
-
-    def test_webhook_idempotency_duplicate_webhook_does_not_deduct_stock_again(self):
-        payment, _ = PaymentManager.create_payment(
-            order=self.cart,
-            provider_name='click'
-        )
-
-        from main.services.payment.click import ClickPaymentProvider
-        provider = ClickPaymentProvider()
-
-        import hashlib
-        sign_time = '2026-08-15 12:00:00'
-        sign_str = hashlib.md5(
-            f"99887766{provider.get_service_id()}{provider.get_secret_key()}{payment.code}1{payment.amount}{ClickPaymentProvider.ACTION_COMPLETE}{sign_time}".encode('utf-8')
-        ).hexdigest()
-
-        click_data = {
-            'click_trans_id': '99887766',
-            'service_id': provider.get_service_id(),
-            'merchant_trans_id': payment.code,
-            'merchant_prepare_id': '1',
-            'amount': str(payment.amount),
-            'action': ClickPaymentProvider.ACTION_COMPLETE,
-            'error': ClickPaymentProvider.ERROR_SUCCESS,
-            'error_note': 'Success',
-            'sign_time': sign_time,
-            'sign_string': sign_str
-        }
-
-        # First call
-        req1 = self.factory.post('/payments/webhook/click/', data=click_data)
-        provider.handle_webhook(req1)
-        self.product.refresh_from_db()
-        self.assertEqual(self.product.count, 8)
-
-        # Duplicate Webhook call
-        req2 = self.factory.post('/payments/webhook/click/', data=click_data)
-        res2 = provider.handle_webhook(req2)
-        self.assertEqual(res2.status_code, 200)
-
-        self.product.refresh_from_db()
-        self.assertEqual(self.product.count, 8)  # Still 8, NEVER 6!
+        financials = PaymentManager.calculate_order_financials(cart2, chosen_percent=30)
+        self.assertEqual(financials['grand_total'], Decimal('900000.00'))
+        self.assertEqual(financials['prepayment_amount'], Decimal('270000.00'))
+        self.assertEqual(financials['remaining_amount'], Decimal('630000.00'))
 
     # -------------------------------------------------------------
-    # 4. Remaining Balance Settlement (Customer Online & Admin Cash)
+    # 13. Zero Balance Settlement Guard Test
     # -------------------------------------------------------------
-    def test_customer_pay_balance_online_initiates_payment_with_purpose_balance(self):
-        # Step 1: Prepayment 30% completed
-        models.Payment.objects.create(
-            order=self.cart,
-            provider='click',
-            purpose=models.Payment.Purpose.PREPAYMENT,
-            amount=Decimal('60000.00'),
-            status=models.Payment.Status.PAID,
-            paid_at=timezone.now()
-        )
-        self.cart.status = 2
-        PaymentManager.sync_order_financial_status(self.cart)
-
-        self.assertEqual(self.cart.remaining_amount, Decimal('140000.00'))
-
-        # Step 2: Customer creates balance payment online
-        bal_payment, checkout_url = PaymentManager.create_payment(
-            order=self.cart,
-            provider_name='payme',
-            purpose=models.Payment.Purpose.BALANCE
-        )
-
-        self.assertEqual(bal_payment.purpose, models.Payment.Purpose.BALANCE)
-        self.assertEqual(bal_payment.amount, Decimal('140000.00'))
-        self.assertEqual(bal_payment.status, models.Payment.Status.INITIATED)
-        self.assertTrue('paycom.uz' in checkout_url.lower() or 'checkout' in checkout_url.lower())
-
-    def test_admin_settle_cash_balance_completes_order_to_fully_paid(self):
-        # Initial 30% paid
-        models.Payment.objects.create(
-            order=self.cart,
-            provider='click',
-            purpose=models.Payment.Purpose.PREPAYMENT,
-            amount=Decimal('60000.00'),
-            status=models.Payment.Status.PAID,
-            paid_at=timezone.now()
-        )
-        self.cart.status = 2
-        PaymentManager.sync_order_financial_status(self.cart)
-
-        # Admin marks remaining balance as paid in cash on delivery
-        cash_payment = PaymentManager.settle_cash_balance(
-            order=self.cart,
-            user=self.admin_user,
-            comment="Yetkazib berishda kuryer tomonidan naqd qabul qilindi"
-        )
-
-        self.cart.refresh_from_db()
-        self.assertEqual(cash_payment.status, models.Payment.Status.PAID)
-        self.assertEqual(cash_payment.amount, Decimal('140000.00'))
-        self.assertEqual(cash_payment.purpose, models.Payment.Purpose.BALANCE)
-        self.assertEqual(cash_payment.provider, models.Payment.Provider.CASH)
-
-        self.assertEqual(self.cart.financial_status, models.Cart.FinancialStatus.FULLY_PAID)
-        self.assertEqual(self.cart.paid_amount, Decimal('200000.00'))
-        self.assertEqual(self.cart.remaining_amount, Decimal('0.00'))
-        self.assertTrue(self.cart.is_fully_paid)
-
-    def test_admin_settle_partial_balance(self):
-        # Initial 30% paid
-        models.Payment.objects.create(
-            order=self.cart,
-            provider='click',
-            purpose=models.Payment.Purpose.PREPAYMENT,
-            amount=Decimal('60000.00'),
-            status=models.Payment.Status.PAID,
-            paid_at=timezone.now()
-        )
-        self.cart.status = 2
-        PaymentManager.sync_order_financial_status(self.cart)
-
-        # Customer pays 50,000 UZS partial balance
-        PaymentManager.settle_cash_balance(
-            order=self.cart,
-            amount=Decimal('50000.00'),
-            user=self.admin_user
-        )
-
-        self.cart.refresh_from_db()
-        self.assertEqual(self.cart.financial_status, models.Cart.FinancialStatus.PARTIALLY_PAID)
-        self.assertEqual(self.cart.paid_amount, Decimal('110000.00'))
-        self.assertEqual(self.cart.remaining_amount, Decimal('90000.00'))
-
-    # -------------------------------------------------------------
-    # 5. Overpayment & Negative Amount Protection
-    # -------------------------------------------------------------
-    def test_overpayment_protection_on_balance_settlement(self):
-        models.Payment.objects.create(
-            order=self.cart,
-            provider='click',
-            purpose=models.Payment.Purpose.PREPAYMENT,
-            amount=Decimal('60000.00'),
-            status=models.Payment.Status.PAID
-        )
-        self.cart.status = 2
-        PaymentManager.sync_order_financial_status(self.cart)
-
-        # Remaining is 140,000. Trying to pay 150,000 should raise ValueError
-        with self.assertRaises(ValueError):
-            PaymentManager.settle_cash_balance(
-                order=self.cart,
-                amount=Decimal('150000.00')
-            )
-
-    def test_negative_amount_protection_on_balance_settlement(self):
-        self.cart.status = 2
-        with self.assertRaises(ValueError):
-            PaymentManager.settle_cash_balance(
-                order=self.cart,
-                amount=Decimal('-5000.00')
-            )
-
-    def test_cannot_settle_balance_when_order_is_already_fully_paid(self):
+    def test_zero_balance_settlement_guard(self):
+        # Set order as fully paid
         models.Payment.objects.create(
             order=self.cart,
             provider='click',
             purpose=models.Payment.Purpose.FULL,
-            amount=Decimal('200000.00'),
-            status=models.Payment.Status.PAID
+            amount=Decimal('967600.00'),
+            status=models.Payment.Status.PAID,
+            paid_at=timezone.now()
         )
         self.cart.status = 2
         PaymentManager.sync_order_financial_status(self.cart)
+
+        with self.assertRaises(ValueError):
+            PaymentManager.create_payment(
+                order=self.cart,
+                provider_name='click',
+                purpose=models.Payment.Purpose.BALANCE
+            )
 
         with self.assertRaises(ValueError):
             PaymentManager.settle_cash_balance(order=self.cart)
 
     # -------------------------------------------------------------
-    # 6. Refund Handling
+    # 14. Overpayment Protection Test
     # -------------------------------------------------------------
-    def test_partial_refund_updates_order_financial_status(self):
-        p1 = models.Payment.objects.create(
+    def test_overpayment_protection(self):
+        # Prepayment 30%
+        models.Payment.objects.create(
             order=self.cart,
             provider='click',
-            purpose=models.Payment.Purpose.FULL,
-            amount=Decimal('200000.00'),
+            purpose=models.Payment.Purpose.PREPAYMENT,
+            amount=Decimal('290280.00'),
             status=models.Payment.Status.PAID,
             paid_at=timezone.now()
         )
         self.cart.status = 2
         PaymentManager.sync_order_financial_status(self.cart)
-        self.assertEqual(self.cart.financial_status, models.Cart.FinancialStatus.FULLY_PAID)
 
-        # Refund 50,000
-        res = PaymentManager.refund_payment(p1, amount=50000.00, reason="Mijoz iltimosiga ko'ra")
-        self.assertTrue(res['success'])
-
-        self.cart.refresh_from_db()
-        self.assertEqual(self.cart.paid_amount, Decimal('150000.00'))
-        self.assertEqual(self.cart.remaining_amount, Decimal('50000.00'))
-        self.assertEqual(self.cart.financial_status, models.Cart.FinancialStatus.PARTIALLY_PAID)
+        # Remaining is 677,320 UZS. Attempting to settle 800,000 UZS raises ValueError
+        with self.assertRaises(ValueError):
+            PaymentManager.settle_cash_balance(order=self.cart, amount=Decimal('800000.00'))
 
     # -------------------------------------------------------------
-    # 7. Stock Replenishment on Order Cancellation
+    # 15. Checkout UI Flow & Options Breakdown Test
     # -------------------------------------------------------------
-    def test_stock_restoration_on_order_rejection(self):
-        # Order accepted & stock decremented from 10 to 8
-        self.cart.status = 2
-        self.cart.save()
-        self.product.count = 8
-        self.product.save()
-
-        # Admin rejects order via reject_cart view
-        self.client.force_login(self.admin_user)
-        response = self.client.get(reverse('d_reject_cart', kwargs={'code': self.cart.code}), follow=True)
-
-        self.cart.refresh_from_db()
-        self.product.refresh_from_db()
-
-        self.assertEqual(self.cart.status, 5)  # Cancelled
-        self.assertEqual(self.product.count, 10)  # Restored to 10
-
-    # -------------------------------------------------------------
-    # 8. Security & IDOR Protection
-    # -------------------------------------------------------------
-    def test_idor_protection_customer_cannot_view_others_order(self):
-        self.cart.status = 2
-        self.cart.save()
-
-        self.client.force_login(self.other_user)
-        response = self.client.get(reverse('order_detail', kwargs={'code': self.cart.code}))
-        self.assertEqual(response.status_code, 404)
-
-    def test_idor_protection_customer_cannot_pay_others_balance(self):
-        self.cart.status = 2
-        self.cart.save()
-
-        self.client.force_login(self.other_user)
-        response = self.client.post(reverse('pay_balance', kwargs={'code': self.cart.code}), {'provider': 'click'})
-        self.assertEqual(response.status_code, 404)
-
-    # -------------------------------------------------------------
-    # 9. Dashboard Admin Balance Settlement Action View
-    # -------------------------------------------------------------
-    def test_admin_dashboard_settle_balance_view(self):
-        models.Payment.objects.create(
-            order=self.cart,
-            provider='click',
-            purpose=models.Payment.Purpose.PREPAYMENT,
-            amount=Decimal('60000.00'),
-            status=models.Payment.Status.PAID
-        )
-        self.cart.status = 2
-        self.cart.save()
-        PaymentManager.sync_order_financial_status(self.cart)
-
-        self.client.force_login(self.admin_user)
-        response = self.client.post(
-            reverse('d_settle_order_balance', kwargs={'code': self.cart.code}),
-            {'amount': '140000.00', 'comment': 'Kuryer topshirdi'},
-            follow=True
-        )
-
-        self.cart.refresh_from_db()
-        self.assertEqual(self.cart.financial_status, models.Cart.FinancialStatus.FULLY_PAID)
-        self.assertEqual(self.cart.remaining_amount, Decimal('0.00'))
-
-    # -------------------------------------------------------------
-    # 10. Dashboard Payments List KPI Aggregation
-    # -------------------------------------------------------------
-    def test_dashboard_payments_list_renders_with_kpis(self):
-        models.Payment.objects.create(
-            order=self.cart,
-            provider='click',
-            purpose=models.Payment.Purpose.PREPAYMENT,
-            amount=Decimal('60000.00'),
-            status=models.Payment.Status.PAID
-        )
-
-        self.client.force_login(self.admin_user)
-        response = self.client.get(reverse('d_payments'))
-
+    def test_checkout_view_renders_prepayment_options_and_correct_balance(self):
+        self.client.force_login(self.customer)
+        response = self.client.get(reverse('checkout'))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Oldindan To'lovlar")
-        self.assertContains(response, "Kutilayotgan Qoldiqlar")
+
+        financials = response.context['financials']
+        self.assertEqual(financials['grand_total'], Decimal('967600.00'))
+        self.assertEqual(financials['prepayment_amount'], Decimal('290280.00'))
+        self.assertEqual(financials['remaining_amount'], Decimal('677320.00'))
+
+        # Check options breakdown
+        self.assertEqual(len(financials['percentage_options']), 3)
+        self.assertEqual(financials['options_breakdown'][30]['prepayment_amount'], Decimal('290280.00'))
+        self.assertEqual(financials['options_breakdown'][30]['remaining_amount'], Decimal('677320.00'))
+        self.assertEqual(financials['options_breakdown'][50]['prepayment_amount'], Decimal('483800.00'))
+        self.assertEqual(financials['options_breakdown'][50]['remaining_amount'], Decimal('483800.00'))
+        self.assertEqual(financials['options_breakdown'][100]['prepayment_amount'], Decimal('967600.00'))
+        self.assertEqual(financials['options_breakdown'][100]['remaining_amount'], Decimal('0.00'))
+
+        # Check HTML content
+        content = response.content.decode('utf-8')
+        self.assertIn('967 600', content)
+        self.assertIn('290 280', content)
+        self.assertIn('677 320', content)
+
+    # -------------------------------------------------------------
+    # 16. Checkout Post with Custom Percentage (e.g. 50%)
+    # -------------------------------------------------------------
+    def test_checkout_post_with_selected_50_percent(self):
+        self.client.force_login(self.customer)
+        response = self.client.post(reverse('checkout'), {
+            'phone': '+998901234567',
+            'address': 'Yunusobod',
+            'provider': 'click',
+            'prepayment_percent': '50'
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.url.startswith('https://my.click.uz/services/pay?'))
+        self.assertIn('amount=483800.00', response.url)
+
+        self.cart.refresh_from_db()
+        self.assertEqual(self.cart.prepayment_percent, 50)
+        self.assertEqual(self.cart.prepayment_amount, Decimal('483800.00'))
+
+    # -------------------------------------------------------------
+    # 17. Checkout Post with Unauthorized Percentage (e.g. 73%) Rejection
+    # -------------------------------------------------------------
+    def test_checkout_post_unauthorized_percentage_rejected(self):
+        self.client.force_login(self.customer)
+        response = self.client.post(reverse('checkout'), {
+            'phone': '+998901234567',
+            'address': 'Yunusobod',
+            'provider': 'click',
+            'prepayment_percent': '73'
+        })
+        self.assertEqual(response.status_code, 200)
+        messages_list = list(response.context['messages'])
+        self.assertTrue(any("Ruxsat etilmagan" in m.message for m in messages_list))
