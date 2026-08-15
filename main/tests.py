@@ -1536,6 +1536,19 @@ class GlobalErrorPagesTests(TestCase):
         self.assertEqual(root_urls.handler500, 'main.views.custom_500_view')
         self.assertEqual(root_urls.handler400, 'main.views.custom_400_view')
 
+    def test_debug_false_client_request_profile_ishak(self):
+        """Ensure requesting /profile/ishak with DEBUG=False returns custom 404 template with no technical debug info."""
+        with self.settings(DEBUG=False):
+            response = self.client.get('/profile/ishak')
+            self.assertEqual(response.status_code, 404)
+            content = response.content.decode('utf-8')
+            self.assertIn('404', content)
+            self.assertIn('Sahifa topilmadi', content)
+            self.assertIn('Bosh sahifaga qaytish', content)
+            self.assertNotIn("You're seeing this error because you have DEBUG = True", content)
+            self.assertNotIn('Traceback', content)
+
+
 
 
 

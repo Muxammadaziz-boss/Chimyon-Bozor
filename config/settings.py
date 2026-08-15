@@ -14,14 +14,17 @@ from pathlib import Path
 import os
 import sys
 import dj_database_url
-from decouple import Csv, config
+from decouple import AutoConfig, Config, Csv, RepositoryEnv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
+# Robust environment config loader: prioritize BASE_DIR/.env if present, otherwise environment variables
+ENV_FILE = BASE_DIR / '.env'
+if ENV_FILE.exists():
+    config = Config(RepositoryEnv(str(ENV_FILE)))
+else:
+    config = AutoConfig(search_path=str(BASE_DIR))
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
