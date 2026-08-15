@@ -4,7 +4,7 @@
         {% for message in messages %}
         setTimeout(() => {
             if (window.showToast) {
-                window.showToast("{{ message|escapejs }}");
+                window.showToast("{{ message|escapejs }}", "{{ message.tags|escapejs }}");
             }
         }, {{ forloop.counter0 }} * 3500);
         {% endfor %}

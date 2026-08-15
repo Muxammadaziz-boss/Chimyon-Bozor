@@ -756,6 +756,7 @@ def checkout(request):
         # Validate Address
         if not address:
             messages.error(request, "Iltimos, yetkazib berish manzilini tanlang.")
+            valid_fallback = addresses.first().name if addresses.exists() else ''
             return render(request, 'front/checkout.html', {
                 'cart': cart,
                 'cart_products': cart_products,
@@ -765,11 +766,12 @@ def checkout(request):
                 'addresses': addresses,
                 'selected_provider': request.POST.get('provider', 'click').strip().lower(),
                 'input_phone': phone,
-                'selected_address': address,
+                'selected_address': valid_fallback,
             })
 
         if addresses.exists() and not addresses.filter(name=address).exists():
             messages.error(request, "Iltimos, admin tomonidan qo'shilgan tasdiqlangan manzillardan birini tanlang.")
+            valid_fallback = addresses.first().name if addresses.exists() else ''
             return render(request, 'front/checkout.html', {
                 'cart': cart,
                 'cart_products': cart_products,
@@ -779,7 +781,7 @@ def checkout(request):
                 'addresses': addresses,
                 'selected_provider': request.POST.get('provider', 'click').strip().lower(),
                 'input_phone': phone,
-                'selected_address': address,
+                'selected_address': valid_fallback,
             })
 
         if prepayment_percent_raw is not None and str(prepayment_percent_raw).strip() != '':
