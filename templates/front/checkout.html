@@ -750,19 +750,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // 3. Phone Input Sanitizer & Formatter
+    // 3. Phone Input Sanitizer & Canonical Formatter (+998XXXXXXXXX)
     const phoneInput = document.getElementById('checkoutPhone');
     if (phoneInput) {
         function sanitizeCheckoutPhone(el) {
             let str = String(el.value || '');
-            let hasPlus = str.startsWith('+') || str.includes('+');
             let digits = str.replace(/\D/g, '');
+            if (digits.length === 0) {
+                el.value = str.startsWith('+') ? '+' : '';
+                return;
+            }
+            if (digits.length === 9 && !digits.startsWith('998')) {
+                el.value = '+998' + digits;
+                return;
+            }
+            if (digits.startsWith('998')) {
+                el.value = '+' + digits.substring(0, 12);
+                return;
+            }
             if (digits.length > 12) {
                 digits = digits.substring(0, 12);
-            }
-            if (digits.length === 0) {
-                el.value = hasPlus ? '+' : '';
-                return;
             }
             el.value = '+' + digits;
         }

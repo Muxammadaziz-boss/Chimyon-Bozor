@@ -1399,17 +1399,24 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 250);
     }
 
-    // Strict Phone Sanitizer Function (Uzbekistan +998XXXXXXXXX format)
+    // Strict Phone Sanitizer & Canonical Formatter (+998XXXXXXXXX)
     function sanitizePhoneNumber(val) {
         if (!val) return '';
         let str = String(val);
-        let hasPlus = str.startsWith('+') || str.includes('+');
         let digits = str.replace(/\D/g, '');
+        if (digits.length === 0) {
+            return str.startsWith('+') ? '+' : '';
+        }
+        // If user entered 9 digits without 998 (e.g. 901234567)
+        if (digits.length === 9 && !digits.startsWith('998')) {
+            return '+998' + digits;
+        }
+        // If starts with 998 and up to 12 digits
+        if (digits.startsWith('998')) {
+            return '+' + digits.substring(0, 12);
+        }
         if (digits.length > 12) {
             digits = digits.substring(0, 12);
-        }
-        if (digits.length === 0) {
-            return hasPlus ? '+' : '';
         }
         return '+' + digits;
     }

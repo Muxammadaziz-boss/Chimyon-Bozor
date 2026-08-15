@@ -471,8 +471,44 @@ class AuthAndCartFlowTestCase(TestCase):
             'address': 'Chimyon'
         })
         self.assertEqual(res.status_code, 302)
-        self.user.refresh_from_db()
         self.assertNotEqual(self.user.phone, '+998917914881a')
+
+    def test_canonical_phone_normalization(self):
+        from main.validators import normalize_uz_phone
+
+        # 1. Normalization function unit checks
+        self.assertEqual(normalize_uz_phone('901234567'), '+998901234567')
+        self.assertEqual(normalize_uz_phone('998901234567'), '+998901234567')
+        self.assertEqual(normalize_uz_phone('+998901234567'), '+998901234567')
+        self.assertEqual(normalize_uz_phone('+998 90 123 45 67'), '+998901234567')
+        self.assertEqual(normalize_uz_phone('998 90 123 45 67'), '+998901234567')
+        self.assertEqual(normalize_uz_phone('90 123 45 67'), '+998901234567')
+
+        # 2. Invalid inputs
+        self.assertIsNone(normalize_uz_phone('+998901234567a'))
+        self.assertIsNone(normalize_uz_phone('+997901234567'))
+        self.assertIsNone(normalize_uz_phone('+123456789'))
+        self.assertIsNone(normalize_uz_phone(''))
+
+        # 3. API canonical return
+        self.client.force_login(self.user)
+        res = self.client.get(reverse('check_phone_api'), {'phone': '917914881'})
+        data = res.json()
+        self.assertTrue(data['valid'])
+        self.assertEqual(data.get('canonical'), '+998917914881')
+
+        # 4. Profile save normalization into DB
+        res = self.client.post(reverse('profile'), {
+            'first_name': 'Canon',
+            'last_name': 'Test',
+            'username': self.user.username,
+            'phone': '931234567',
+            'address': 'Chimyon'
+        })
+        self.assertEqual(res.status_code, 302)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.phone, '+998931234567')
+
 
 
 

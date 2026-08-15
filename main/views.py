@@ -17,13 +17,12 @@ from django.views.decorators.http import require_POST
 from . import models
 from .utils import paginate_queryset
 from .sms_service import send_sms_code
-from .validators import validate_image_file
+from .validators import validate_image_file, normalize_uz_phone, PHONE_RE
 from .services.payment import PaymentManager
 from .services.payment.base import PaymentConfigurationError
 from django.contrib.auth import authenticate, login, logout
 
 logger = logging.getLogger(__name__)
-PHONE_RE = re.compile(r'^\+?998[0-9]{9}$')
 send_otp_sms = send_sms_code
 
 
@@ -555,16 +554,12 @@ def categories_page(request):
 
 def register(request):
     if request.method == "POST":
+        raw_phone = request.POST.get('phone', '').strip()
         username = request.POST.get('username', '').strip()
-        raw_phone = request.POST.get('phone', '').strip().replace(' ', '').replace('-', '').replace('+', '')
         password = request.POST.get('password', '')
         confirm_password = request.POST.get('confirm_password', '')
 
-        # Normalize phone: ensure +998 prefix
-        if raw_phone.startswith('998'):
-            phone = '+' + raw_phone
-        else:
-            phone = '+998' + raw_phone
+        phone = normalize_uz_phone(raw_phone)
 
         reg_data = {
             'is_register_page': True,
@@ -580,7 +575,7 @@ def register(request):
             reg_data['reg_error'] = 'Parollar mos kelmadi'
             return render(request, 'front/login.html', reg_data)
 
-        if not PHONE_RE.match(phone):
+        if not phone:
             reg_data['reg_error'] = "Telefon raqam noto'g'ri formatda. 9 ta raqam kiriting (masalan: 917914881)."
             return render(request, 'front/login.html', reg_data)
 
@@ -784,29 +779,8 @@ def profile(request):
 
         raw_phone = (request.POST.get('phone') or '').strip()
         if raw_phone:
-            if not re.match(r'^\+?[0-9\s\-()]+$', raw_phone):
-                messages.error(request, "Telefon raqamini +998XXXXXXXXX formatida to'g'ri kiriting.")
-                return redirect('profile')
-
-            clean_digits = re.sub(r'\D', '', raw_phone)
-            if raw_phone.startswith('+'):
-                if not clean_digits.startswith('998') or len(clean_digits) != 12:
-                    messages.error(request, "Telefon raqamini +998XXXXXXXXX formatida to'g'ri kiriting.")
-                    return redirect('profile')
-                clean_phone = '+' + clean_digits
-            else:
-                if clean_digits.startswith('998'):
-                    if len(clean_digits) != 12:
-                        messages.error(request, "Telefon raqamini +998XXXXXXXXX formatida to'g'ri kiriting.")
-                        return redirect('profile')
-                    clean_phone = '+' + clean_digits
-                elif len(clean_digits) == 9:
-                    clean_phone = '+998' + clean_digits
-                else:
-                    messages.error(request, "Telefon raqamini +998XXXXXXXXX formatida to'g'ri kiriting.")
-                    return redirect('profile')
-
-            if not PHONE_RE.match(clean_phone):
+            clean_phone = normalize_uz_phone(raw_phone)
+            if not clean_phone:
                 messages.error(request, "Telefon raqamini +998XXXXXXXXX formatida to'g'ri kiriting.")
                 return redirect('profile')
 
@@ -1078,21 +1052,8 @@ def checkout(request):
             'prepayment_percent': prepayment_percent_raw,
         }
 
-        # Check if phone contains illegal characters (letters, etc.)
-        if not raw_phone or not re.match(r'^\+?[0-9\s\-()]+$', raw_phone):
-            messages.error(request, "Telefon raqami noto'g'ri kiritildi. Iltimos, to'g'ri O'zbekiston raqamini kiriting (masalan: +998 90 123 45 67).")
-            return redirect('checkout')
-
-        # Clean and normalize phone
-        clean_phone_digits = re.sub(r'[^\d]', '', raw_phone)
-        if clean_phone_digits.startswith('998') and len(clean_phone_digits) == 12:
-            phone = '+' + clean_phone_digits
-        elif len(clean_phone_digits) == 9:
-            phone = '+998' + clean_phone_digits
-        else:
-            phone = '+' + clean_phone_digits if clean_phone_digits else ''
-
-        if not phone or not PHONE_RE.match(phone):
+        phone = normalize_uz_phone(raw_phone)
+        if not phone:
             messages.error(request, "Telefon raqami noto'g'ri kiritildi. Iltimos, to'g'ri O'zbekiston raqamini kiriting (masalan: +998 90 123 45 67).")
             return redirect('checkout')
 
@@ -1435,37 +1396,20 @@ def check_phone_api(request):
     if not raw_phone:
         return JsonResponse({'valid': False, 'message': "Telefon raqam kiritilmadi"})
 
-    # Check for illegal characters
-    if not re.match(r'^\+?[0-9\s\-()]+$', raw_phone):
-        return JsonResponse({'valid': False, 'message': "Telefon raqamida faqat raqamlar bo'lishi kerak"})
-
-    clean_digits = re.sub(r'\D', '', raw_phone)
-    if raw_phone.startswith('+'):
-        if not clean_digits.startswith('998') or len(clean_digits) != 12:
-            return JsonResponse({'valid': False, 'message': "O'zbekiston raqami +998XXXXXXXXX formatida bo'lishi kerak"})
-        phone = '+' + clean_digits
-    else:
-        if clean_digits.startswith('998'):
-            if len(clean_digits) != 12:
-                return JsonResponse({'valid': False, 'message': "Telefon raqamini +998XXXXXXXXX formatida kiriting"})
-            phone = '+' + clean_digits
-        elif len(clean_digits) == 9:
-            phone = '+998' + clean_digits
-        else:
-            return JsonResponse({'valid': False, 'message': "9 ta raqam bo'lishi kerak (masalan: +998901234567)"})
-
-    if not PHONE_RE.match(phone):
+    phone = normalize_uz_phone(raw_phone)
+    if not phone:
         return JsonResponse({'valid': False, 'message': "Telefon raqamini +998XXXXXXXXX formatida kiriting"})
 
     qs = models.User.objects.filter(phone=phone)
     if request.user.is_authenticated:
         if request.user.phone == phone:
-            return JsonResponse({'valid': True, 'available': True, 'is_current': True, 'message': "Sizning joriy telefon raqamingiz"})
+            return JsonResponse({'valid': True, 'available': True, 'is_current': True, 'canonical': phone, 'message': "Sizning joriy telefon raqamingiz"})
         qs = qs.exclude(pk=request.user.pk)
 
     is_taken = qs.exists()
     if is_taken:
-        return JsonResponse({'valid': False, 'available': False, 'message': "Ushbu telefon raqami allaqachon ro'yxatdan o'tgan!"})
+        return JsonResponse({'valid': False, 'available': False, 'canonical': phone, 'message': "Ushbu telefon raqami allaqachon ro'yxatdan o'tgan!"})
 
-    return JsonResponse({'valid': True, 'available': True, 'message': "Telefon raqami to'g'ri va bo'sh"})
+    return JsonResponse({'valid': True, 'available': True, 'canonical': phone, 'message': "Telefon raqami to'g'ri va bo'sh"})
+
 
