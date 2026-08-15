@@ -282,6 +282,12 @@
         caret-color: #7C3AED;
         outline: none;
         transition: all 0.2s ease;
+        -moz-appearance: textfield;
+    }
+    .price-input-control::-webkit-outer-spin-button,
+    .price-input-control::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
     }
     .price-input-control::placeholder {
         color: #94A3B8 !important;
@@ -604,9 +610,9 @@
                                 <span>Narx (so'm)</span>
                             </div>
                             <div class="price-input-group">
-                                <input type="number" name="min_price" id="minPriceInput" class="price-input-control" placeholder="0" value="{{ min_price_raw|default:'' }}" min="0" step="1000">
+                                <input type="text" inputmode="numeric" pattern="[0-9]*" name="min_price" id="minPriceInput" class="price-input-control" placeholder="0" value="{{ min_price_raw|default:'' }}" autocomplete="off">
                                 <span class="text-muted font-weight-bold">-</span>
-                                <input type="number" name="max_price" id="maxPriceInput" class="price-input-control" placeholder="1 000 000" value="{{ max_price_raw|default:'' }}" min="0" step="1000">
+                                <input type="text" inputmode="numeric" pattern="[0-9]*" name="max_price" id="maxPriceInput" class="price-input-control" placeholder="1 000 000" value="{{ max_price_raw|default:'' }}" autocomplete="off">
                             </div>
 
                             <!-- Price Quick Presets -->
@@ -826,11 +832,36 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.setItem('chimyon_catalog_view', 'list');
         });
 
-        // Restore view preference from localStorage if set
-        const savedView = localStorage.getItem('chimyon_catalog_view');
-        if (savedView === 'list') {
-            listViewBtn.click();
-        }
+    // Numeric Input Sanitizer (Prevents 'e', 'E', '+', '-', '.' and letters)
+    function sanitizeNumericInput(el) {
+        if (!el) return;
+        el.addEventListener('keydown', function(e) {
+            // Block 'e', 'E', '+', '-', '.', ','
+            if (['e', 'E', '+', '-', '.', ','].includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+
+        el.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+
+        el.addEventListener('paste', function(e) {
+            setTimeout(() => {
+                this.value = this.value.replace(/[^0-9]/g, '');
+            }, 10);
+        });
+    }
+
+    const minPriceInput = document.getElementById('minPriceInput');
+    const maxPriceInput = document.getElementById('maxPriceInput');
+    sanitizeNumericInput(minPriceInput);
+    sanitizeNumericInput(maxPriceInput);
+
+    // Restore view preference from localStorage if set
+    const savedView = localStorage.getItem('chimyon_catalog_view');
+    if (savedView === 'list') {
+        listViewBtn.click();
     }
 });
 </script>

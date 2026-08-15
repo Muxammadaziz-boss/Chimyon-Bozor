@@ -230,20 +230,30 @@ def _build_catalog_context(request, products_qs, active_category=None):
     max_price = None
 
     if min_price_raw:
+        clean_min = re.sub(r'[^0-9.]', '', min_price_raw.replace(' ', ''))
         try:
-            min_price_val = Decimal(min_price_raw.replace(' ', ''))
-            if min_price_val >= 0:
-                min_price = min_price_val
+            if clean_min:
+                min_price_val = Decimal(clean_min)
+                if min_price_val >= 0:
+                    min_price = min_price_val
+                    min_price_raw = str(int(min_price_val)) if min_price_val == int(min_price_val) else str(min_price_val)
+            else:
+                min_price_raw = ''
         except Exception:
-            pass
+            min_price_raw = ''
 
     if max_price_raw:
+        clean_max = re.sub(r'[^0-9.]', '', max_price_raw.replace(' ', ''))
         try:
-            max_price_val = Decimal(max_price_raw.replace(' ', ''))
-            if max_price_val >= 0:
-                max_price = max_price_val
+            if clean_max:
+                max_price_val = Decimal(clean_max)
+                if max_price_val >= 0:
+                    max_price = max_price_val
+                    max_price_raw = str(int(max_price_val)) if max_price_val == int(max_price_val) else str(max_price_val)
+            else:
+                max_price_raw = ''
         except Exception:
-            pass
+            max_price_raw = ''
 
     # Swap if min > max
     if min_price is not None and max_price is not None and min_price > max_price:

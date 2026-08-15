@@ -288,4 +288,19 @@ class ProductFilterAndSortingTests(TestCase):
         self.assertIn("class=\"filter-all-cats-btn\"", content)
         self.assertIn("Barchasi <i class=\"fas fa-arrow-right", content)
 
+    # 22. Price Sanitization Against Non-Numeric Chars (e.g. 'e342', '2143e')
+    def test_price_input_sanitization_against_invalid_chars(self):
+        url = reverse('all_products')
+        res = self.client.get(url, {'min_price': 'e342', 'max_price': '2143e'})
+        self.assertEqual(res.status_code, 200)
+        # Should sanitize 'e342' to 342 and '2143e' to 2143
+        self.assertEqual(res.context['min_price_raw'], '342')
+        self.assertEqual(res.context['max_price_raw'], '2143')
+
+        # If completely non-numeric
+        res_empty = self.client.get(url, {'min_price': 'abc', 'max_price': 'xyz'})
+        self.assertEqual(res_empty.status_code, 200)
+        self.assertEqual(res_empty.context['min_price_raw'], '')
+        self.assertEqual(res_empty.context['max_price_raw'], '')
+
 
