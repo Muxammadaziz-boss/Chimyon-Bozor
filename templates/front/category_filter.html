@@ -446,6 +446,103 @@
         margin-bottom: 0 !important;
         margin-right: 16px;
     }
+
+    /* ==========================================
+       CATALOG EMPTY STATE (FULL WIDTH)
+       ========================================== */
+    .catalog-empty-state {
+        width: 100% !important;
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+        grid-column: 1 / -1;
+        padding: 0;
+        margin: 0;
+    }
+    .catalog-empty-state-card {
+        background: #FFFFFF;
+        border: 1.5px solid #E2E8F0;
+        border-radius: 20px;
+        box-shadow: 0 8px 30px rgba(15, 23, 42, 0.04);
+        padding: 56px 24px;
+        min-height: 360px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        width: 100%;
+    }
+    .empty-state-icon-box {
+        width: 76px;
+        height: 76px;
+        border-radius: 50%;
+        background: #FAF5FF;
+        border: 2px solid #E9D5FF;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+        color: #7C3AED;
+        font-size: 32px;
+        box-shadow: 0 6px 18px rgba(124, 58, 237, 0.12);
+        flex-shrink: 0;
+    }
+    .empty-state-title {
+        font-size: 26px;
+        font-weight: 800;
+        color: #0F172A;
+        margin-bottom: 10px;
+        letter-spacing: -0.4px;
+        line-height: 1.3;
+        word-break: keep-all;
+        white-space: normal;
+    }
+    @media (min-width: 768px) {
+        .empty-state-title {
+            font-size: 28px;
+        }
+    }
+    .empty-state-desc {
+        font-size: 15px;
+        color: #64748B;
+        max-width: 480px;
+        line-height: 1.55;
+        margin-bottom: 24px;
+        word-break: normal;
+    }
+    .empty-state-filter-badge {
+        display: inline-block;
+        background: #EDE9FE;
+        color: #7C3AED;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 13px;
+        border: 1px solid #DDD6FE;
+    }
+    .btn-clear-all-filters {
+        background: linear-gradient(135deg, #7C3AED 0%, #EC4899 100%);
+        color: #FFFFFF !important;
+        font-weight: 700;
+        font-size: 15px;
+        padding: 12px 28px;
+        border-radius: 999px;
+        border: none;
+        box-shadow: 0 4px 16px rgba(124, 58, 237, 0.25);
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        text-decoration: none !important;
+        white-space: nowrap;
+    }
+    .btn-clear-all-filters:hover {
+        background: linear-gradient(135deg, #6D28D9 0%, #DB2777 100%) !important;
+        color: #FFFFFF !important;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(124, 58, 237, 0.38);
+    }
 </style>
 
 <section class="catalog-section">
@@ -708,25 +805,43 @@
             <!-- Right Products Grid Container -->
             <div class="col-xl-9 col-lg-8">
                 
-                <!-- Products Grid -->
+                <!-- Products Grid / Empty State -->
+                {% if products %}
                 <div class="row g-3 g-md-4 row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-xl-4 {% if view_mode == 'list' %}list-mode row-cols-1 row-cols-sm-1 row-cols-md-1 row-cols-xl-1{% endif %}" id="productsContainer">
                     {% for product in products %}
                     <div class="col">
                         {% include 'front/partials/product_card.html' %}
                     </div>
-                    {% empty %}
-                    <div class="col-12 text-center py-5">
-                        <div class="p-5 bg-white rounded-4 border">
-                            <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
-                            <h4 class="font-weight-bold text-dark mb-2">Mahsulotlar topilmadi</h4>
-                            <p class="text-muted mb-4 font-15">Tanlangan filtrlar yoki qidiruv so‘rovi bo‘yicha mos mahsulot topilmadi.</p>
-                            <a href="{% url 'all_products' %}" class="btn btn-primary rounded-pill font-weight-bold px-4 py-2">
-                                <i class="fas fa-sync-alt me-2"></i> Barcha filtrlarni tozalash
-                            </a>
-                        </div>
-                    </div>
                     {% endfor %}
                 </div>
+                {% else %}
+                <div class="catalog-empty-state" id="productsContainer">
+                    <div class="catalog-empty-state-card">
+                        <div class="empty-state-icon-box">
+                            {% if search_query %}
+                            <i class="fas fa-search"></i>
+                            {% else %}
+                            <i class="fas fa-box-open"></i>
+                            {% endif %}
+                        </div>
+                        <h3 class="empty-state-title">Mahsulotlar topilmadi</h3>
+                        <p class="empty-state-desc">
+                            {% if active_chips_count and active_chips_count > 0 %}
+                                <span class="empty-state-filter-badge">{{ active_chips_count }} ta filtr</span> bo‘yicha mos mahsulot topilmadi.
+                            {% elif search_query %}
+                                <strong>"{{ search_query }}"</strong> qidiruv so‘rovi bo‘yicha mos mahsulot topilmadi.
+                            {% elif active_category_name %}
+                                <strong>"{{ active_category_name }}"</strong> kategoriyasida hozircha mahsulot mavjud emas.
+                            {% else %}
+                                Tanlangan filtrlar yoki qidiruv so‘rovi bo‘yicha mos mahsulot topilmadi.
+                            {% endif %}
+                        </p>
+                        <a href="{% url 'all_products' %}" class="btn-clear-all-filters">
+                            <i class="fas fa-redo-alt me-1"></i> Barcha filtrlarni tozalash
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
 
                 <!-- Pagination -->
                 {% if page_obj.has_other_pages %}

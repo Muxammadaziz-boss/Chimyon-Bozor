@@ -327,5 +327,30 @@ class ProductFilterAndSortingTests(TestCase):
         self.assertIn("oninput=\"this.value=this.value.replace(/\\D/g,'')\"", content)
         self.assertIn("function sanitizeNumericPriceInput", content)
 
+    # 23. Catalog Empty State Full Width & Dynamic Context
+    def test_empty_state_full_width_and_content(self):
+        url = reverse('all_products')
+
+        # 1. Search with no results
+        res_search = self.client.get(url, {'q': 'nonexistentproduct12345'})
+        self.assertEqual(res_search.status_code, 200)
+        self.assertEqual(len(res_search.context['products']), 0)
+        content_search = res_search.content.decode('utf-8')
+
+        self.assertIn("class=\"catalog-empty-state\"", content_search)
+        self.assertIn("class=\"catalog-empty-state-card\"", content_search)
+        self.assertIn("Mahsulotlar topilmadi", content_search)
+        self.assertIn("nonexistentproduct12345", content_search)
+        self.assertIn("class=\"btn-clear-all-filters\"", content_search)
+
+        # 2. Filter with no results (active chips count)
+        res_filter = self.client.get(url, {'min_price': '999999999'})
+        self.assertEqual(res_filter.status_code, 200)
+        self.assertEqual(len(res_filter.context['products']), 0)
+        content_filter = res_filter.content.decode('utf-8')
+        self.assertIn("class=\"catalog-empty-state\"", content_filter)
+        self.assertIn("class=\"empty-state-filter-badge\">1 ta filtr</span>", content_filter)
+
+
 
 
