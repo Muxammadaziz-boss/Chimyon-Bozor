@@ -1,8 +1,11 @@
 import json
+from decimal import Decimal
 from unittest.mock import patch
 from django.test import TestCase
 from django.urls import reverse
 from .models import Cart, CartProduct, Category, Product, User, SiteSettings
+from .views import get_active_cart
+from . import models
 
 class ProductDetailTestCase(TestCase):
     def setUp(self):
@@ -540,6 +543,91 @@ class AuthAndCartFlowTestCase(TestCase):
         self.assertFalse(phone_responses[3]['valid'])
         self.assertTrue(phone_responses[4]['valid'])
         self.assertEqual(phone_responses[4]['canonical'], '+998901234567')
+
+
+class ProductDetailUXTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='detailtester',
+            password='password123',
+            phone='+998901112233'
+        )
+        self.category = models.Category.objects.create(name='Texnika', is_active=True)
+        self.in_stock_product = models.Product.objects.create(
+            name='Noutbuk Pro 15',
+            category=self.category,
+            price=Decimal('10000000.00'),
+            discount_price=Decimal('8500000.00'),
+            discount_status=True,
+            count=10,
+            description='Zo\'r noutbuk tezkor va kuchli'
+        )
+        self.out_of_stock_product = models.Product.objects.create(
+            name='Tugagan Smartfon',
+            category=self.category,
+            price=Decimal('3000000.00'),
+            count=0,
+            description='Omborda qolmagan smartfon'
+        )
+
+    def test_product_detail_in_stock_page_render(self):
+        response = self.client.get(reverse('product_detail', kwargs={'code': self.in_stock_product.code}))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Noutbuk Pro 15')
+        self.assertContains(response, 'Sotuvda mavjud')
+        self.assertContains(response, 'Savatga qo\'shish')
+        self.assertContains(response, 'Hozir xarid qilish')
+        self.assertEqual(self.in_stock_product.discount_percent, 15)
+
+    def test_product_detail_out_of_stock_page_render(self):
+        response = self.client.get(reverse('product_detail', kwargs={'code': self.out_of_stock_product.code}))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Tugagan Smartfon')
+        self.assertContains(response, 'Sotuvda qolmagan')
+        self.assertContains(response, 'disabled')
+
+    def test_add_to_cart_stock_enforcement(self):
+        self.client.login(username='detailtester', password='password123')
+        
+        # Adding more than available stock should cap at stock count
+        response = self.client.post(
+            reverse('add_to_cart', kwargs={'product_code': self.in_stock_product.code}),
+            {'quantity': 99},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data['status'], 'success')
+        
+        cart = get_active_cart(self.user)
+        cart_item = models.CartProduct.objects.get(cart=cart, product=self.in_stock_product)
+        self.assertEqual(cart_item.count, 10)  # Capped at product.count (10)
+
+    def test_out_of_stock_cart_rejection(self):
+        self.client.login(username='detailtester', password='password123')
+        response = self.client.post(
+            reverse('add_to_cart', kwargs={'product_code': self.out_of_stock_product.code}),
+            {'quantity': 1},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        self.assertEqual(response.status_code, 400)
+        data = response.json()
+        self.assertEqual(data['status'], 'error')
+
+    def test_product_review_and_avg_rating(self):
+        self.client.login(username='detailtester', password='password123')
+        
+        # Add review
+        response = self.client.post(
+            reverse('add_review', kwargs={'product_code': self.in_stock_product.code}),
+            {'rating': 5, 'text': 'Ajoyib mahsulot, juda yoqdi!'}
+        )
+        self.assertEqual(response.status_code, 302)
+        
+        self.assertEqual(self.in_stock_product.reviews_count, 1)
+        self.assertEqual(self.in_stock_product.avg_rating, 5.0)
+
+
 
 
 

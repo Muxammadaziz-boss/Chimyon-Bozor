@@ -107,6 +107,28 @@ class Product(Code):
     def is_out_of_stock(self):
         return self.count <= 0
 
+    @property
+    def avg_rating(self):
+        if hasattr(self, '_avg_rating_val'):
+            return self._avg_rating_val
+        from django.db.models import Avg
+        val = self.reviews.aggregate(Avg('rating'))['rating__avg']
+        return round(val, 1) if val else 5.0
+
+    @avg_rating.setter
+    def avg_rating(self, val):
+        self._avg_rating_val = round(val, 1) if val is not None else 5.0
+
+    @property
+    def reviews_count(self):
+        if hasattr(self, '_reviews_count_val'):
+            return self._reviews_count_val
+        return self.reviews.count()
+
+    @reviews_count.setter
+    def reviews_count(self, val):
+        self._reviews_count_val = val
+
     def __str__(self):
         return self.name
 
