@@ -136,6 +136,7 @@
     }
 
     /* Sidebar Filter Panel */
+    /* Sidebar Filter Panel */
     .filter-sidebar-card {
         background: #FFFFFF;
         border: 2px solid #E2E8F0;
@@ -181,59 +182,85 @@
         align-items: center;
         justify-content: space-between;
     }
+    .filter-all-cats-btn {
+        color: #7C3AED !important;
+        font-weight: 700;
+        font-size: 12.5px;
+        text-transform: none;
+        letter-spacing: normal;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 10px;
+        border-radius: 8px;
+        background: #FAF5FF;
+        border: 1px solid #E9D5FF;
+        transition: all 0.2s ease;
+        text-decoration: none !important;
+    }
+    .filter-all-cats-btn:hover {
+        background: #7C3AED;
+        color: #FFFFFF !important;
+        border-color: #7C3AED;
+    }
     
     /* Category List in Sidebar */
     .filter-cat-list {
         list-style: none;
         padding: 0;
+        padding-right: 6px;
         margin: 0;
-        max-height: 220px;
+        max-height: 250px;
         overflow-y: auto;
         scrollbar-width: thin;
-        scrollbar-color: #CBD5E1 #F1F5F9;
+        scrollbar-color: #CBD5E1 #F8FAFC;
+        -webkit-overflow-scrolling: touch;
     }
     .filter-cat-list::-webkit-scrollbar {
-        width: 4px;
+        width: 6px;
+    }
+    .filter-cat-list::-webkit-scrollbar-track {
+        background: #F8FAFC;
+        border-radius: 999px;
     }
     .filter-cat-list::-webkit-scrollbar-thumb {
         background: #CBD5E1;
         border-radius: 999px;
+        border: 1px solid #F8FAFC;
+    }
+    .filter-cat-list::-webkit-scrollbar-thumb:hover {
+        background: #94A3B8;
     }
     .filter-cat-item {
         margin-bottom: 4px;
     }
-    .filter-cat-link {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 6px 10px;
-        border-radius: 8px;
-        color: #334155;
-        font-weight: 600;
+    .filter-cat-text {
         font-size: 13.5px;
-        text-decoration: none !important;
-        transition: all 0.2s ease;
+        font-weight: 600;
+        color: #334155;
+        line-height: 1.35;
+        word-break: break-word;
+        transition: color 0.15s ease;
     }
-    .filter-cat-link:hover {
-        background: #F8FAFC;
+    .custom-filter-option:hover .filter-cat-text {
         color: #7C3AED;
-    }
-    .filter-cat-link.active {
-        background: #F5F3FF;
-        color: #7C3AED;
-        font-weight: 800;
     }
     .filter-cat-badge {
-        font-size: 11px;
+        font-size: 11.5px;
         font-weight: 700;
         background: #F1F5F9;
-        color: #64748B;
-        padding: 2px 7px;
+        color: #475569;
+        padding: 2px 8px;
         border-radius: 999px;
+        white-space: nowrap;
+        flex-shrink: 0;
+        margin-left: 8px;
+        border: 1px solid #E2E8F0;
     }
-    .filter-cat-link.active .filter-cat-badge {
+    .custom-filter-option input:checked ~ .filter-cat-badge {
         background: #EDE9FE;
         color: #7C3AED;
+        border-color: #DDD6FE;
     }
 
     /* Price inputs & presets */
@@ -245,28 +272,37 @@
     }
     .price-input-control {
         width: 100%;
-        padding: 7px 10px;
+        padding: 9px 12px;
         border: 2px solid #CBD5E1;
         border-radius: 10px;
         font-weight: 700;
-        font-size: 13px;
-        color: #0F172A;
+        font-size: 13.5px;
+        color: #0F172A !important;
+        background-color: #FFFFFF !important;
+        caret-color: #7C3AED;
         outline: none;
         transition: all 0.2s ease;
     }
+    .price-input-control::placeholder {
+        color: #94A3B8 !important;
+        opacity: 1;
+        font-weight: 500;
+    }
     .price-input-control:focus {
-        border-color: #7C3AED;
-        box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+        background-color: #FFFFFF !important;
+        color: #0F172A !important;
+        border-color: #7C3AED !important;
+        box-shadow: 0 0 0 3.5px rgba(124, 58, 237, 0.15) !important;
     }
     .price-preset-pill {
         display: inline-block;
-        padding: 4px 10px;
-        border: 1px solid #E2E8F0;
+        padding: 5px 11px;
+        border: 1.5px solid #E2E8F0;
         border-radius: 999px;
         background: #F8FAFC;
-        font-size: 11.5px;
+        font-size: 12px;
         font-weight: 700;
-        color: #475569;
+        color: #334155;
         margin: 2px;
         cursor: pointer;
         transition: all 0.2s ease;
@@ -283,12 +319,18 @@
         display: flex;
         align-items: center;
         gap: 9px;
-        padding: 5px 0;
+        padding: 6px 4px;
+        border-radius: 8px;
         cursor: pointer;
         font-size: 13.5px;
         font-weight: 600;
-        color: #334155;
+        color: #1E293B;
         user-select: none;
+        transition: background 0.15s ease;
+    }
+    .custom-filter-option:hover {
+        background: #F8FAFC;
+        color: #0F172A;
     }
     .custom-filter-option input[type="radio"],
     .custom-filter-option input[type="checkbox"] {
@@ -296,9 +338,7 @@
         height: 17px;
         accent-color: #7C3AED;
         cursor: pointer;
-    }
-    .custom-filter-option:hover {
-        color: #0F172A;
+        flex-shrink: 0;
     }
 
     /* Sticky Footer Actions */
@@ -534,22 +574,24 @@
                         <div class="filter-section">
                             <div class="filter-section-title">
                                 <span>Kategoriya</span>
-                                <a href="{% url 'categories' %}" class="text-primary font-12" style="text-transform:none;">Barchasi &rarr;</a>
+                                <a href="{% url 'categories' %}" class="filter-all-cats-btn" title="Barcha kategoriyalarni ko'rish">
+                                    Barchasi <i class="fas fa-arrow-right font-11 ms-1"></i>
+                                </a>
                             </div>
                             <ul class="filter-cat-list">
                                 <li class="filter-cat-item">
-                                    <label class="custom-filter-option">
+                                    <label class="custom-filter-option w-100" title="Barcha kategoriyalar">
                                         <input type="radio" name="category" value="" {% if not active_category %}checked{% endif %}>
-                                        <span class="flex-grow-1">Barcha kategoriyalar</span>
-                                        <span class="filter-cat-badge">{{ total_categories_count|default:"22" }}</span>
+                                        <span class="flex-grow-1 filter-cat-text">Barcha kategoriyalar</span>
+                                        <span class="filter-cat-badge">{{ total_categories_count|default:"22" }} ta</span>
                                     </label>
                                 </li>
                                 {% for cat in categories %}
                                 <li class="filter-cat-item">
-                                    <label class="custom-filter-option">
+                                    <label class="custom-filter-option w-100" title="{{ cat.name }}">
                                         <input type="radio" name="category" value="{{ cat.id }}" {% if active_category == cat.id %}checked{% endif %}>
-                                        <span class="flex-grow-1 text-truncate">{{ cat.name }}</span>
-                                        <span class="filter-cat-badge">{{ cat.product_count }}</span>
+                                        <span class="flex-grow-1 filter-cat-text">{{ cat.name }}</span>
+                                        <span class="filter-cat-badge">{{ cat.product_count }} ta</span>
                                     </label>
                                 </li>
                                 {% endfor %}
@@ -569,10 +611,10 @@
 
                             <!-- Price Quick Presets -->
                             <div class="d-flex flex-wrap gap-1 mt-2">
-                                <span class="price-preset-pill" onclick="setPricePreset(0, 100000)">0–100k</span>
-                                <span class="price-preset-pill" onclick="setPricePreset(100000, 500000)">100k–500k</span>
-                                <span class="price-preset-pill" onclick="setPricePreset(500000, 1000000)">500k–1mln</span>
-                                <span class="price-preset-pill" onclick="setPricePreset(1000000, '')">1mln+</span>
+                                <span class="price-preset-pill" onclick="setPricePreset(0, 100000)">0 – 100 ming</span>
+                                <span class="price-preset-pill" onclick="setPricePreset(100000, 500000)">100 – 500 ming</span>
+                                <span class="price-preset-pill" onclick="setPricePreset(500000, 1000000)">500 ming – 1 mln</span>
+                                <span class="price-preset-pill" onclick="setPricePreset(1000000, '')">1 mln+</span>
                             </div>
                         </div>
 

@@ -263,3 +263,29 @@ class ProductFilterAndSortingTests(TestCase):
         self.assertTrue(res.context['page_obj'].has_previous())
         self.assertContains(res, f"category={self.cat_phones.id}")
 
+    # 21. Filter Panel UI Elements (Contrast, Badges, Presets, Header)
+    def test_filter_panel_ui_elements(self):
+        url = reverse('all_products')
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 200)
+        content = res.content.decode('utf-8')
+
+        # Price input contrast styling
+        self.assertIn("class=\"price-input-control\"", content)
+        self.assertIn("placeholder=\"1 000 000\"", content)
+
+        # Price presets formatted with spaces / Uzbek words
+        self.assertIn("0 – 100 ming", content)
+        self.assertIn("100 – 500 ming", content)
+        self.assertIn("500 ming – 1 mln", content)
+        self.assertIn("1 mln+", content)
+
+        # Category badge suffix 'ta'
+        self.assertIn("class=\"filter-cat-badge\">3 ta</span>", content)
+        self.assertIn("class=\"filter-cat-badge\">1 ta</span>", content)
+
+        # All categories header link
+        self.assertIn("class=\"filter-all-cats-btn\"", content)
+        self.assertIn("Barchasi <i class=\"fas fa-arrow-right", content)
+
+
