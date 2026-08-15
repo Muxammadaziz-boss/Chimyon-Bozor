@@ -480,6 +480,9 @@
                     <a href="{% url 'order_history' %}" class="btn-orders-back">
                         <i class="fas fa-arrow-left mr-1"></i> Barcha Buyurtmalar
                     </a>
+                    <button type="button" onclick="window.print();" class="btn-orders-back" style="background: #f8fafc !important; border-color: #cbd5e1 !important;">
+                        <i class="fas fa-print mr-1"></i> Hisob-fakturani Chop Etish
+                    </button>
                     <a href="{% url 'all_products' %}" class="btn-catalog-action">
                         <i class="fas fa-shopping-bag mr-1"></i> Katalogga Qaytish
                     </a>
@@ -490,13 +493,33 @@
             <div>
                 <div class="info-card sidebar-sticky">
                     <div class="info-card__title">
-                        <i class="fas fa-wallet text-primary"></i> To'lov Holati
+                        <i class="fas fa-wallet text-primary"></i> To'lov va Buyurtma Holati
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <span class="text-muted font-weight-600">Buyurtma statusi:</span>
-                        <span class="status-badge" style="background-color: #f1f5f9; color: #0f172a !important; border: 1.5px solid #cbd5e1; font-weight: 700; padding: 5px 14px; border-radius: 999px;">
-                            <i class="fas fa-box text-primary mr-1"></i> {{ order.get_status_display }}
+                        <span>
+                            {% if order.status == 2 %}
+                                <span class="status-badge" style="background-color: #e0f2fe; color: #0369a1 !important; border: 1px solid #7dd3fc;">
+                                    <i class="fas fa-clock"></i> Qabul qilindi
+                                </span>
+                            {% elif order.status == 3 %}
+                                <span class="status-badge" style="background-color: #f3e8ff; color: #7c3aed !important; border: 1px solid #d8b4fe;">
+                                    <i class="fas fa-truck"></i> Yo'lda
+                                </span>
+                            {% elif order.status == 4 %}
+                                <span class="status-badge" style="background-color: #dcfce7; color: #15803d !important; border: 1px solid #86efac;">
+                                    <i class="fas fa-check-circle"></i> Yetkazildi
+                                </span>
+                            {% elif order.status == 5 %}
+                                <span class="status-badge" style="background-color: #fee2e2; color: #b91c1c !important; border: 1px solid #fca5a5;">
+                                    <i class="fas fa-times-circle"></i> Bekor qilindi
+                                </span>
+                            {% else %}
+                                <span class="status-badge" style="background-color: #f1f5f9; color: #334155 !important; border: 1px solid #cbd5e1;">
+                                    <i class="fas fa-box"></i> {{ order.get_status_display }}
+                                </span>
+                            {% endif %}
                         </span>
                     </div>
 
@@ -506,11 +529,11 @@
                             {% if order.financial_status == 'fully_paid' %}
                                 <span class="status-badge status-badge--paid"><i class="fas fa-check-circle"></i> To'liq to'langan</span>
                             {% elif order.financial_status == 'partially_paid' %}
-                                <span class="status-badge status-badge--partial"><i class="fas fa-adjust"></i> Qisman to'langan</span>
+                                <span class="status-badge" style="background-color: #fef3c7; color: #92400e !important; border: 1px solid #fde68a;"><i class="fas fa-adjust"></i> Qisman to'langan</span>
                             {% elif order.financial_status == 'refunded' %}
                                 <span class="status-badge status-badge--refunded"><i class="fas fa-undo"></i> Qaytarilgan</span>
                             {% else %}
-                                <span class="status-badge status-badge--unpaid"><i class="fas fa-clock"></i> To'lanmagan</span>
+                                <span class="status-badge" style="background-color: #fee2e2; color: #991b1b !important; border: 1px solid #fecaca;"><i class="fas fa-clock"></i> To'lanmagan</span>
                             {% endif %}
                         </span>
                     </div>
@@ -539,7 +562,7 @@
                         </span>
                     </div>
 
-                    {% if financials.remaining_amount > 0 %}
+                    {% if financials.remaining_amount > 0 and order.financial_status != 'fully_paid' %}
                     <div class="balance-box">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <span class="text-warning-dark font-weight-bold" style="color: #92400e;">Qolgan qoldiq summa:</span>

@@ -3,7 +3,7 @@ from decimal import Decimal
 from unittest.mock import patch
 from django.test import TestCase
 from django.urls import reverse
-from .models import Cart, CartProduct, Category, Product, User, SiteSettings
+from .models import Cart, CartProduct, Category, Product, User, SiteSettings, Payment
 from .views import get_active_cart
 from . import models
 
@@ -761,6 +761,167 @@ class CartEdgeCaseConsistencyTests(TestCase):
         self.assertIn('/cart/', response.url)
         self.item1.refresh_from_db()
         self.assertEqual(self.item1.count, 1)
+
+
+class OrderStatusAndFinancialStatusUXTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='ordertester',
+            password='password123',
+            phone='+998901234567'
+        )
+        self.admin_user = User.objects.create_superuser(
+            username='adminuser',
+            password='password123',
+            phone='+998901112233'
+        )
+        self.category = Category.objects.create(name='Elektronika', is_active=True)
+        self.product = Product.objects.create(
+            name='Klaviatura RGB',
+            category=self.category,
+            price=Decimal('1000000.00'),
+            count=10
+        )
+        self.order = Cart.objects.create(
+            user=self.user,
+            status=2, # Qabul qilindi
+            financial_status=Cart.FinancialStatus.UNPAID,
+            prepayment_percent=30
+        )
+        CartProduct.objects.create(cart=self.order, product=self.product, count=1)
+
+    # 1. Delivered + Unpaid: Changing order status to Delivered (4) does NOT alter UNPAID financial status
+    def test_delivered_plus_unpaid_independence(self):
+        self.client.login(username='adminuser', password='password123')
+        # Admin updates order status to Delivered (4)
+        response = self.client.post(
+            reverse('d_update_status', kwargs={'code': self.order.code}),
+            {'target_status': '4', 'comment': 'Yetkazildi'}
+        )
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, 4) # Delivered
+        self.assertEqual(self.order.financial_status, Cart.FinancialStatus.UNPAID) # Remains Unpaid!
+        self.assertEqual(self.order.paid_amount, Decimal('0.00'))
+        self.assertEqual(self.order.remaining_amount, Decimal('1000000.00'))
+
+    # 2. Delivered + Partial: Order delivered, 30% prepayment paid, 70% remaining
+    def test_delivered_plus_partially_paid(self):
+        Payment.objects.create(
+            order=self.order,
+            amount=Decimal('300000.00'),
+            provider=Payment.Provider.CLICK,
+            purpose=Payment.Purpose.PREPAYMENT,
+            status=Payment.Status.PAID
+        )
+        self.order.status = 4 # Delivered
+        self.order.financial_status = Cart.FinancialStatus.PARTIALLY_PAID
+        self.order.save()
+
+        self.assertEqual(self.order.status, 4)
+        self.assertEqual(self.order.financial_status, Cart.FinancialStatus.PARTIALLY_PAID)
+        self.assertEqual(self.order.paid_amount, Decimal('300000.00'))
+        self.assertEqual(self.order.remaining_amount, Decimal('700000.00'))
+
+    # 3. Delivered + Full: Order delivered and fully paid
+    def test_delivered_plus_fully_paid(self):
+        Payment.objects.create(
+            order=self.order,
+            amount=Decimal('1000000.00'),
+            provider=Payment.Provider.CLICK,
+            purpose=Payment.Purpose.FULL,
+            status=Payment.Status.PAID
+        )
+        self.order.status = 4 # Delivered
+        self.order.financial_status = Cart.FinancialStatus.FULLY_PAID
+        self.order.save()
+
+        self.assertEqual(self.order.status, 4)
+        self.assertEqual(self.order.financial_status, Cart.FinancialStatus.FULLY_PAID)
+        self.assertEqual(self.order.paid_amount, Decimal('1000000.00'))
+        self.assertEqual(self.order.remaining_amount, Decimal('0.00'))
+
+    # 4. Cancelled + Refunded: Order cancelled (5) and refund recorded
+    def test_cancelled_plus_refunded(self):
+        p = Payment.objects.create(
+            order=self.order,
+            amount=Decimal('300000.00'),
+            provider=Payment.Provider.CLICK,
+            purpose=Payment.Purpose.PREPAYMENT,
+            status=Payment.Status.REFUNDED,
+            refund_amount=Decimal('300000.00')
+        )
+        self.order.status = 5 # Cancelled
+        self.order.financial_status = Cart.FinancialStatus.REFUNDED
+        self.order.save()
+
+        self.assertEqual(self.order.status, 5)
+        self.assertEqual(self.order.financial_status, Cart.FinancialStatus.REFUNDED)
+        self.assertEqual(self.order.paid_amount, Decimal('0.00'))
+
+    # 5. Prepayment only ledger entry
+    def test_prepayment_only_ledger(self):
+        Payment.objects.create(
+            order=self.order,
+            amount=Decimal('300000.00'),
+            provider=Payment.Provider.CLICK,
+            purpose=Payment.Purpose.PREPAYMENT,
+            status=Payment.Status.PAID
+        )
+        self.assertEqual(self.order.payments.count(), 1)
+        self.assertEqual(self.order.payments.first().purpose, Payment.Purpose.PREPAYMENT)
+        self.assertEqual(self.order.paid_amount, Decimal('300000.00'))
+
+    # 6. Balance paid (Prepayment + Balance Settlement)
+    def test_balance_settlement_ledger(self):
+        Payment.objects.create(
+            order=self.order,
+            amount=Decimal('300000.00'),
+            provider=Payment.Provider.CLICK,
+            purpose=Payment.Purpose.PREPAYMENT,
+            status=Payment.Status.PAID
+        )
+        Payment.objects.create(
+            order=self.order,
+            amount=Decimal('700000.00'),
+            provider=Payment.Provider.CASH,
+            purpose=Payment.Purpose.BALANCE,
+            status=Payment.Status.PAID
+        )
+        self.order.financial_status = Cart.FinancialStatus.FULLY_PAID
+        self.order.save()
+
+        self.assertEqual(self.order.payments.count(), 2)
+        self.assertEqual(self.order.paid_amount, Decimal('1000000.00'))
+        self.assertEqual(self.order.remaining_amount, Decimal('0.00'))
+
+    # 7. Customer order detail view renders correct decoupled state and ledger
+    def test_customer_order_detail_view(self):
+        Payment.objects.create(
+            order=self.order,
+            amount=Decimal('300000.00'),
+            provider=Payment.Provider.CLICK,
+            purpose=Payment.Purpose.PREPAYMENT,
+            status=Payment.Status.PAID
+        )
+        self.order.status = 4 # Delivered
+        self.order.financial_status = Cart.FinancialStatus.PARTIALLY_PAID
+        self.order.save()
+
+        self.client.login(username='ordertester', password='password123')
+        response = self.client.get(reverse('order_detail', kwargs={'code': self.order.code}))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Yetkazildi')
+        self.assertContains(response, 'Qisman')
+        self.assertContains(response, '700 000') # Remaining amount
+
+    # 8. Admin order detail view renders correct decoupled controls and settle balance modal
+    def test_admin_order_detail_view(self):
+        self.client.login(username='adminuser', password='password123')
+        response = self.client.get(reverse('d_detail_orders', kwargs={'code': self.order.code}))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Moliyaviy Holat')
+        self.assertContains(response, 'settleBalanceModal')
+
 
 
 

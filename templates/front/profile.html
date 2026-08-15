@@ -1143,26 +1143,26 @@
                                             </td>
                                             <td>
                                                 {% if order.status == 2 %}
-                                                    <span class="status-badge status-badge-new"><i class="fas fa-clock"></i> Qabul qilindi</span>
+                                                    <span class="status-badge" style="background-color: #e0f2fe; color: #0369a1 !important; border: 1px solid #7dd3fc;"><i class="fas fa-clock"></i> Qabul qilindi</span>
                                                 {% elif order.status == 3 %}
-                                                    <span class="status-badge status-badge-shipping"><i class="fas fa-truck"></i> Yo'lda</span>
+                                                    <span class="status-badge" style="background-color: #f3e8ff; color: #7c3aed !important; border: 1px solid #d8b4fe;"><i class="fas fa-truck"></i> Yo'lda</span>
                                                 {% elif order.status == 4 %}
-                                                    <span class="status-badge status-badge-delivered"><i class="fas fa-check-circle"></i> Yetkazilgan</span>
+                                                    <span class="status-badge" style="background-color: #dcfce7; color: #15803d !important; border: 1px solid #86efac;"><i class="fas fa-check-circle"></i> Yetkazilgan</span>
                                                 {% elif order.status == 5 %}
-                                                    <span class="status-badge status-badge-cancelled"><i class="fas fa-times-circle"></i> Qaytarilgan</span>
+                                                    <span class="status-badge" style="background-color: #fee2e2; color: #b91c1c !important; border: 1px solid #fca5a5;"><i class="fas fa-times-circle"></i> Bekor qilindi</span>
                                                 {% else %}
-                                                    <span class="status-badge status-badge-default">{{ order.get_status_display }}</span>
+                                                    <span class="status-badge" style="background-color: #f1f5f9; color: #334155 !important; border: 1px solid #cbd5e1;"><i class="fas fa-box"></i> {{ order.get_status_display }}</span>
                                                 {% endif %}
                                             </td>
                                             <td>
                                                 {% if order.financial_status == 'fully_paid' %}
-                                                    <span class="badge bg-success text-white px-2 py-1"><i class="fas fa-check-circle mr-1"></i> To'liq to'langan</span>
+                                                    <span class="status-badge" style="background-color: #dcfce7; color: #15803d !important; border: 1px solid #86efac;"><i class="fas fa-check-circle mr-1"></i> To'liq to'langan</span>
                                                 {% elif order.financial_status == 'partially_paid' %}
-                                                    <span class="badge bg-info text-white px-2 py-1"><i class="fas fa-adjust mr-1"></i> Qisman ({{ order.prepayment_percent }}%)</span>
+                                                    <span class="status-badge" style="background-color: #fef3c7; color: #92400e !important; border: 1px solid #fde68a;"><i class="fas fa-adjust mr-1"></i> Qisman ({{ order.prepayment_percent }}%)</span>
                                                 {% elif order.financial_status == 'refunded' %}
-                                                    <span class="badge bg-secondary text-white px-2 py-1"><i class="fas fa-undo mr-1"></i> Qaytarilgan</span>
+                                                    <span class="status-badge" style="background-color: #f1f5f9; color: #334155 !important; border: 1px solid #cbd5e1;"><i class="fas fa-undo mr-1"></i> Qaytarilgan</span>
                                                 {% else %}
-                                                    <span class="badge bg-warning text-dark px-2 py-1"><i class="fas fa-clock mr-1"></i> To'lanmagan</span>
+                                                    <span class="status-badge" style="background-color: #fee2e2; color: #991b1b !important; border: 1px solid #fecaca;"><i class="fas fa-clock mr-1"></i> To'lanmagan</span>
                                                 {% endif %}
                                             </td>
                                             <td class="text-muted">{{ order.date|date:"d.m.Y, H:i" }}</td>
