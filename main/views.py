@@ -874,18 +874,24 @@ def remove_from_cart(request, product_code):
         return redirect('login')
 
     product = get_object_or_404(models.Product, code=product_code)
-    models.CartProduct.objects.filter(
-        cart__user=request.user, cart__status=1, product=product
-    ).delete()
+    cart = models.Cart.objects.filter(user=request.user, status=1).first()
+    if cart:
+        models.CartProduct.objects.filter(cart=cart, product=product).delete()
+
     if is_ajax:
+        active_items = list(cart.cart_products.filter(product__isnull=False, product__count__gt=0)) if cart else []
+        has_out_of_stock = cart.cart_products.filter(product__count__lte=0).exists() if cart else False
         return JsonResponse({
             'status': 'success',
             'message': f'"{product.name}" savatdan olib tashlandi',
-            'cart_count': request.user.cart_items_count,
+            'cart_count': sum(item.count for item in active_items),
+            'cart_total': float(sum(item.total_price for item in active_items)),
+            'cart_items_count': cart.cart_products.count() if cart else 0,
+            'has_out_of_stock': has_out_of_stock,
             'in_cart': False
         })
     messages.success(request, f'"{product.name}" savatdan olib tashlandi')
-    return redirect_back(request, 'product_detail', code=product.code)
+    return redirect_back(request, 'cart')
 
 
 @require_POST
@@ -903,38 +909,81 @@ def update_cart_quantity(request, product_code):
         else:
             quantity = int(request.POST.get('quantity', 0))
 
+        if quantity < 0:
+            if request.content_type == 'application/json':
+                return JsonResponse({'status': 'error', 'message': "Noto'g'ri miqdor kiritildi"}, status=400)
+            messages.error(request, "Noto'g'ri miqdor kiritildi")
+            return redirect('cart')
+
+        # Check if product is out of stock (stock <= 0)
+        if product.count <= 0:
+            if quantity == 0:
+                cart_product.delete()
+                active_items = list(cart.cart_products.filter(product__isnull=False, product__count__gt=0))
+                has_out_of_stock = cart.cart_products.filter(product__count__lte=0).exists()
+                if request.content_type == 'application/json':
+                    return JsonResponse({
+                        'status': 'deleted',
+                        'cart_total': float(sum(item.total_price for item in active_items)),
+                        'cart_count': sum(item.count for item in active_items),
+                        'cart_items_count': cart.cart_products.count(),
+                        'has_out_of_stock': has_out_of_stock,
+                    })
+                messages.success(request, f'"{product.name}" savatdan olib tashlandi')
+                return redirect('cart')
+
+            if request.content_type == 'application/json':
+                return JsonResponse({
+                    'status': 'error',
+                    'out_of_stock': True,
+                    'message': f'"{product.name}" omborda tugagan.',
+                    'max_stock': 0
+                }, status=400)
+            messages.error(request, f'"{product.name}" omborda tugagan.')
+            return redirect('cart')
+
         stock_warning = None
         if quantity > product.count:
             quantity = product.count
-            stock_warning = f"Omborda faqat {product.count} ta mahsulot mavjud"
+            stock_warning = f"Faqat {product.count} dona mavjud."
 
         if quantity <= 0:
             cart_product.delete()
+            active_items = list(cart.cart_products.filter(product__isnull=False, product__count__gt=0))
+            has_out_of_stock = cart.cart_products.filter(product__count__lte=0).exists()
             if request.content_type == 'application/json':
                 return JsonResponse({
                     'status': 'deleted',
-                    'cart_total': float(cart.total_price),
-                    'cart_count': cart.count_product,
+                    'cart_total': float(sum(item.total_price for item in active_items)),
+                    'cart_count': sum(item.count for item in active_items),
                     'cart_items_count': cart.cart_products.count(),
+                    'has_out_of_stock': has_out_of_stock,
                 })
             messages.success(request, f'"{product.name}" savatdan olib tashlandi')
             return redirect('cart')
 
         cart_product.count = quantity
-        cart_product.save()
+        cart_product.save(update_fields=['count'])
 
+        active_items = list(cart.cart_products.filter(product__isnull=False, product__count__gt=0))
+        has_out_of_stock = cart.cart_products.filter(product__count__lte=0).exists()
         if request.content_type == 'application/json':
             return JsonResponse({
                 'status': 'updated',
                 'item_total_price': float(cart_product.total_price),
                 'count': cart_product.count,
+                'unit_price': float(cart_product.unit_price),
                 'max_stock': product.count,
                 'stock_warning': stock_warning,
-                'cart_total': float(cart.total_price),
-                'cart_count': cart.count_product,
+                'cart_total': float(sum(item.total_price for item in active_items)),
+                'cart_count': sum(item.count for item in active_items),
                 'cart_items_count': cart.cart_products.count(),
+                'has_out_of_stock': has_out_of_stock,
             })
-        messages.success(request, 'Savat yangilandi')
+        if stock_warning:
+            messages.warning(request, stock_warning)
+        else:
+            messages.success(request, 'Savat yangilandi')
         return redirect_back(request, 'product_detail', code=product.code)
     except (ValueError, TypeError, json.JSONDecodeError):
         if request.content_type == 'application/json':
@@ -999,15 +1048,39 @@ def wishlist(request):
 
 @login_required(login_url='login')
 def cart(request):
-    cart_products = models.CartProduct.objects.filter(
+    # Remove any dangling cart products where product is null
+    models.CartProduct.objects.filter(cart__user=request.user, cart__status=1, product__isnull=True).delete()
+
+    cart_products = list(models.CartProduct.objects.filter(
         cart__user=request.user,
         cart__status=1,
         product__isnull=False,
-    ).select_related('product', 'product__category', 'cart')
+    ).select_related('product', 'product__category', 'cart'))
+
+    adjusted_messages = []
+    has_out_of_stock = False
+
+    for item in cart_products:
+        if item.product.count <= 0:
+            has_out_of_stock = True
+        elif item.count > item.product.count:
+            item.count = item.product.count
+            item.save(update_fields=['count'])
+            adjusted_messages.append(f'"{item.product.name}" mahsulotidan omborda faqat {item.product.count} dona qolganligi sababli savat miqdori moslashtirildi.')
+
+    for msg in adjusted_messages:
+        messages.warning(request, msg)
+
+    # In-stock active products for valid order calculations
+    active_cart_products = [item for item in cart_products if item.product and item.product.count > 0]
+    cart_total = sum(item.total_price for item in active_cart_products)
+    cart_count = sum(item.count for item in active_cart_products)
+
     context = {
         "cart_products": cart_products,
-        "cart_total": sum(item.total_price for item in cart_products),
-        "cart_count": sum(item.count for item in cart_products),
+        "cart_total": cart_total,
+        "cart_count": cart_count,
+        "has_out_of_stock": has_out_of_stock,
     }
     return render(request, 'front/cart.html', context=context)
 
@@ -1016,8 +1089,7 @@ def cart(request):
 def checkout(request):
     """
     Checkout sahifasi (GET) va Buyurtma/To'lov yaratish (POST).
-    Partial Prepayment (0%, 30%, 50%, 100%) tizimi bilan to'liq integratsiya qilingan.
-    Telefon raqami qat'iy tekshiriladi va manzil admin qo'shgan manzillardan tanlanadi.
+    Multi-tab va stale cart holatlariga qarshi qat'iy tekshiruvlar bilan.
     """
     user = request.user
     cart = models.Cart.objects.filter(user=user, status=1).first()
@@ -1025,7 +1097,25 @@ def checkout(request):
         messages.error(request, "Savatingiz bo'sh. Iltimos, avval mahsulot tanlang.")
         return redirect('cart')
 
+    # Clean up any null products
+    cart.cart_products.filter(product__isnull=True).delete()
     cart_products = list(cart.cart_products.filter(product__isnull=False).select_related('product', 'product__category'))
+
+    # Stale stock & Out-of-stock validation
+    stock_adjusted = False
+    for item in cart_products:
+        if item.product.count <= 0:
+            messages.error(request, f'"{item.product.name}" mahsuloti omborda tugagan. Buyurtma berish uchun uni savatdan olib tashlang.')
+            return redirect('cart')
+        elif item.count > item.product.count:
+            item.count = item.product.count
+            item.save(update_fields=['count'])
+            stock_adjusted = True
+
+    if stock_adjusted:
+        messages.warning(request, "Omborda qoldiq o'zgarganligi sababli savatingiz miqdori moslashtirildi.")
+        return redirect('cart')
+
     cart_count = sum(item.count for item in cart_products)
     financials = PaymentManager.calculate_order_financials(cart)
     addresses = models.Address.objects.filter(is_active=True).order_by('name')
@@ -1086,10 +1176,16 @@ def checkout(request):
         user.address = address
         user.save(update_fields=['phone', 'address'])
 
-        # Validate stock availability
+        # Multi-tab / Concurrent stock verification: atomic refresh from DB
         for item in cart_products:
+            item.product.refresh_from_db()
+            if item.product.count <= 0:
+                messages.error(request, f'"{item.product.name}" mahsuloti omborda tugagan.')
+                return redirect('cart')
             if item.count > item.product.count:
-                messages.error(request, f'"{item.product.name}" mahsulotidan omborda yetarli qoldiq mavjud emas (Mavjud: {item.product.count} dona).')
+                item.count = item.product.count
+                item.save(update_fields=['count'])
+                messages.warning(request, f'"{item.product.name}" mahsulotidan omborda yetarli qoldiq qolmagan (Mavjud: {item.product.count} dona).')
                 return redirect('cart')
 
         # Check prepayment requirements

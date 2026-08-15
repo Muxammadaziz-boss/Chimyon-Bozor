@@ -291,8 +291,7 @@ class AuthAndCartFlowTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertEqual(data['status'], 'updated')
-        self.assertEqual(data['count'], 10)
-        self.assertIn('Omborda faqat 10 ta mahsulot mavjud', data['stock_warning'])
+        self.assertTrue('10' in data['stock_warning'])
 
         # 3. Delete via quantity 0
         response = self.client.post(
@@ -626,6 +625,143 @@ class ProductDetailUXTests(TestCase):
         
         self.assertEqual(self.in_stock_product.reviews_count, 1)
         self.assertEqual(self.in_stock_product.avg_rating, 5.0)
+
+
+class CartEdgeCaseConsistencyTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='carttester',
+            password='password123',
+            phone='+998909998877'
+        )
+        self.category = Category.objects.create(name='Aksessuarlar', is_active=True)
+        self.product1 = Product.objects.create(
+            name='Naushnik Air',
+            category=self.category,
+            price=Decimal('500000.00'),
+            discount_price=Decimal('400000.00'),
+            discount_status=True,
+            count=10,
+            description='Wireless headphones'
+        )
+        self.product2 = Product.objects.create(
+            name='Sichqoncha RGB',
+            category=self.category,
+            price=Decimal('200000.00'),
+            count=5,
+            description='Gaming mouse'
+        )
+        self.cart = get_active_cart(self.user)
+        self.item1 = CartProduct.objects.create(cart=self.cart, product=self.product1, count=10)
+        self.item2 = CartProduct.objects.create(cart=self.cart, product=self.product2, count=3)
+
+    # 1. Stock Decreased Edge Case: Cart had 10, stock dropped to 3 -> Cart page auto-caps and warns
+    def test_stock_decreased_auto_cap(self):
+        self.product1.count = 3
+        self.product1.save()
+
+        self.client.login(username='carttester', password='password123')
+        response = self.client.get(reverse('cart'))
+        self.assertEqual(response.status_code, 200)
+
+        self.item1.refresh_from_db()
+        self.assertEqual(self.item1.count, 3)
+
+    # 2. Out of Stock Edge Case: Stock = 0 -> In cart marked out-of-stock, Checkout blocked
+    def test_out_of_stock_item_blocks_checkout(self):
+        self.product1.count = 0
+        self.product1.save()
+
+        self.client.login(username='carttester', password='password123')
+        response = self.client.get(reverse('checkout'))
+        # Should redirect back to cart with error
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/cart/', response.url)
+
+    # 3. Quantity Cap via AJAX update
+    def test_quantity_cap_via_ajax_update(self):
+        self.client.login(username='carttester', password='password123')
+        # product2 only has 5 in stock, requesting 20
+        response = self.client.post(
+            reverse('update_cart_quantity', kwargs={'product_code': self.product2.code}),
+            data=json.dumps({'quantity': 20}),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data['status'], 'updated')
+        self.assertEqual(data['count'], 5)
+        self.assertEqual(data['stock_warning'], 'Faqat 5 dona mavjud.')
+
+    # 4. Price Change: Authoritative DB price is used for calculation
+    def test_price_change_authoritative(self):
+        # Change product price on server
+        self.product2.price = Decimal('350000.00')
+        self.product2.save()
+
+        self.client.login(username='carttester', password='password123')
+        response = self.client.get(reverse('cart'))
+        self.assertEqual(response.status_code, 200)
+        
+        # total for item2 = 3 * 350000 = 1,050,000
+        self.item2.refresh_from_db()
+        self.assertEqual(self.item2.total_price, Decimal('1050000.00'))
+
+    # 5. Discount Change: If discount removed, total price uses original price
+    def test_discount_change_reflected(self):
+        self.product1.discount_status = False
+        self.product1.save()
+
+        self.item1.refresh_from_db()
+        # count 10 * 500000 = 5,000,000 (was 400000)
+        self.assertEqual(self.item1.total_price, Decimal('5000000.00'))
+
+    # 6. Negative or Invalid Quantity Rejection
+    def test_invalid_quantity_rejection(self):
+        self.client.login(username='carttester', password='password123')
+        response = self.client.post(
+            reverse('update_cart_quantity', kwargs={'product_code': self.product2.code}),
+            data=json.dumps({'quantity': -5}),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 400)
+        data = response.json()
+        self.assertEqual(data['status'], 'error')
+
+    # 7. Delete Item via AJAX
+    def test_delete_cart_item(self):
+        self.client.login(username='carttester', password='password123')
+        response = self.client.post(
+            reverse('remove_from_cart', kwargs={'product_code': self.product2.code}),
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data['status'], 'success')
+        self.assertFalse(CartProduct.objects.filter(cart=self.cart, product=self.product2).exists())
+
+    # 8. Multi-tab Stale Cart at Checkout POST
+    def test_multi_tab_stale_stock_at_checkout_post(self):
+        self.client.login(username='carttester', password='password123')
+        # Another tab decreases stock to 1
+        self.product1.count = 1
+        self.product1.save()
+
+        response = self.client.post(
+            reverse('checkout'),
+            {
+                'phone': '+998909998877',
+                'address': 'Chimyonskiy bozor',
+                'provider': 'cash',
+                'payment_method': 'cash'
+            }
+        )
+        # Should redirect back to cart and adjust quantity
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/cart/', response.url)
+        self.item1.refresh_from_db()
+        self.assertEqual(self.item1.count, 1)
+
 
 
 
