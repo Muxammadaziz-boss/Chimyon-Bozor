@@ -1030,10 +1030,10 @@
                                     
                                     <div class="col-md-6">
                                         <div class="form-floating-custom locked" id="phoneWrapper">
-                                            <input type="text" name="phone" value="{{ user.phone|default:'' }}" class="form-control" id="phone" placeholder=" " data-current-phone="{{ user.phone|default:'' }}" disabled autocomplete="off">
+                                            <input type="tel" inputmode="tel" name="phone" value="{{ user.phone|default:'' }}" class="form-control" id="phone" placeholder="+998901234567" maxlength="13" data-current-phone="{{ user.phone|default:'' }}" disabled autocomplete="off" aria-label="Telefon raqam">
                                             <i class="fas fa-phone input-icon"></i>
                                             <label for="phone">Telefon raqam</label>
-                                            <div class="input-feedback" id="phoneFeedback" style="display: none;"></div>
+                                            <div class="input-feedback" id="phoneFeedback" style="display: none;" role="alert"></div>
                                         </div>
                                     </div>
                                     
@@ -1399,8 +1399,84 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 250);
     }
 
+    // Strict Phone Sanitizer Function (Uzbekistan +998XXXXXXXXX format)
+    function sanitizePhoneNumber(val) {
+        if (!val) return '';
+        let str = String(val);
+        let hasPlus = str.startsWith('+') || str.includes('+');
+        let digits = str.replace(/\D/g, '');
+        if (digits.length > 12) {
+            digits = digits.substring(0, 12);
+        }
+        if (digits.length === 0) {
+            return hasPlus ? '+' : '';
+        }
+        return '+' + digits;
+    }
+
+    function handlePhoneInputSanitization(input) {
+        if (!input) return;
+        const oldVal = input.value;
+        const cleanVal = sanitizePhoneNumber(oldVal);
+        if (oldVal !== cleanVal) {
+            input.value = cleanVal;
+        }
+    }
+
+    function handlePhoneKeyDown(e) {
+        const allowedControlKeys = [
+            'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+            'Home', 'End', 'Tab', 'Enter', 'Escape'
+        ];
+        if (allowedControlKeys.includes(e.key)) return;
+        if (e.ctrlKey || e.metaKey) return; // Allow clipboard actions
+
+        // Allow '+' only at position 0 and only if not already present
+        if (e.key === '+') {
+            const input = e.target;
+            if (input.selectionStart === 0 && !input.value.includes('+')) {
+                return;
+            }
+            e.preventDefault();
+            return;
+        }
+
+        // Block all non-digits (letters, punctuation, etc.)
+        if (!/^[0-9]$/.test(e.key)) {
+            e.preventDefault();
+            return;
+        }
+
+        // Enforce max 12 digits (+ and 12 digits = 13 chars)
+        const input = e.target;
+        const selectedLen = (input.selectionEnd || 0) - (input.selectionStart || 0);
+        const digits = input.value.replace(/\D/g, '');
+        if (digits.length >= 12 && selectedLen === 0) {
+            e.preventDefault();
+            return;
+        }
+    }
+
+    function handlePhoneBeforeInput(e) {
+        if (e.inputType === 'deleteContentBackward' || e.inputType === 'deleteContentForward') return;
+        if (e.data) {
+            if (!/^[0-9+]+$/.test(e.data)) {
+                e.preventDefault();
+                return;
+            }
+            if (e.data.includes('+')) {
+                const input = e.target;
+                if (input.selectionStart !== 0 || input.value.includes('+')) {
+                    e.preventDefault();
+                    return;
+                }
+            }
+        }
+    }
+
     function checkPhone() {
         if (!isEditing || !phoneInput) return;
+        handlePhoneInputSanitization(phoneInput);
         let val = phoneInput.value.trim();
         const currentPhone = (phoneInput.getAttribute('data-current-phone') || '').trim();
 
@@ -1408,7 +1484,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let rawDigits = val.replace(/\D/g, '');
         let pureDigits = rawDigits.startsWith('998') ? rawDigits.substring(3) : rawDigits;
 
-        if (!val) {
+        if (!val || val === '+') {
             phoneFeedback.style.display = 'flex';
             phoneFeedback.className = 'input-feedback invalid';
             phoneFeedback.innerHTML = '<i class="fas fa-times-circle"></i> Telefon raqam kiritilmadi';
@@ -1416,18 +1492,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 phoneWrapper.classList.add('is-invalid');
                 phoneWrapper.classList.remove('is-valid');
             }
+            phoneInput.setAttribute('aria-invalid', 'true');
             isPhoneValid = false;
             return;
         }
 
-        if (pureDigits.length !== 9) {
+        if (!rawDigits.startsWith('998') || pureDigits.length !== 9) {
             phoneFeedback.style.display = 'flex';
             phoneFeedback.className = 'input-feedback invalid';
-            phoneFeedback.innerHTML = '<i class="fas fa-times-circle"></i> 9 ta raqam bo\'lishi kerak (masalan: +998901234567)';
+            phoneFeedback.innerHTML = '<i class="fas fa-exclamation-circle"></i> Telefon raqamini to\'g\'ri kiriting (+998XXXXXXXXX)';
             if (phoneWrapper) {
                 phoneWrapper.classList.add('is-invalid');
                 phoneWrapper.classList.remove('is-valid');
             }
+            phoneInput.setAttribute('aria-invalid', 'true');
             isPhoneValid = false;
             return;
         }
@@ -1438,11 +1516,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (normalizedPhone === normalizedCurrent) {
             phoneFeedback.style.display = 'flex';
             phoneFeedback.className = 'input-feedback valid';
-            phoneFeedback.innerHTML = '<i class="fas fa-check-circle"></i> Sizning joriy telefon raqamingiz';
+            phoneFeedback.innerHTML = '<i class="fas fa-check-circle"></i> Telefon raqami to\'g\'ri (joriy raqamingiz)';
             if (phoneWrapper) {
                 phoneWrapper.classList.remove('is-invalid');
                 phoneWrapper.classList.add('is-valid');
             }
+            phoneInput.setAttribute('aria-invalid', 'false');
             isPhoneValid = true;
             return;
         }
@@ -1458,11 +1537,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then(data => {
                     if (data.available) {
                         phoneFeedback.className = 'input-feedback valid';
-                        phoneFeedback.innerHTML = '<i class="fas fa-check-circle"></i> ' + (data.message || 'Ushbu telefon raqami bo\'sh');
+                        phoneFeedback.innerHTML = '<i class="fas fa-check-circle"></i> ' + (data.message || 'Telefon raqami to\'g\'ri');
                         if (phoneWrapper) {
                             phoneWrapper.classList.remove('is-invalid');
                             phoneWrapper.classList.add('is-valid');
                         }
+                        phoneInput.setAttribute('aria-invalid', 'false');
                         isPhoneValid = true;
                     } else {
                         phoneFeedback.className = 'input-feedback invalid';
@@ -1471,6 +1551,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             phoneWrapper.classList.add('is-invalid');
                             phoneWrapper.classList.remove('is-valid');
                         }
+                        phoneInput.setAttribute('aria-invalid', 'true');
                         isPhoneValid = false;
                     }
                 })
@@ -1486,8 +1567,32 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (phoneInput) {
-        phoneInput.addEventListener('input', checkPhone);
-        phoneInput.addEventListener('change', checkPhone);
+        phoneInput.addEventListener('keydown', handlePhoneKeyDown);
+        phoneInput.addEventListener('beforeinput', handlePhoneBeforeInput);
+        phoneInput.addEventListener('input', function() {
+            handlePhoneInputSanitization(phoneInput);
+            checkPhone();
+        });
+        phoneInput.addEventListener('paste', function() {
+            setTimeout(() => {
+                handlePhoneInputSanitization(phoneInput);
+                checkPhone();
+            }, 0);
+        });
+        phoneInput.addEventListener('drop', function() {
+            setTimeout(() => {
+                handlePhoneInputSanitization(phoneInput);
+                checkPhone();
+            }, 0);
+        });
+        phoneInput.addEventListener('change', function() {
+            handlePhoneInputSanitization(phoneInput);
+            checkPhone();
+        });
+        phoneInput.addEventListener('blur', function() {
+            handlePhoneInputSanitization(phoneInput);
+            checkPhone();
+        });
     }
 
     // Custom Address Dropdown Controller

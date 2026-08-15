@@ -436,5 +436,44 @@ class AuthAndCartFlowTestCase(TestCase):
         # Should redirect back to profile with error message
         self.assertEqual(response.status_code, 302)
 
+    def test_strict_phone_validation_valid_and_invalid(self):
+        self.client.force_login(self.user)
+
+        # 1. Valid numbers
+        valid_numbers = ['+998901234567', '+998991234567']
+        for num in valid_numbers:
+            res = self.client.get(reverse('check_phone_api'), {'phone': num})
+            data = res.json()
+            self.assertTrue(data['valid'], f"Failed for valid number: {num}")
+
+        # 2. Invalid numbers
+        invalid_numbers = [
+            '+998901234567a',
+            'a+998901234567',
+            '++998901234567',
+            '+998+901234567',
+            '+99890123456',
+            '+9989012345678',
+            '+997901234567',
+            '+123456789'
+        ]
+        for num in invalid_numbers:
+            res = self.client.get(reverse('check_phone_api'), {'phone': num})
+            data = res.json()
+            self.assertFalse(data['valid'], f"Expected invalid for number: {num}")
+
+        # 3. Profile save with invalid phone with letter should fail
+        res = self.client.post(reverse('profile'), {
+            'first_name': 'Test',
+            'last_name': 'User',
+            'username': self.user.username,
+            'phone': '+998917914881a',
+            'address': 'Chimyon'
+        })
+        self.assertEqual(res.status_code, 302)
+        self.user.refresh_from_db()
+        self.assertNotEqual(self.user.phone, '+998917914881a')
+
+
 
 

@@ -753,26 +753,56 @@ document.addEventListener('DOMContentLoaded', function() {
     // 3. Phone Input Sanitizer & Formatter
     const phoneInput = document.getElementById('checkoutPhone');
     if (phoneInput) {
-        phoneInput.addEventListener('input', function() {
-            let val = this.value.replace(/[^\d+]/g, '');
-            if (!val.startsWith('+')) {
-                val = '+' + val.replace(/\+/g, '');
-            } else {
-                val = '+' + val.slice(1).replace(/\+/g, '');
+        function sanitizeCheckoutPhone(el) {
+            let str = String(el.value || '');
+            let hasPlus = str.startsWith('+') || str.includes('+');
+            let digits = str.replace(/\D/g, '');
+            if (digits.length > 12) {
+                digits = digits.substring(0, 12);
             }
-            if (!val.startsWith('+998')) {
-                if (val === '+' || val === '') {
-                    val = '+998';
-                } else if (val.startsWith('+99')) {
-                    val = '+998';
-                } else if (val.length >= 4) {
-                    val = '+998' + val.slice(4);
-                }
+            if (digits.length === 0) {
+                el.value = hasPlus ? '+' : '';
+                return;
             }
-            if (val.length > 13) {
-                val = val.slice(0, 13);
+            el.value = '+' + digits;
+        }
+
+        phoneInput.addEventListener('keydown', function(e) {
+            const allowed = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Tab', 'Enter'];
+            if (allowed.includes(e.key) || e.ctrlKey || e.metaKey) return;
+            if (e.key === '+') {
+                if (this.selectionStart === 0 && !this.value.includes('+')) return;
+                e.preventDefault();
+                return;
             }
-            this.value = val;
+            if (!/^[0-9]$/.test(e.key)) {
+                e.preventDefault();
+                return;
+            }
+            const digits = this.value.replace(/\D/g, '');
+            const selLen = (this.selectionEnd || 0) - (this.selectionStart || 0);
+            if (digits.length >= 12 && selLen === 0) {
+                e.preventDefault();
+            }
+        });
+
+        phoneInput.addEventListener('beforeinput', function(e) {
+            if (e.inputType === 'deleteContentBackward' || e.inputType === 'deleteContentForward') return;
+            if (e.data && !/^[0-9+]+$/.test(e.data)) {
+                e.preventDefault();
+            }
+        });
+
+        ['input', 'change', 'blur'].forEach(evt => {
+            phoneInput.addEventListener(evt, function() {
+                sanitizeCheckoutPhone(this);
+            });
+        });
+
+        ['paste', 'drop'].forEach(evt => {
+            phoneInput.addEventListener(evt, function() {
+                setTimeout(() => sanitizeCheckoutPhone(this), 0);
+            });
         });
 
         phoneInput.addEventListener('focus', function() {
