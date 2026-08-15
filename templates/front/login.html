@@ -530,8 +530,8 @@
                         <label for="reg-username" class="form-label">Foydalanuvchi nomi (kamida 4 ta belgi)</label>
                         <input type="text" class="form-control" id="reg-username" name="username"
                             value="{{ reg_username|default:'' }}" minlength="4" placeholder="Kamida 4 ta belgi" required
-                            autocomplete="username">
-                        <div class="username-feedback" id="usernameFeedback" style="display: none;"></div>
+                            autocomplete="username" aria-describedby="usernameFeedback">
+                        <div class="username-feedback" id="usernameFeedback" style="display: none;" role="status" aria-live="polite"></div>
                     </div>
 
                     <div class="mb-form">
@@ -540,9 +540,9 @@
                             <span class="phone-prefix">+998</span>
                             <input type="tel" class="form-control phone-input" id="reg-phone" name="phone"
                                 value="{{ reg_phone|default:'' }}" placeholder="91 234 56 78" maxlength="12" required
-                                autocomplete="tel">
+                                autocomplete="tel" aria-describedby="phoneFeedback">
                         </div>
-                        <div class="phone-feedback" id="phoneFeedback" style="display: none;"></div>
+                        <div class="phone-feedback" id="phoneFeedback" style="display: none;" role="status" aria-live="polite"></div>
                     </div>
 
                     <div class="mb-form">
@@ -550,8 +550,8 @@
                         <div class="pw-wrap">
                             <input type="password" class="form-control pw-input" id="reg-password" name="password"
                                 placeholder="Kamida 6 ta belgi" required autocomplete="new-password">
-                            <button type="button" class="pw-eye toggle-pw" data-target="reg-password">
-                                <i class="las la-eye"></i>
+                            <button type="button" class="pw-eye toggle-pw" data-target="reg-password" aria-label="Parolni ko'rsatish yoki yashirish">
+                                <i class="las la-eye" aria-hidden="true"></i>
                             </button>
                         </div>
 

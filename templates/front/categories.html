@@ -372,7 +372,7 @@
 
         <!-- Live Category Search Bar -->
         <div class="category-search-box">
-            <i class="fas fa-search category-search-icon"></i>
+            <i class="fas fa-search category-search-icon" aria-hidden="true"></i>
             <input 
                 type="text" 
                 id="categorySearchInput" 
@@ -382,8 +382,8 @@
                 autocomplete="off"
                 aria-label="Kategoriyalarni qidirish"
             >
-            <button type="button" id="categorySearchClear" class="category-search-clear" title="Qidiruvni tozalash">
-                <i class="fas fa-times"></i>
+            <button type="button" id="categorySearchClear" class="category-search-clear" title="Qidiruvni tozalash" aria-label="Qidiruvni tozalash">
+                <i class="fas fa-times" aria-hidden="true"></i>
             </button>
         </div>
     </div>
@@ -396,35 +396,35 @@
         <!-- Scrollable Category Group Navigation with Left/Right Arrows -->
         <div class="category-nav-wrapper">
             <button type="button" class="category-nav-arrow category-nav-arrow--left me-2" id="catNavScrollLeft" aria-label="Chapga skrol qilish">
-                <i class="fas fa-chevron-left"></i>
+                <i class="fas fa-chevron-left" aria-hidden="true"></i>
             </button>
 
-            <div class="category-group-nav" id="categoryPillNav">
-                <button class="group-filter-pill active" data-filter="all">
-                    <i class="fas fa-th-large"></i> Barchasi <span class="pill-count-badge">{{ total_categories }}</span>
+            <div class="category-group-nav" id="categoryPillNav" role="tablist" aria-label="Kategoriyalar guruhi">
+                <button type="button" class="group-filter-pill active" data-filter="all" role="tab" aria-selected="true">
+                    <i class="fas fa-th-large" aria-hidden="true"></i> Barchasi <span class="pill-count-badge">{{ total_categories }}</span>
                 </button>
                 {% for group in grouped_categories %}
-                <button class="group-filter-pill" data-filter="{{ group.id }}">
-                    <i class="{{ group.icon }}"></i> {{ group.title }} <span class="pill-count-badge">{{ group.categories|length }}</span>
+                <button type="button" class="group-filter-pill" data-filter="{{ group.id }}" role="tab" aria-selected="false">
+                    <i class="{{ group.icon }}" aria-hidden="true"></i> {{ group.title }} <span class="pill-count-badge">{{ group.categories|length }}</span>
                 </button>
                 {% endfor %}
             </div>
 
             <button type="button" class="category-nav-arrow category-nav-arrow--right ms-2" id="catNavScrollRight" aria-label="O'ngga skrol qilish">
-                <i class="fas fa-chevron-right"></i>
+                <i class="fas fa-chevron-right" aria-hidden="true"></i>
             </button>
         </div>
 
         <!-- High-Contrast Toolbar Bar -->
         <div class="categories-toolbar">
             <div class="d-flex align-items-center gap-2">
-                <span class="text-dark font-weight-700 font-16" id="resultCountText">
+                <span class="text-dark font-weight-700 font-16" id="resultCountText" role="status" aria-live="polite">
                     Jami <strong class="badge-total-cats">{{ total_categories }} ta kategoriya</strong> mavjud
                 </span>
             </div>
             <a href="{% url 'all_products' %}" class="btn-all-products-contrast">
-                <i class="fas fa-shopping-bag"></i> Barcha Mahsulotlar ({{ total_products }})
-                <i class="fas fa-arrow-right font-11"></i>
+                <i class="fas fa-shopping-bag" aria-hidden="true"></i> Barcha Mahsulotlar ({{ total_products }})
+                <i class="fas fa-arrow-right font-11" aria-hidden="true"></i>
             </a>
         </div>
 

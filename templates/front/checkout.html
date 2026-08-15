@@ -391,23 +391,23 @@
                                 <div class="checkout-select-wrapper" id="checkoutAddressDropdown">
                                     <input type="hidden" name="address" id="checkoutAddressInput" value="{{ selected_address|default:addresses.first.name }}" required>
                                     
-                                    <div class="checkout-select-trigger" id="checkoutSelectTrigger">
-                                        <i class="fas fa-map-marker-alt checkout-select-address-icon"></i>
+                                    <div class="checkout-select-trigger" id="checkoutSelectTrigger" role="combobox" aria-haspopup="listbox" aria-expanded="false" tabindex="0" aria-label="Yetkazib berish hududini tanlash">
+                                        <i class="fas fa-map-marker-alt checkout-select-address-icon" aria-hidden="true"></i>
                                         <div class="checkout-select-label-wrap">
                                             <span class="checkout-select-floating-label">Yetkazib berish hududi</span>
                                             <span class="checkout-select-current-value" id="checkoutSelectValue">
                                                 {{ selected_address|default:addresses.first.name }}
                                             </span>
                                         </div>
-                                        <i class="fas fa-chevron-down checkout-select-chevron"></i>
+                                        <i class="fas fa-chevron-down checkout-select-chevron" aria-hidden="true"></i>
                                     </div>
                                     
-                                    <div class="checkout-select-options" id="checkoutSelectOptions">
+                                    <div class="checkout-select-options" id="checkoutSelectOptions" role="listbox">
                                         {% for addr in addresses %}
-                                        <div class="checkout-custom-option {% if selected_address == addr.name or not selected_address and forloop.first %}selected{% endif %}" data-value="{{ addr.name }}">
+                                        <div class="checkout-custom-option {% if selected_address == addr.name or not selected_address and forloop.first %}selected{% endif %}" data-value="{{ addr.name }}" role="option" aria-selected="{% if selected_address == addr.name or not selected_address and forloop.first %}true{% else %}false{% endif %}" tabindex="0">
                                             <div class="d-flex align-items-center justify-content-between w-100">
-                                                <span><i class="fas fa-map-pin text-primary option-pin-icon mr-2"></i>{{ addr.name }}</span>
-                                                <i class="fas fa-check check-mark"></i>
+                                                <span><i class="fas fa-map-pin text-primary option-pin-icon mr-2" aria-hidden="true"></i>{{ addr.name }}</span>
+                                                <i class="fas fa-check check-mark" aria-hidden="true"></i>
                                             </div>
                                         </div>
                                         {% endfor %}
@@ -616,28 +616,78 @@ document.addEventListener('DOMContentLoaded', function() {
     const checkoutCustomOptions = document.querySelectorAll('.checkout-custom-option');
 
     if (checkoutSelectTrigger && checkoutAddressDropdown) {
+        function toggleCheckoutDropdown(open) {
+            const willOpen = open !== undefined ? open : !checkoutAddressDropdown.classList.contains('open');
+            if (willOpen) {
+                checkoutAddressDropdown.classList.add('open');
+                checkoutSelectTrigger.setAttribute('aria-expanded', 'true');
+            } else {
+                checkoutAddressDropdown.classList.remove('open');
+                checkoutSelectTrigger.setAttribute('aria-expanded', 'false');
+            }
+        }
+
         checkoutSelectTrigger.addEventListener('click', function(e) {
             e.stopPropagation();
-            checkoutAddressDropdown.classList.toggle('open');
+            toggleCheckoutDropdown();
+        });
+
+        checkoutSelectTrigger.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                toggleCheckoutDropdown(true);
+                const firstOpt = checkoutAddressDropdown.querySelector('.checkout-custom-option');
+                if (firstOpt) firstOpt.focus();
+            } else if (e.key === 'Escape') {
+                toggleCheckoutDropdown(false);
+            }
         });
 
         checkoutCustomOptions.forEach(option => {
-            option.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const val = this.getAttribute('data-value');
+            function selectThisOption() {
+                const val = option.getAttribute('data-value');
                 if (checkoutAddressInput) checkoutAddressInput.value = val;
                 if (checkoutSelectValue) checkoutSelectValue.textContent = val;
 
-                checkoutCustomOptions.forEach(opt => opt.classList.remove('selected'));
-                this.classList.add('selected');
+                checkoutCustomOptions.forEach(opt => {
+                    opt.classList.remove('selected');
+                    opt.setAttribute('aria-selected', 'false');
+                });
+                option.classList.add('selected');
+                option.setAttribute('aria-selected', 'true');
 
-                checkoutAddressDropdown.classList.remove('open');
+                toggleCheckoutDropdown(false);
+                checkoutSelectTrigger.focus();
+            }
+
+            option.addEventListener('click', function(e) {
+                e.stopPropagation();
+                selectThisOption();
+            });
+
+            option.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    selectThisOption();
+                } else if (e.key === 'Escape') {
+                    toggleCheckoutDropdown(false);
+                    checkoutSelectTrigger.focus();
+                } else if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    const next = option.nextElementSibling;
+                    if (next && next.classList.contains('checkout-custom-option')) next.focus();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    const prev = option.previousElementSibling;
+                    if (prev && prev.classList.contains('checkout-custom-option')) prev.focus();
+                }
             });
         });
 
         document.addEventListener('click', function(e) {
             if (!checkoutAddressDropdown.contains(e.target)) {
-                checkoutAddressDropdown.classList.remove('open');
+                toggleCheckoutDropdown(false);
             }
         });
     }

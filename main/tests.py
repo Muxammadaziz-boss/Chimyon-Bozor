@@ -3,7 +3,7 @@ from decimal import Decimal
 from unittest.mock import patch
 from django.test import TestCase
 from django.urls import reverse
-from .models import Cart, CartProduct, Category, Product, User, SiteSettings, Payment, Review
+from .models import Cart, CartProduct, Category, Product, User, SiteSettings, Payment, Review, Address
 from .views import get_active_cart
 from . import models
 
@@ -1348,6 +1348,97 @@ class CatalogSortingBusinessMetricsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         prods = list(response.context['products'])
         self.assertEqual(prods[0].id, self.prod_d.id)
+
+
+class GlobalAccessibilityAuditTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='a11yuser',
+            password='password123',
+            phone='+998901234567',
+            address='Chimyon'
+        )
+        self.address = Address.objects.create(name='Chimyon')
+        self.cat = Category.objects.create(name='Texnika', is_active=True)
+        self.prod = Product.objects.create(
+            name='Smartfon X',
+            category=self.cat,
+            price=2000000,
+            count=10
+        )
+
+    def test_base_template_accessibility_styles(self):
+        """Ensure global focus-visible ring, sr-only utility, and reduced motion CSS exist."""
+        response = self.client.get(reverse('index'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode('utf-8')
+        self.assertIn(':focus-visible', content)
+        self.assertIn('.sr-only', content)
+        self.assertIn('prefers-reduced-motion', content)
+
+    def test_modal_accessibility_attributes(self):
+        """Ensure custom modal dialogs have role=dialog, aria-modal=true, and aria-labelledby."""
+        response = self.client.get(reverse('index'))
+        content = response.content.decode('utf-8')
+        self.assertIn('role', content)
+        self.assertIn('aria-modal', content)
+        self.assertIn('customModalTitle', content)
+
+    def test_catalog_toolbar_accessibility(self):
+        """Ensure catalog view buttons have aria-pressed and filter drawer toggle has aria-controls and aria-expanded."""
+        response = self.client.get(reverse('all_products'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode('utf-8')
+        self.assertIn('aria-controls="filterSidebarCard"', content)
+        self.assertIn('aria-expanded="false"', content)
+        self.assertIn('aria-pressed=', content)
+
+    def test_categories_directory_tabs_accessibility(self):
+        """Ensure category group pills use role=tablist, role=tab, and result count uses role=status."""
+        response = self.client.get(reverse('categories'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode('utf-8')
+        self.assertIn('role="tablist"', content)
+        self.assertIn('role="tab"', content)
+        self.assertIn('role="status"', content)
+        self.assertIn('aria-live="polite"', content)
+
+    def test_auth_form_accessibility(self):
+        """Ensure login and register forms have label for associations and aria-describedby for validation feedback."""
+        response = self.client.get(reverse('login'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode('utf-8')
+        self.assertIn('for="login-username"', content)
+        self.assertIn('for="login-password"', content)
+        self.assertIn('aria-describedby="usernameFeedback"', content)
+        self.assertIn('aria-describedby="phoneFeedback"', content)
+        self.assertIn('role="status"', content)
+        self.assertIn('aria-live="polite"', content)
+
+    def test_profile_address_dropdown_accessibility(self):
+        """Ensure profile page address combobox and inputs have proper ARIA attributes."""
+        self.client.login(username='a11yuser', password='password123')
+        response = self.client.get(reverse('profile'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode('utf-8')
+        self.assertIn('role="combobox"', content)
+        self.assertIn('role="listbox"', content)
+        self.assertIn('role="option"', content)
+        self.assertIn('aria-describedby="phoneFeedback"', content)
+        self.assertIn('aria-describedby="usernameFeedback"', content)
+
+    def test_cart_controls_accessibility(self):
+        """Ensure cart quantity adjustments and item removals have accessible aria-labels."""
+        self.client.login(username='a11yuser', password='password123')
+        cart = Cart.objects.create(user=self.user, status=1)
+        CartProduct.objects.create(cart=cart, product=self.prod, count=2)
+        response = self.client.get(reverse('cart'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode('utf-8')
+        self.assertIn('aria-label="Kamaytirish"', content)
+        self.assertIn('aria-label="Ko\'paytirish"', content)
+        self.assertIn('aria-label="Savatdan o\'chirish"', content)
+
 
 
 

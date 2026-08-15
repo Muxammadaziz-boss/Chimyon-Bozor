@@ -563,8 +563,8 @@
         <div class="catalog-toolbar d-flex flex-wrap align-items-center justify-content-between gap-3">
             <!-- Left: Filter Toggle & Total Count -->
             <div class="d-flex align-items-center gap-3">
-                <button type="button" class="catalog-filter-btn" id="toggleFilterSidebarBtn">
-                    <i class="fas fa-sliders-h"></i> <span>Filtrlar</span>
+                <button type="button" class="catalog-filter-btn" id="toggleFilterSidebarBtn" aria-expanded="false" aria-controls="filterSidebarCard" aria-label="Filtrlarni ko'rish">
+                    <i class="fas fa-sliders-h" aria-hidden="true"></i> <span>Filtrlar</span>
                     {% if active_chips_count %}
                     <span class="badge bg-purple text-white ms-1" style="background:#7C3AED !important; font-size:11px;">{{ active_chips_count }}</span>
                     {% endif %}
@@ -600,12 +600,12 @@
                 </form>
 
                 <!-- Grid / List Switchers -->
-                <div class="d-none d-sm-flex align-items-center gap-1">
-                    <button type="button" class="view-mode-btn {% if view_mode == 'grid' %}active{% endif %}" id="gridViewBtn" title="Katakcha ko'rinishi">
-                        <i class="fas fa-th"></i>
+                <div class="d-none d-sm-flex align-items-center gap-1" role="group" aria-label="Ko'rinish rejimi">
+                    <button type="button" class="view-mode-btn {% if view_mode == 'grid' %}active{% endif %}" id="gridViewBtn" title="Katakcha ko'rinishi" aria-label="Katakcha ko'rinishi" aria-pressed="{% if view_mode == 'grid' %}true{% else %}false{% endif %}">
+                        <i class="fas fa-th" aria-hidden="true"></i>
                     </button>
-                    <button type="button" class="view-mode-btn {% if view_mode == 'list' %}active{% endif %}" id="listViewBtn" title="Ro'yxat ko'rinishi">
-                        <i class="fas fa-list"></i>
+                    <button type="button" class="view-mode-btn {% if view_mode == 'list' %}active{% endif %}" id="listViewBtn" title="Ro'yxat ko'rinishi" aria-label="Ro'yxat ko'rinishi" aria-pressed="{% if view_mode == 'list' %}true{% else %}false{% endif %}">
+                        <i class="fas fa-list" aria-hidden="true"></i>
                     </button>
                 </div>
             </div>
@@ -846,33 +846,35 @@
                 <!-- Pagination -->
                 {% if page_obj.has_other_pages %}
                 <div class="pagination-wrapper mt-5 text-center">
-                    <ul class="pagination justify-content-center flex-wrap gap-1">
-                        {% if page_obj.has_previous %}
-                        <li class="page-item">
-                            <a class="page-link rounded-pill px-3 font-weight-700" href="{% query_transform page=page_obj.previous_page_number %}">
-                                <i class="fas fa-chevron-left me-1"></i> Oldingi
-                            </a>
-                        </li>
-                        {% endif %}
-
-                        {% for num in page_obj.paginator.page_range %}
-                            {% if page_obj.number == num %}
-                            <li class="page-item active"><span class="page-link rounded-circle font-weight-800" style="background:#7C3AED; border-color:#7C3AED; width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center;">{{ num }}</span></li>
-                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <nav aria-label="Sahifalar bo'ylab harakatlanish">
+                        <ul class="pagination justify-content-center flex-wrap gap-1">
+                            {% if page_obj.has_previous %}
                             <li class="page-item">
-                                <a class="page-link rounded-circle font-weight-700" style="width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center;" href="{% query_transform page=num %}">{{ num }}</a>
+                                <a class="page-link rounded-pill px-3 font-weight-700" href="{% query_transform page=page_obj.previous_page_number %}" aria-label="Oldingi sahifa">
+                                    <i class="fas fa-chevron-left me-1" aria-hidden="true"></i> Oldingi
+                                </a>
                             </li>
                             {% endif %}
-                        {% endfor %}
 
-                        {% if page_obj.has_next %}
-                        <li class="page-item">
-                            <a class="page-link rounded-pill px-3 font-weight-700" href="{% query_transform page=page_obj.next_page_number %}">
-                                Keyingi <i class="fas fa-chevron-right ms-1"></i>
-                            </a>
-                        </li>
-                        {% endif %}
-                    </ul>
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                <li class="page-item active" aria-current="page"><span class="page-link rounded-circle font-weight-800" style="background:#7C3AED; border-color:#7C3AED; width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center;">{{ num }}</span></li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link rounded-circle font-weight-700" style="width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center;" href="{% query_transform page=num %}" aria-label="{{ num }}-sahifa">{{ num }}</a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link rounded-pill px-3 font-weight-700" href="{% query_transform page=page_obj.next_page_number %}" aria-label="Keyingi sahifa">
+                                    Keyingi <i class="fas fa-chevron-right ms-1" aria-hidden="true"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
                 </div>
                 {% endif %}
 
@@ -999,12 +1001,14 @@ document.addEventListener('DOMContentLoaded', function() {
     function openDrawer() {
         if (sidebarCard) sidebarCard.classList.add('open');
         if (overlay) overlay.style.display = 'block';
+        if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'true');
         document.body.style.overflow = 'hidden';
     }
 
     function closeDrawer() {
         if (sidebarCard) sidebarCard.classList.remove('open');
         if (overlay) overlay.style.display = 'none';
+        if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
         document.body.style.overflow = '';
     }
 
@@ -1024,7 +1028,9 @@ document.addEventListener('DOMContentLoaded', function() {
             productsContainer.classList.remove('list-mode', 'row-cols-1', 'row-cols-sm-1', 'row-cols-md-1', 'row-cols-xl-1');
             productsContainer.classList.add('row-cols-2', 'row-cols-sm-2', 'row-cols-md-3', 'row-cols-xl-4');
             gridViewBtn.classList.add('active');
+            gridViewBtn.setAttribute('aria-pressed', 'true');
             listViewBtn.classList.remove('active');
+            listViewBtn.setAttribute('aria-pressed', 'false');
             if (sortViewInput) sortViewInput.value = 'grid';
             if (filterViewInput) filterViewInput.value = 'grid';
             localStorage.setItem('chimyon_catalog_view', 'grid');
@@ -1034,7 +1040,9 @@ document.addEventListener('DOMContentLoaded', function() {
             productsContainer.classList.add('list-mode', 'row-cols-1', 'row-cols-sm-1', 'row-cols-md-1', 'row-cols-xl-1');
             productsContainer.classList.remove('row-cols-2', 'row-cols-sm-2', 'row-cols-md-3', 'row-cols-xl-4');
             listViewBtn.classList.add('active');
+            listViewBtn.setAttribute('aria-pressed', 'true');
             gridViewBtn.classList.remove('active');
+            gridViewBtn.setAttribute('aria-pressed', 'false');
             if (sortViewInput) sortViewInput.value = 'list';
             if (filterViewInput) filterViewInput.value = 'list';
             localStorage.setItem('chimyon_catalog_view', 'list');
