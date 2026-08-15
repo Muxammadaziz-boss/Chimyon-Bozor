@@ -302,3 +302,66 @@ class AuthAndCartFlowTestCase(TestCase):
         self.assertEqual(data['status'], 'deleted')
         self.assertFalse(CartProduct.objects.filter(cart=cart, product=product).exists())
 
+    def test_profile_username_and_phone_real_check(self):
+        user1 = User.objects.create_user(username='testuser1', password='pass123', phone='+998901112233')
+        user2 = User.objects.create_user(username='testuser2', password='pass123', phone='+998904445566')
+
+        self.client.force_login(user1)
+
+        # 1. Check own username (should be valid and current)
+        res = self.client.get(reverse('check_username_api'), {'username': 'testuser1'})
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertTrue(data['valid'])
+        self.assertTrue(data.get('is_current'))
+
+        # 2. Check other taken username (should be taken)
+        res = self.client.get(reverse('check_username_api'), {'username': 'testuser2'})
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertFalse(data['valid'])
+        self.assertFalse(data.get('available'))
+
+        # 3. Check new free username (should be available)
+        res = self.client.get(reverse('check_username_api'), {'username': 'brandnewuser'})
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertTrue(data['valid'])
+        self.assertTrue(data['available'])
+
+        # 4. Check own phone (should be valid and current)
+        res = self.client.get(reverse('check_phone_api'), {'phone': '+998901112233'})
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertTrue(data['valid'])
+        self.assertTrue(data.get('is_current'))
+
+        # 5. Check other taken phone (should be taken)
+        res = self.client.get(reverse('check_phone_api'), {'phone': '+998904445566'})
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertFalse(data['valid'])
+        self.assertFalse(data.get('available'))
+
+        # 6. Check new free phone (should be available)
+        res = self.client.get(reverse('check_phone_api'), {'phone': '+998907778899'})
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertTrue(data['valid'])
+        self.assertTrue(data['available'])
+
+        # 7. Update profile successfully
+        res = self.client.post(reverse('profile'), {
+            'first_name': 'Ali',
+            'last_name': 'Valiyev',
+            'username': 'brandnewuser',
+            'phone': '+998907778899',
+            'address': 'Chimyon'
+        })
+        self.assertEqual(res.status_code, 302)
+        user1.refresh_from_db()
+        self.assertEqual(user1.username, 'brandnewuser')
+        self.assertEqual(user1.phone, '+998907778899')
+        self.assertEqual(user1.first_name, 'Ali')
+
+

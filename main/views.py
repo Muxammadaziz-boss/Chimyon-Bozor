@@ -774,15 +774,29 @@ def profile(request):
         user = request.user
         new_username = (request.POST.get('username') or '').strip()
         if new_username and new_username != user.username:
-            if models.User.objects.filter(username=new_username).exclude(pk=user.pk).exists():
+            if len(new_username) < 4:
+                messages.error(request, "Foydalanuvchi nomi kamida 4 ta belgidan iborat bo'lishi kerak")
+                return redirect('profile')
+            if models.User.objects.filter(username__iexact=new_username).exclude(pk=user.pk).exists():
                 messages.error(request, 'Bu foydalanuvchi nomi band')
                 return redirect('profile')
             user.username = new_username
 
-        user.last_name = request.POST.get('last_name', '')
-        user.first_name = request.POST.get('first_name', '')
-        user.phone = request.POST.get('phone', '')
-        user.address = request.POST.get('address', '')
+        raw_phone = (request.POST.get('phone') or '').strip().replace(' ', '').replace('-', '').replace('+', '')
+        if raw_phone:
+            if raw_phone.startswith('998'):
+                clean_phone = '+' + raw_phone
+            else:
+                clean_phone = '+998' + raw_phone
+            if clean_phone != user.phone:
+                if models.User.objects.filter(phone=clean_phone).exclude(pk=user.pk).exists():
+                    messages.error(request, "Bu telefon raqami allaqachon ro'yxatdan o'tgan!")
+                    return redirect('profile')
+                user.phone = clean_phone
+
+        user.last_name = request.POST.get('last_name', '').strip()
+        user.first_name = request.POST.get('first_name', '').strip()
+        user.address = request.POST.get('address', '').strip()
         if request.FILES.get('photo'):
             photo_file = request.FILES.get('photo')
             try:
@@ -793,6 +807,7 @@ def profile(request):
                 return redirect('profile')
         user.save()
         messages.success(request, "Ma'lumotlar muvaffaqiyatli saqlandi")
+        return redirect('profile')
 
     orders = models.Cart.objects.filter(
         user=request.user,
@@ -1376,11 +1391,17 @@ def category_products_api(request, category_id):
 def check_username_api(request):
     username = request.GET.get('username', '').strip()
     if not username:
-        return JsonResponse({'valid': False, 'message': 'Foydalanuvchi nomi kiritilmadi'})
+        return JsonResponse({'valid': False, 'message': "Foydalanuvchi nomi kiritilmadi"})
     if len(username) < 4:
         return JsonResponse({'valid': False, 'message': "Kamida 4 ta belgidan iborat bo'lishi kerak"})
 
-    is_taken = models.User.objects.filter(username__iexact=username).exists()
+    qs = models.User.objects.filter(username__iexact=username)
+    if request.user.is_authenticated:
+        if request.user.username.lower() == username.lower():
+            return JsonResponse({'valid': True, 'available': True, 'is_current': True, 'message': "Sizning joriy foydalanuvchi nomingiz"})
+        qs = qs.exclude(pk=request.user.pk)
+
+    is_taken = qs.exists()
     if is_taken:
         return JsonResponse({'valid': False, 'available': False, 'message': 'Ushbu nom allaqachon band!'})
 
@@ -1397,10 +1418,17 @@ def check_phone_api(request):
         digits = raw_phone
 
     if len(digits) != 9 or not digits.isdigit():
-        return JsonResponse({'valid': False, 'message': "9 ta raqam bo'lishi kerak"})
+        return JsonResponse({'valid': False, 'message': "9 ta raqam bo'lishi kerak (masalan: 901234567)"})
 
-    is_taken = models.User.objects.filter(phone=phone).exists()
+    qs = models.User.objects.filter(phone=phone)
+    if request.user.is_authenticated:
+        if request.user.phone == phone:
+            return JsonResponse({'valid': True, 'available': True, 'is_current': True, 'message': "Sizning joriy telefon raqamingiz"})
+        qs = qs.exclude(pk=request.user.pk)
+
+    is_taken = qs.exists()
     if is_taken:
         return JsonResponse({'valid': False, 'available': False, 'message': "Ushbu telefon raqami allaqachon ro'yxatdan o'tgan!"})
 
     return JsonResponse({'valid': True, 'available': True, 'message': "Ushbu telefon raqami bo'sh"})
+

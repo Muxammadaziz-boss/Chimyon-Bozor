@@ -220,6 +220,41 @@
         color: #7C3AED;
     }
 
+    /* REAL-TIME INPUT VALIDATION FEEDBACK */
+    .input-feedback {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12.5px;
+        font-weight: 600;
+        margin-top: 6px;
+        padding: 0 4px;
+        transition: all 0.2s ease;
+    }
+    .input-feedback.invalid {
+        color: #ef4444 !important;
+    }
+    .input-feedback.valid {
+        color: #10b981 !important;
+    }
+    .input-feedback.checking {
+        color: #3b82f6 !important;
+    }
+    .form-floating-custom.is-invalid .form-control {
+        border-color: #ef4444 !important;
+        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12) !important;
+    }
+    .form-floating-custom.is-invalid .input-icon {
+        color: #ef4444 !important;
+    }
+    .form-floating-custom.is-valid .form-control {
+        border-color: #10b981 !important;
+        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.12) !important;
+    }
+    .form-floating-custom.is-valid .input-icon {
+        color: #10b981 !important;
+    }
+
     /* CUSTOM FILE UPLOAD */
     .file-upload-wrapper {
         position: relative;
@@ -729,18 +764,20 @@
                                     </div>
                                     
                                     <div class="col-md-6">
-                                        <div class="form-floating-custom locked">
-                                            <input type="text" name="phone" value="{{ user.phone|default:'' }}" class="form-control" id="phone" placeholder=" " disabled>
+                                        <div class="form-floating-custom locked" id="phoneWrapper">
+                                            <input type="text" name="phone" value="{{ user.phone|default:'' }}" class="form-control" id="phone" placeholder=" " data-current-phone="{{ user.phone|default:'' }}" disabled autocomplete="off">
                                             <i class="fas fa-phone input-icon"></i>
                                             <label for="phone">Telefon raqam</label>
+                                            <div class="input-feedback" id="phoneFeedback" style="display: none;"></div>
                                         </div>
                                     </div>
                                     
                                     <div class="col-md-6">
-                                        <div class="form-floating-custom locked">
-                                            <input type="text" name="username" value="{{ user.username|default:'' }}" class="form-control" id="username" placeholder=" " disabled>
+                                        <div class="form-floating-custom locked" id="usernameWrapper">
+                                            <input type="text" name="username" value="{{ user.username|default:'' }}" class="form-control" id="username" placeholder=" " data-current-username="{{ user.username|default:'' }}" disabled autocomplete="off">
                                             <i class="fas fa-at input-icon"></i>
                                             <label for="username">Foydalanuvchi nomi</label>
+                                            <div class="input-feedback" id="usernameFeedback" style="display: none;"></div>
                                         </div>
                                     </div>
 
@@ -917,6 +954,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (saveBtnContainer) saveBtnContainer.style.display = 'block';
 
+                // Initial validation check on entering edit mode
+                checkUsername();
+                checkPhone();
+
                 const fNameInput = document.getElementById('fName');
                 if (fNameInput) fNameInput.focus();
             } else {
@@ -926,7 +967,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     customAddressDropdown.classList.add('locked');
                     customAddressDropdown.classList.remove('open');
                 }
-                document.querySelectorAll('.form-floating-custom').forEach(el => el.classList.add('locked'));
+                document.querySelectorAll('.form-floating-custom').forEach(el => {
+                    el.classList.add('locked');
+                    el.classList.remove('is-valid', 'is-invalid');
+                });
+
+                if (usernameFeedback) usernameFeedback.style.display = 'none';
+                if (phoneFeedback) phoneFeedback.style.display = 'none';
 
                 toggleEditBtn.className = 'btn btn-edit-toggle rounded-pill px-4 py-2';
                 toggleEditBtn.innerHTML = '<i class="fas fa-edit me-2"></i> Tahrirlash';
@@ -935,6 +982,204 @@ document.addEventListener('DOMContentLoaded', function() {
                 editStatusBadge.innerHTML = '<i class="fas fa-lock"></i> Qulflangan (Tahrirlash uchun knopkani bosing)';
 
                 if (saveBtnContainer) saveBtnContainer.style.display = 'none';
+            }
+        });
+    }
+
+    // Real-Time Username & Phone Validation
+    const usernameInput = document.getElementById('username');
+    const usernameWrapper = document.getElementById('usernameWrapper');
+    const usernameFeedback = document.getElementById('usernameFeedback');
+
+    const phoneInput = document.getElementById('phone');
+    const phoneWrapper = document.getElementById('phoneWrapper');
+    const phoneFeedback = document.getElementById('phoneFeedback');
+
+    const profileForm = document.getElementById('profileForm');
+
+    let usernameTimer = null;
+    let phoneTimer = null;
+    let isUsernameValid = true;
+    let isPhoneValid = true;
+
+    function checkUsername() {
+        if (!isEditing || !usernameInput) return;
+        const val = usernameInput.value.trim();
+        const currentUsername = (usernameInput.getAttribute('data-current-username') || '').trim();
+
+        if (!val) {
+            usernameFeedback.style.display = 'flex';
+            usernameFeedback.className = 'input-feedback invalid';
+            usernameFeedback.innerHTML = '<i class="fas fa-times-circle"></i> Foydalanuvchi nomi kiritilmadi';
+            if (usernameWrapper) {
+                usernameWrapper.classList.add('is-invalid');
+                usernameWrapper.classList.remove('is-valid');
+            }
+            isUsernameValid = false;
+            return;
+        }
+
+        if (val.length < 4) {
+            usernameFeedback.style.display = 'flex';
+            usernameFeedback.className = 'input-feedback invalid';
+            usernameFeedback.innerHTML = '<i class="fas fa-times-circle"></i> Kamida 4 ta belgidan iborat bo\'lishi kerak';
+            if (usernameWrapper) {
+                usernameWrapper.classList.add('is-invalid');
+                usernameWrapper.classList.remove('is-valid');
+            }
+            isUsernameValid = false;
+            return;
+        }
+
+        if (val.toLowerCase() === currentUsername.toLowerCase()) {
+            usernameFeedback.style.display = 'flex';
+            usernameFeedback.className = 'input-feedback valid';
+            usernameFeedback.innerHTML = '<i class="fas fa-check-circle"></i> Sizning joriy foydalanuvchi nomingiz';
+            if (usernameWrapper) {
+                usernameWrapper.classList.remove('is-invalid');
+                usernameWrapper.classList.add('is-valid');
+            }
+            isUsernameValid = true;
+            return;
+        }
+
+        usernameFeedback.style.display = 'flex';
+        usernameFeedback.className = 'input-feedback checking';
+        usernameFeedback.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Tekshirilmoqda...';
+
+        clearTimeout(usernameTimer);
+        usernameTimer = setTimeout(() => {
+            fetch('/api/check-username/?username=' + encodeURIComponent(val))
+                .then(res => res.json())
+                .then(data => {
+                    if (data.available) {
+                        usernameFeedback.className = 'input-feedback valid';
+                        usernameFeedback.innerHTML = '<i class="fas fa-check-circle"></i> ' + (data.message || 'Ushbu nom bo\'sh (ishlatishingiz mumkin)');
+                        if (usernameWrapper) {
+                            usernameWrapper.classList.remove('is-invalid');
+                            usernameWrapper.classList.add('is-valid');
+                        }
+                        isUsernameValid = true;
+                    } else {
+                        usernameFeedback.className = 'input-feedback invalid';
+                        usernameFeedback.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (data.message || 'Ushbu nom band!');
+                        if (usernameWrapper) {
+                            usernameWrapper.classList.add('is-invalid');
+                            usernameWrapper.classList.remove('is-valid');
+                        }
+                        isUsernameValid = false;
+                    }
+                })
+                .catch(err => {
+                    console.error('Username check error:', err);
+                });
+        }, 250);
+    }
+
+    function checkPhone() {
+        if (!isEditing || !phoneInput) return;
+        let val = phoneInput.value.trim();
+        const currentPhone = (phoneInput.getAttribute('data-current-phone') || '').trim();
+
+        // Extract digits
+        let rawDigits = val.replace(/\D/g, '');
+        let pureDigits = rawDigits.startsWith('998') ? rawDigits.substring(3) : rawDigits;
+
+        if (!val) {
+            phoneFeedback.style.display = 'flex';
+            phoneFeedback.className = 'input-feedback invalid';
+            phoneFeedback.innerHTML = '<i class="fas fa-times-circle"></i> Telefon raqam kiritilmadi';
+            if (phoneWrapper) {
+                phoneWrapper.classList.add('is-invalid');
+                phoneWrapper.classList.remove('is-valid');
+            }
+            isPhoneValid = false;
+            return;
+        }
+
+        if (pureDigits.length !== 9) {
+            phoneFeedback.style.display = 'flex';
+            phoneFeedback.className = 'input-feedback invalid';
+            phoneFeedback.innerHTML = '<i class="fas fa-times-circle"></i> 9 ta raqam bo\'lishi kerak (masalan: +998901234567)';
+            if (phoneWrapper) {
+                phoneWrapper.classList.add('is-invalid');
+                phoneWrapper.classList.remove('is-valid');
+            }
+            isPhoneValid = false;
+            return;
+        }
+
+        const normalizedPhone = '+998' + pureDigits;
+        const normalizedCurrent = currentPhone.startsWith('+') ? currentPhone : (currentPhone.startsWith('998') ? '+' + currentPhone : '+998' + currentPhone.replace(/\D/g, ''));
+
+        if (normalizedPhone === normalizedCurrent) {
+            phoneFeedback.style.display = 'flex';
+            phoneFeedback.className = 'input-feedback valid';
+            phoneFeedback.innerHTML = '<i class="fas fa-check-circle"></i> Sizning joriy telefon raqamingiz';
+            if (phoneWrapper) {
+                phoneWrapper.classList.remove('is-invalid');
+                phoneWrapper.classList.add('is-valid');
+            }
+            isPhoneValid = true;
+            return;
+        }
+
+        phoneFeedback.style.display = 'flex';
+        phoneFeedback.className = 'input-feedback checking';
+        phoneFeedback.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Tekshirilmoqda...';
+
+        clearTimeout(phoneTimer);
+        phoneTimer = setTimeout(() => {
+            fetch('/api/check-phone/?phone=' + encodeURIComponent(normalizedPhone))
+                .then(res => res.json())
+                .then(data => {
+                    if (data.available) {
+                        phoneFeedback.className = 'input-feedback valid';
+                        phoneFeedback.innerHTML = '<i class="fas fa-check-circle"></i> ' + (data.message || 'Ushbu telefon raqami bo\'sh');
+                        if (phoneWrapper) {
+                            phoneWrapper.classList.remove('is-invalid');
+                            phoneWrapper.classList.add('is-valid');
+                        }
+                        isPhoneValid = true;
+                    } else {
+                        phoneFeedback.className = 'input-feedback invalid';
+                        phoneFeedback.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (data.message || 'Ushbu telefon raqami allaqachon ro\'yxatdan o\'tgan!');
+                        if (phoneWrapper) {
+                            phoneWrapper.classList.add('is-invalid');
+                            phoneWrapper.classList.remove('is-valid');
+                        }
+                        isPhoneValid = false;
+                    }
+                })
+                .catch(err => {
+                    console.error('Phone check error:', err);
+                });
+        }, 250);
+    }
+
+    if (usernameInput) {
+        usernameInput.addEventListener('input', checkUsername);
+        usernameInput.addEventListener('change', checkUsername);
+    }
+
+    if (phoneInput) {
+        phoneInput.addEventListener('input', checkPhone);
+        phoneInput.addEventListener('change', checkPhone);
+    }
+
+    if (profileForm) {
+        profileForm.addEventListener('submit', function(e) {
+            if (!isUsernameValid) {
+                e.preventDefault();
+                if (usernameInput) usernameInput.focus();
+                alert('Iltimos, to\'g\'ri va band bo\'lmagan foydalanuvchi nomini kiriting!');
+                return false;
+            }
+            if (!isPhoneValid) {
+                e.preventDefault();
+                if (phoneInput) phoneInput.focus();
+                alert('Iltimos, to\'g\'ri va band bo\'lmagan telefon raqamini kiriting!');
+                return false;
             }
         });
     }
