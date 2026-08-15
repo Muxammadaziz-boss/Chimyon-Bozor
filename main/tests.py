@@ -923,6 +923,187 @@ class OrderStatusAndFinancialStatusUXTests(TestCase):
         self.assertContains(response, 'settleBalanceModal')
 
 
+class AvatarAndProfileImageQATests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='avatartester',
+            password='password123',
+            phone='+998901234567',
+            first_name='Aziz',
+            last_name='Valiyev'
+        )
+
+    def _generate_test_image(self, format='JPEG', size=(512, 512), color=(124, 58, 237)):
+        import io
+        from PIL import Image
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        file_obj = io.BytesIO()
+        image = Image.new("RGB", size, color)
+        image.save(file_obj, format=format)
+        file_obj.seek(0)
+        ext = format.lower()
+        if ext == 'jpeg':
+            ext = 'jpg'
+        return SimpleUploadedFile(f"test_avatar.{ext}", file_obj.read(), content_type=f"image/{ext}")
+
+    # 1. Profile Page Crop Modal & Elements Render
+    def test_profile_page_crop_modal_render(self):
+        self.client.login(username='avatartester', password='password123')
+        response = self.client.get(reverse('profile'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'avatarCropModal')
+        self.assertContains(response, 'cropCanvas')
+        self.assertContains(response, 'cropZoomSlider')
+        self.assertContains(response, 'btnCropRotate')
+        self.assertContains(response, 'btnCropConfirm')
+        self.assertContains(response, 'avatarNewPreviewCard')
+
+    # 2. Valid JPEG Avatar Upload & Save
+    def test_valid_jpeg_avatar_upload(self):
+        self.client.login(username='avatartester', password='password123')
+        avatar = self._generate_test_image(format='JPEG')
+        response = self.client.post(
+            reverse('profile'),
+            {
+                'username': 'avatartester',
+                'phone': '+998901234567',
+                'first_name': 'Aziz',
+                'last_name': 'Valiyev',
+                'address': 'Chimyon',
+                'photo': avatar
+            },
+            follow=True
+        )
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertTrue(bool(self.user.photo))
+
+    # 3. Valid PNG Avatar Upload & Save
+    def test_valid_png_avatar_upload(self):
+        self.client.login(username='avatartester', password='password123')
+        avatar = self._generate_test_image(format='PNG')
+        response = self.client.post(
+            reverse('profile'),
+            {
+                'username': 'avatartester',
+                'phone': '+998901234567',
+                'first_name': 'Aziz',
+                'last_name': 'Valiyev',
+                'address': 'Chimyon',
+                'photo': avatar
+            },
+            follow=True
+        )
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertTrue(bool(self.user.photo))
+
+    # 4. Valid WEBP Avatar Upload & Save
+    def test_valid_webp_avatar_upload(self):
+        self.client.login(username='avatartester', password='password123')
+        avatar = self._generate_test_image(format='WEBP')
+        response = self.client.post(
+            reverse('profile'),
+            {
+                'username': 'avatartester',
+                'phone': '+998901234567',
+                'first_name': 'Aziz',
+                'last_name': 'Valiyev',
+                'address': 'Chimyon',
+                'photo': avatar
+            },
+            follow=True
+        )
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertTrue(bool(self.user.photo))
+
+    # 5. Invalid / Corrupted Fake Image Rejection
+    def test_invalid_corrupt_image_rejected(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        self.client.login(username='avatartester', password='password123')
+        fake_image = SimpleUploadedFile("fake.jpg", b"MALICIOUS_NON_IMAGE_CONTENT", content_type="image/jpeg")
+        response = self.client.post(
+            reverse('profile'),
+            {
+                'username': 'avatartester',
+                'phone': '+998901234567',
+                'first_name': 'Aziz',
+                'last_name': 'Valiyev',
+                'address': 'Chimyon',
+                'photo': fake_image
+            },
+            follow=True
+        )
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertFalse(bool(self.user.photo))
+
+    # 6. Disallowed Extension Rejection (e.g. .php, .exe, .sh)
+    def test_disallowed_extension_rejected(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        self.client.login(username='avatartester', password='password123')
+        bad_file = SimpleUploadedFile("script.php", b"<?php echo 'bad'; ?>", content_type="application/x-php")
+        response = self.client.post(
+            reverse('profile'),
+            {
+                'username': 'avatartester',
+                'phone': '+998901234567',
+                'first_name': 'Aziz',
+                'last_name': 'Valiyev',
+                'address': 'Chimyon',
+                'photo': bad_file
+            },
+            follow=True
+        )
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertFalse(bool(self.user.photo))
+
+    # 7. Oversized Image File Rejection (> 5MB)
+    def test_oversized_file_rejected(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        self.client.login(username='avatartester', password='password123')
+        large_bytes = b"0" * (6 * 1024 * 1024) # 6MB
+        large_file = SimpleUploadedFile("large_avatar.jpg", large_bytes, content_type="image/jpeg")
+        response = self.client.post(
+            reverse('profile'),
+            {
+                'username': 'avatartester',
+                'phone': '+998901234567',
+                'first_name': 'Aziz',
+                'last_name': 'Valiyev',
+                'address': 'Chimyon',
+                'photo': large_file
+            },
+            follow=True
+        )
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertFalse(bool(self.user.photo))
+
+    # 8. Profile Edit without Avatar Change
+    def test_profile_edit_without_photo_change(self):
+        self.client.login(username='avatartester', password='password123')
+        response = self.client.post(
+            reverse('profile'),
+            {
+                'username': 'avatartester',
+                'phone': '+998901234567',
+                'first_name': 'Muhammad',
+                'last_name': 'Karimov',
+                'address': 'Chimyon'
+            },
+            follow=True
+        )
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.first_name, 'Muhammad')
+        self.assertEqual(self.user.last_name, 'Karimov')
+
+
+
 
 
 

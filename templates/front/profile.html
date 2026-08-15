@@ -1741,13 +1741,15 @@ document.addEventListener('DOMContentLoaded', function() {
     let rawFileName = 'avatar.jpg';
     let croppedBlob = null;
     let croppedFile = null;
+    let previousFocusedElement = null;
 
     let imgState = {
-        x: 0,
-        y: 0,
+        x: 160,
+        y: 160,
         scale: 1,
-        minScale: 0.2,
-        maxScale: 4,
+        baseScale: 1,
+        minScale: 0.5,
+        maxScale: 3.5,
         rotation: 0 // 0, 90, 180, 270
     };
 
@@ -1758,6 +1760,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function openCropModal(imgSrc, fileName) {
         rawFileName = fileName || 'avatar.jpg';
+        previousFocusedElement = document.activeElement;
         rawImage = new Image();
         rawImage.onload = function() {
             resetCropState();
@@ -1766,6 +1769,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.body.style.overflow = 'hidden';
             }
             renderCanvas();
+            if (btnCropConfirm) btnCropConfirm.focus();
         };
         rawImage.src = imgSrc;
     }
@@ -1774,6 +1778,18 @@ document.addEventListener('DOMContentLoaded', function() {
         if (avatarCropModal) {
             avatarCropModal.classList.remove('show');
             document.body.style.overflow = '';
+        }
+        // If closed without confirming and no existing cropped blob, reset file input
+        if (!croppedBlob && fileInput) {
+            fileInput.value = '';
+            if (fileNameDisplay) {
+                fileNameDisplay.textContent = 'Hali hech qanday fayl tanlanmagan (JPG, PNG, WEBP, max 5MB)';
+                fileNameDisplay.style.color = '';
+                fileNameDisplay.style.fontWeight = '';
+            }
+        }
+        if (previousFocusedElement && typeof previousFocusedElement.focus === 'function') {
+            previousFocusedElement.focus();
         }
     }
 
@@ -1786,6 +1802,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Fit image inside 1:1 box
         const scale = Math.max(cw / iw, ch / ih);
+        imgState.baseScale = scale;
         imgState.scale = scale;
         imgState.minScale = scale * 0.5;
         imgState.maxScale = scale * 3.5;
@@ -1798,6 +1815,15 @@ document.addEventListener('DOMContentLoaded', function() {
             cropZoomSlider.max = imgState.maxScale;
             cropZoomSlider.value = imgState.scale;
         }
+    }
+
+    function clampImagePosition() {
+        if (!cropCanvas) return;
+        const cw = cropCanvas.width;
+        const ch = cropCanvas.height;
+        const maxOffset = cw * 1.2;
+        imgState.x = Math.max(cw / 2 - maxOffset, Math.min(cw / 2 + maxOffset, imgState.x));
+        imgState.y = Math.max(ch / 2 - maxOffset, Math.min(ch / 2 + maxOffset, imgState.y));
     }
 
     function renderCanvas() {
@@ -1816,9 +1842,9 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.drawImage(rawImage, -rawImage.width / 2, -rawImage.height / 2);
         ctx.restore();
 
-        // 2. Dark translucent overlay with 1:1 circular & rounded-square cutout guide
+        // 2. Dark translucent overlay with 1:1 circular & square cutout guide
         ctx.save();
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.55)';
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.65)';
         ctx.fillRect(0, 0, cw, ch);
 
         // Cutout 1:1 crop window
@@ -1828,7 +1854,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const cy = ch / 2;
         const radius = cropSize / 2;
 
-        // Destination-out clears the center circle/square
+        // Destination-out clears the center circle
         ctx.globalCompositeOperation = 'destination-out';
         ctx.beginPath();
         ctx.arc(cx, cy, radius, 0, Math.PI * 2, false);
@@ -1844,7 +1870,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.stroke();
 
         // Subtle crosshair / grid lines
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
         ctx.lineWidth = 1;
         ctx.setLineDash([4, 4]);
         ctx.beginPath();
@@ -1858,17 +1884,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Canvas Mouse & Touch Drag & Zoom
     if (cropCanvas) {
+        function getCanvasCoords(e) {
+            const rect = cropCanvas.getBoundingClientRect();
+            const scaleX = cropCanvas.width / rect.width;
+            const scaleY = cropCanvas.height / rect.height;
+            return {
+                x: (e.clientX - rect.left) * scaleX,
+                y: (e.clientY - rect.top) * scaleY
+            };
+        }
+
         // Mouse Drag
         cropCanvas.addEventListener('mousedown', function(e) {
             isDragging = true;
-            dragStart.x = e.clientX - imgState.x;
-            dragStart.y = e.clientY - imgState.y;
+            const coords = getCanvasCoords(e);
+            dragStart.x = coords.x - imgState.x;
+            dragStart.y = coords.y - imgState.y;
         });
 
         window.addEventListener('mousemove', function(e) {
             if (!isDragging) return;
-            imgState.x = e.clientX - dragStart.x;
-            imgState.y = e.clientY - dragStart.y;
+            const coords = getCanvasCoords(e);
+            imgState.x = coords.x - dragStart.x;
+            imgState.y = coords.y - dragStart.y;
+            clampImagePosition();
             renderCanvas();
         });
 
@@ -1890,8 +1929,13 @@ document.addEventListener('DOMContentLoaded', function() {
         cropCanvas.addEventListener('touchstart', function(e) {
             if (e.touches.length === 1) {
                 isDragging = true;
-                dragStart.x = e.touches[0].clientX - imgState.x;
-                dragStart.y = e.touches[0].clientY - imgState.y;
+                const rect = cropCanvas.getBoundingClientRect();
+                const scaleX = cropCanvas.width / rect.width;
+                const scaleY = cropCanvas.height / rect.height;
+                const clientX = (e.touches[0].clientX - rect.left) * scaleX;
+                const clientY = (e.touches[0].clientY - rect.top) * scaleY;
+                dragStart.x = clientX - imgState.x;
+                dragStart.y = clientY - imgState.y;
             } else if (e.touches.length === 2) {
                 isDragging = false;
                 const dx = e.touches[0].clientX - e.touches[1].clientX;
@@ -1903,10 +1947,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
         cropCanvas.addEventListener('touchmove', function(e) {
             if (e.touches.length === 1 && isDragging) {
-                imgState.x = e.touches[0].clientX - dragStart.x;
-                imgState.y = e.touches[0].clientY - dragStart.y;
+                e.preventDefault();
+                const rect = cropCanvas.getBoundingClientRect();
+                const scaleX = cropCanvas.width / rect.width;
+                const scaleY = cropCanvas.height / rect.height;
+                const clientX = (e.touches[0].clientX - rect.left) * scaleX;
+                const clientY = (e.touches[0].clientY - rect.top) * scaleY;
+                imgState.x = clientX - dragStart.x;
+                imgState.y = clientY - dragStart.y;
+                clampImagePosition();
                 renderCanvas();
             } else if (e.touches.length === 2 && initialPinchDistance) {
+                e.preventDefault();
                 const dx = e.touches[0].clientX - e.touches[1].clientX;
                 const dy = e.touches[0].clientY - e.touches[1].clientY;
                 const dist = Math.hypot(dx, dy);
@@ -1916,7 +1968,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (cropZoomSlider) cropZoomSlider.value = newScale;
                 renderCanvas();
             }
-        }, { passive: true });
+        }, { passive: false });
 
         cropCanvas.addEventListener('touchend', function() {
             isDragging = false;
@@ -1932,7 +1984,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Rotate Button
+    // Rotate Button: 90° step (0 -> 90 -> 180 -> 270 -> 0)
     if (btnCropRotate) {
         btnCropRotate.addEventListener('click', function() {
             imgState.rotation = (imgState.rotation + 90) % 360;
@@ -1952,9 +2004,38 @@ document.addEventListener('DOMContentLoaded', function() {
     if (btnCropCancel) btnCropCancel.addEventListener('click', closeCropModal);
     if (cropModalCloseBtn) cropModalCloseBtn.addEventListener('click', closeCropModal);
 
+    // Modal Backdrop Click
+    if (avatarCropModal) {
+        avatarCropModal.addEventListener('click', function(e) {
+            if (e.target === avatarCropModal) {
+                closeCropModal();
+            }
+        });
+    }
+
+    // Keyboard ESC Support & Tab Trap
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && avatarCropModal && avatarCropModal.classList.contains('show')) {
-            closeCropModal();
+        if (avatarCropModal && avatarCropModal.classList.contains('show')) {
+            if (e.key === 'Escape') {
+                closeCropModal();
+            } else if (e.key === 'Tab') {
+                const focusableElements = avatarCropModal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+                if (focusableElements.length > 0) {
+                    const firstEl = focusableElements[0];
+                    const lastEl = focusableElements[focusableElements.length - 1];
+                    if (e.shiftKey) {
+                        if (document.activeElement === firstEl) {
+                            lastEl.focus();
+                            e.preventDefault();
+                        }
+                    } else {
+                        if (document.activeElement === lastEl) {
+                            firstEl.focus();
+                            e.preventDefault();
+                        }
+                    }
+                }
+            }
         }
     });
 
@@ -2025,20 +2106,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Re-Crop button
+    // Re-Crop button: re-opens modal preserving current image & adjustments
     if (btnReCrop) {
         btnReCrop.addEventListener('click', function() {
             if (rawImage) {
+                previousFocusedElement = document.activeElement;
                 if (avatarCropModal) {
                     avatarCropModal.classList.add('show');
                     document.body.style.overflow = 'hidden';
                 }
                 renderCanvas();
+                if (btnCropConfirm) btnCropConfirm.focus();
             }
         });
     }
 
-    // Remove Cropped file
+    // Remove Cropped file ("Bekor qilish")
     if (btnRemoveCrop) {
         btnRemoveCrop.addEventListener('click', function() {
             croppedBlob = null;
@@ -2054,15 +2137,19 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // File input change handler: validates format and opens crop modal
+    // File input change handler: validates format (JPG, PNG, WEBP) & size (max 5MB), opens crop modal
     if (fileInput) {
         fileInput.addEventListener('change', function(e) {
             const file = this.files && this.files[0];
             if (!file) return;
 
             // 1. Format check
-            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-            if (!allowedTypes.includes(file.type.toLowerCase())) {
+            const allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
+            const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/pjpeg', 'image/x-png'];
+            const ext = (file.name || '').split('.').pop().toLowerCase();
+            const mime = (file.type || '').toLowerCase();
+
+            if (!allowedExts.includes(ext) && !allowedMimes.includes(mime)) {
                 this.value = '';
                 if (window.showAlertModal) {
                     showAlertModal({ title: "Noto'g'ri format", body: "Faqat JPG, PNG, WEBP formatlaridagi rasmlarga ruxsat berilgan.", type: "error" });
@@ -2087,9 +2174,15 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Form submit validation & double submit prevention
+    // Form submit validation & double submit protection
+    let isSubmittingProfile = false;
     if (profileForm) {
         profileForm.addEventListener('submit', function(e) {
+            if (isSubmittingProfile) {
+                e.preventDefault();
+                return false;
+            }
+
             if (isUsernameChecking || isPhoneChecking) {
                 e.preventDefault();
                 if (window.showAlertModal) {
@@ -2124,6 +2217,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
+            isSubmittingProfile = true;
             if (profileSubmitBtn) {
                 profileSubmitBtn.disabled = true;
                 profileSubmitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Saqlanmoqda...';
