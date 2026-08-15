@@ -3,7 +3,7 @@ from decimal import Decimal
 from unittest.mock import patch
 from django.test import TestCase
 from django.urls import reverse
-from .models import Cart, CartProduct, Category, Product, User, SiteSettings, Payment
+from .models import Cart, CartProduct, Category, Product, User, SiteSettings, Payment, Review
 from .views import get_active_cart
 from . import models
 
@@ -1229,6 +1229,126 @@ class CategoryAndFilterCountConsistencyTests(TestCase):
         self.assertEqual(resp_hidden.status_code, 200)
         data_hidden = resp_hidden.json()
         self.assertEqual(len(data_hidden['results']), 0)
+
+
+class CatalogSortingBusinessMetricsTests(TestCase):
+    def setUp(self):
+        Category.objects.all().delete()
+        Product.objects.all().delete()
+        Cart.objects.all().delete()
+        CartProduct.objects.all().delete()
+        Review.objects.all().delete()
+
+        self.user = User.objects.create_user(username='sorttester', password='password123', phone='+998901234567')
+        self.cat = Category.objects.create(name='Texnika', is_active=True)
+
+        # Product A: Price 1 000 000, discount 700 000 (effective 700 000), Stock 10
+        self.prod_a = Product.objects.create(
+            name='Product A', category=self.cat, price=Decimal('1000000.00'),
+            discount_price=Decimal('700000.00'), discount_status=True, count=10
+        )
+        # Product B: Price 800 000 (effective 800 000), Stock 5
+        self.prod_b = Product.objects.create(
+            name='Product B', category=self.cat, price=Decimal('800000.00'),
+            discount_status=False, count=5
+        )
+        # Product C: Price 500 000 (effective 500 000), Stock 0 (out of stock)
+        self.prod_c = Product.objects.create(
+            name='Product C', category=self.cat, price=Decimal('500000.00'),
+            discount_status=False, count=0
+        )
+        # Product D: Price 2 000 000 (effective 2 000 000), Stock 20
+        self.prod_d = Product.objects.create(
+            name='Product D', category=self.cat, price=Decimal('2000000.00'),
+            discount_status=False, count=20
+        )
+
+        # Sales setup:
+        # Confirmed delivered cart (status=4): Product B bought 15 times, Product A bought 2 times
+        order_delivered = Cart.objects.create(user=self.user, status=4)
+        CartProduct.objects.create(cart=order_delivered, product=self.prod_b, count=15)
+        CartProduct.objects.create(cart=order_delivered, product=self.prod_a, count=2)
+
+        # Cancelled/Returned cart (status=5): Product D bought 50 times (MUST BE EXCLUDED!)
+        order_returned = Cart.objects.create(user=self.user, status=5)
+        CartProduct.objects.create(cart=order_returned, product=self.prod_d, count=50)
+
+        # Active shopping cart (status=1): Product C added 100 times (MUST BE EXCLUDED!)
+        active_cart = Cart.objects.create(user=self.user, status=1)
+        CartProduct.objects.create(cart=active_cart, product=self.prod_c, count=100)
+
+        # Reviews setup:
+        # Product D has 5 reviews with average rating 4.8
+        for r in [5, 5, 5, 5, 4]:
+            Review.objects.create(user=self.user, product=self.prod_d, rating=r, text="Ajoyib")
+        # Product A has 1 review with rating 5.0
+        Review.objects.create(user=self.user, product=self.prod_a, rating=5, text="Yaxshi")
+
+    # 1. Price Ascending (effective discount price taken into account)
+    def test_price_asc_sorting(self):
+        response = self.client.get(reverse('all_products'), {'sort': 'price_asc'})
+        self.assertEqual(response.status_code, 200)
+        prods = list(response.context['products'])
+        # Order by effective price: C(500k) -> A(700k) -> B(800k) -> D(2m)
+        self.assertEqual([p.id for p in prods], [self.prod_c.id, self.prod_a.id, self.prod_b.id, self.prod_d.id])
+
+    # 2. Price Descending
+    def test_price_desc_sorting(self):
+        response = self.client.get(reverse('all_products'), {'sort': 'price_desc'})
+        self.assertEqual(response.status_code, 200)
+        prods = list(response.context['products'])
+        # Order by effective price DESC: D(2m) -> B(800k) -> A(700k) -> C(500k)
+        self.assertEqual([p.id for p in prods], [self.prod_d.id, self.prod_b.id, self.prod_a.id, self.prod_c.id])
+
+    # 3. Popular / Best Selling (confirmed orders only, excluding carts & returns)
+    def test_bestseller_popular_sorting(self):
+        response = self.client.get(reverse('all_products'), {'sort': 'popular'})
+        self.assertEqual(response.status_code, 200)
+        prods = list(response.context['products'])
+        # Sales: B has 15 sales (status=4), A has 2 sales (status=4), D has 0 (status 5 excluded), C has 0 (status 1 excluded)
+        self.assertEqual(prods[0].id, self.prod_b.id)
+        self.assertEqual(prods[1].id, self.prod_a.id)
+
+    # 4. Rating Sorting with tie-breaker
+    def test_rating_sorting(self):
+        response = self.client.get(reverse('all_products'), {'sort': 'rating'})
+        self.assertEqual(response.status_code, 200)
+        prods = list(response.context['products'])
+        # Product A (5.0 rating, 1 review), Product D (4.8 rating, 5 reviews)
+        self.assertEqual(prods[0].id, self.prod_a.id)
+        self.assertEqual(prods[1].id, self.prod_d.id)
+
+    # 5. Newest Sorting
+    def test_newest_sorting(self):
+        response = self.client.get(reverse('all_products'), {'sort': 'newest'})
+        self.assertEqual(response.status_code, 200)
+        prods = list(response.context['products'])
+        self.assertEqual(prods[0].id, self.prod_d.id)
+        self.assertEqual(prods[-1].id, self.prod_a.id)
+
+    # 6. Recommended Deterministic Sorting (in stock first, then sales/reviews/ratings)
+    def test_recommended_deterministic_sorting(self):
+        response = self.client.get(reverse('all_products'), {'sort': 'recommended'})
+        self.assertEqual(response.status_code, 200)
+        prods = list(response.context['products'])
+        # In-stock items (D, B, A) come before out-of-stock item (C)
+        self.assertNotEqual(prods[-1].id, self.prod_d.id)
+        self.assertEqual(prods[-1].id, self.prod_c.id)
+
+    # 7. Category + Sorting combination
+    def test_category_plus_sorting(self):
+        response = self.client.get(reverse('category_filter', kwargs={'category_id': self.cat.id}), {'sort': 'price_asc'})
+        self.assertEqual(response.status_code, 200)
+        prods = list(response.context['products'])
+        self.assertEqual(prods[0].id, self.prod_c.id)
+
+    # 8. Search + Sorting combination
+    def test_search_plus_sorting(self):
+        response = self.client.get(reverse('all_products'), {'q': 'Product', 'sort': 'price_desc'})
+        self.assertEqual(response.status_code, 200)
+        prods = list(response.context['products'])
+        self.assertEqual(prods[0].id, self.prod_d.id)
+
 
 
 

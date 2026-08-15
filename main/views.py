@@ -7,7 +7,8 @@ from decimal import Decimal
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import F, Count, Q, Avg, Case, When, DecimalField, Min, Max
+from django.db.models import F, Count, Q, Avg, Sum, Case, When, DecimalField, IntegerField, FloatField, Value, Min, Max, OuterRef, Subquery
+from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, render, redirect
 from django.http import JsonResponse, HttpResponse
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -306,11 +307,26 @@ def _build_catalog_context(request, products_qs, active_category=None):
     elif stock_filter == 'out_of_stock':
         products_qs = products_qs.filter(count__lte=0)
 
-    # 6. Rating Filter & Price/Rating Annotations
+    # 6. Sales, Rating & Price Subqueries / Annotations
+    sales_subquery = models.CartProduct.objects.filter(
+        product=OuterRef('pk'),
+        cart__status__in=[2, 3, 4]
+    ).values('product').annotate(total=Sum('count')).values('total')
+
+    rating_subquery = models.Review.objects.filter(
+        product=OuterRef('pk')
+    ).values('product').annotate(avg_r=Avg('rating')).values('avg_r')
+
+    reviews_count_subquery = models.Review.objects.filter(
+        product=OuterRef('pk')
+    ).values('product').annotate(c=Count('id')).values('c')
+
     rating_filter = request.GET.get('rating', '').strip()
     products_qs = products_qs.annotate(
-        avg_rating=Avg('reviews__rating'),
-        reviews_count=Count('reviews'),
+        total_sales=Coalesce(Subquery(sales_subquery, output_field=IntegerField()), Value(0)),
+        avg_rating=Coalesce(Subquery(rating_subquery, output_field=FloatField()), Value(0.0, output_field=FloatField())),
+        reviews_count=Coalesce(Subquery(reviews_count_subquery, output_field=IntegerField()), Value(0)),
+        in_stock_rank=Case(When(count__gt=0, then=Value(1)), default=Value(0), output_field=IntegerField()),
         effective_price=Case(
             When(discount_status=True, discount_price__isnull=False, then='discount_price'),
             default='price',
@@ -328,15 +344,16 @@ def _build_catalog_context(request, products_qs, active_category=None):
     if sort == 'newest':
         products_qs = products_qs.order_by('-created_at', '-id')
     elif sort == 'price_asc':
-        products_qs = products_qs.order_by('effective_price', 'price', '-id')
+        products_qs = products_qs.order_by('effective_price', 'price', 'id')
     elif sort == 'price_desc':
         products_qs = products_qs.order_by('-effective_price', '-price', '-id')
     elif sort == 'popular':
-        products_qs = products_qs.order_by('-count', '-created_at')
+        products_qs = products_qs.order_by('-total_sales', '-created_at', '-id')
     elif sort == 'rating':
-        products_qs = products_qs.order_by('-avg_rating', '-created_at')
+        products_qs = products_qs.order_by('-avg_rating', '-reviews_count', '-created_at', '-id')
     else:  # recommended
-        products_qs = products_qs.order_by('-created_at', '-id')
+        # Deterministic recommendation: in-stock items first, confirmed sales, reviews, ratings, newest
+        products_qs = products_qs.order_by('-in_stock_rank', '-total_sales', '-reviews_count', '-avg_rating', '-created_at', '-id')
 
     # View Mode (Grid vs List)
     view_mode = request.GET.get('view', 'grid').strip()
