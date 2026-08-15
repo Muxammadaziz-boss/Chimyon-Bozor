@@ -85,6 +85,41 @@
                 </div>
               </div>
 
+              <h5 class="font-weight-bold text-dark mt-4 mb-3"><i class="fas fa-credit-card text-success mr-2"></i>Oldindan To'lov va To'lov Siyosati (Prepayment Policy)</h5>
+              <div class="form-row bg-light p-3 rounded mb-3 border">
+                <div class="form-group col-md-6 mb-2">
+                  <div class="custom-control custom-checkbox mb-2">
+                    <input type="checkbox" name="prepayment_enabled" class="custom-control-input" id="prepaymentEnabled" {% if settings.prepayment_enabled %}checked{% endif %}>
+                    <label class="custom-control-label font-weight-bold text-dark" for="prepaymentEnabled">Oldindan to'lov tizimini yoqish</label>
+                  </div>
+                  <small class="text-muted d-block">Yoqilgan holatda buyurtma rasmiylashtirishda tanlangan foiz miqdorida oldindan to'lov talab qilinadi.</small>
+                </div>
+
+                <div class="form-group col-md-6 mb-2">
+                  <label class="font-weight-bold text-dark">Oldindan To'lov Foizi:</label>
+                  <select name="prepayment_percent" class="form-control font-weight-bold">
+                    <option value="0" {% if settings.prepayment_percent == 0 %}selected{% endif %}>0% (Faqat yetkazilganda to'lash)</option>
+                    <option value="30" {% if settings.prepayment_percent == 30 %}selected{% endif %}>30% (Standart oldindan to'lov)</option>
+                    <option value="50" {% if settings.prepayment_percent == 50 %}selected{% endif %}>50% (Yarmini oldindan to'lash)</option>
+                    <option value="100" {% if settings.prepayment_percent == 100 %}selected{% endif %}>100% (To'liq onlayn to'lov)</option>
+                  </select>
+                </div>
+
+                <div class="form-group col-md-6 mb-0 mt-2">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" name="allow_cash_balance" class="custom-control-input" id="allowCashBalance" {% if settings.allow_cash_balance %}checked{% endif %}>
+                    <label class="custom-control-label font-weight-bold" for="allowCashBalance">Yetkazib berishda naqd qoldiq to'lashga ruxsat</label>
+                  </div>
+                </div>
+
+                <div class="form-group col-md-6 mb-0 mt-2">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" name="allow_online_balance_payment" class="custom-control-input" id="allowOnlineBalance" {% if settings.allow_online_balance_payment %}checked{% endif %}>
+                    <label class="custom-control-label font-weight-bold" for="allowOnlineBalance">Mijoz tomonidan qoldiqni onlayn to'lashga ruxsat</label>
+                  </div>
+                </div>
+              </div>
+
               <h5 class="font-weight-bold text-dark mt-4 mb-3"><i class="fas fa-image text-warning mr-2"></i>Logotip va Favicon</h5>
               <div class="form-row">
                 <div class="form-group col-md-6">

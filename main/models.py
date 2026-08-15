@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.db import models
 from django.db.models import Sum
 from uuid import uuid4
@@ -145,12 +146,26 @@ CART_STATUS = (
 )
 
 class Cart(Code):
+    class FinancialStatus(models.TextChoices):
+        UNPAID = 'unpaid', 'To\'lanmagan'
+        PARTIALLY_PAID = 'partially_paid', 'Qisman to\'langan'
+        FULLY_PAID = 'fully_paid', 'To\'liq to\'langan'
+        REFUNDED = 'refunded', 'Qaytarilgan'
+
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     status = models.IntegerField(choices=CART_STATUS, default=1)
+    financial_status = models.CharField(
+        max_length=20,
+        choices=FinancialStatus.choices,
+        default=FinancialStatus.UNPAID,
+        db_index=True
+    )
+    prepayment_percent = models.IntegerField(default=0)
+    prepayment_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
     date = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f'{self.user} - {self.status}'
+        return f'{self.user} - {self.status} ({self.get_financial_status_display()})'
 
     @property
     def cart_products(self):
@@ -161,8 +176,34 @@ class Cart(Code):
         return sum(item.total_price for item in self.cart_products)
 
     @property
+    def grand_total(self):
+        return Decimal(str(self.total_price))
+
+    @property
     def count_product(self):
         return sum(item.count for item in self.cart_products)
+
+    @property
+    def paid_amount(self):
+        paid_sum = Decimal('0.00')
+        for p in self.payments.filter(status__in=[Payment.Status.PAID, Payment.Status.REFUNDED]):
+            paid_sum += Decimal(str(p.amount))
+            if p.refund_amount:
+                paid_sum -= Decimal(str(p.refund_amount))
+        return max(Decimal('0.00'), paid_sum)
+
+    @property
+    def remaining_amount(self):
+        rem = self.grand_total - self.paid_amount
+        return max(Decimal('0.00'), rem)
+
+    @property
+    def is_fully_paid(self):
+        return self.financial_status == self.FinancialStatus.FULLY_PAID or (self.grand_total > 0 and self.remaining_amount <= 0)
+
+    @property
+    def is_partially_paid(self):
+        return self.financial_status == self.FinancialStatus.PARTIALLY_PAID
 
 
 class CartProduct(Code):
@@ -225,6 +266,19 @@ class SiteSettings(models.Model):
     instagram = models.URLField(blank=True)
     linkedin = models.URLField(blank=True)
     telegram = models.URLField(blank=True, help_text="Telegram kanal yoki guruh havolasi (masalan: https://t.me/sizning_kanal)")
+    prepayment_enabled = models.BooleanField(default=True, verbose_name="Oldindan to'lov tizimi yoqilgan")
+    prepayment_percent = models.IntegerField(
+        default=30,
+        choices=[
+            (0, "0% (Faqat yetkazilganda to'lash)"),
+            (30, "30% (Oldindan to'lov)"),
+            (50, "50% (Yarmi oldindan)"),
+            (100, "100% (To'liq onlayn to'lov)")
+        ],
+        verbose_name="Oldindan to'lov foizi"
+    )
+    allow_cash_balance = models.BooleanField(default=True, verbose_name="Yetkazilganda naqd qoldiq to'loviga ruxsat")
+    allow_online_balance_payment = models.BooleanField(default=True, verbose_name="Qoldiqni onlayn to'lashga ruxsat")
 
     def __str__(self):
         return self.site_name
@@ -260,7 +314,7 @@ class OrderStatusHistory(models.Model):
         verbose_name_plural = "Buyurtma status tarixlari"
 
     def __str__(self):
-        return f"Order #{self.order.code[:8] if self.order and self.order.code else self.order_id}: {self.old_status} -> {self.new_status}"
+        return f"Order #{str(self.order.code)[:8] if self.order and self.order.code else self.order_id}: {self.old_status} -> {self.new_status}"
 
 
 class AuditLog(models.Model):
@@ -294,6 +348,11 @@ class Payment(models.Model):
         CANCELLED = 'cancelled', 'Bekor qilindi'
         REFUNDED = 'refunded', 'Qaytarildi'
 
+    class Purpose(models.TextChoices):
+        PREPAYMENT = 'prepayment', "Oldindan to'lov"
+        BALANCE = 'balance', "Qoldiq to'lov"
+        FULL = 'full', "To'liq to'lov"
+
     code = models.CharField(max_length=150, unique=True, default=uuid4, db_index=True)
     order = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='payments')
     provider = models.CharField(max_length=30, choices=Provider.choices, default=Provider.CASH, db_index=True)
@@ -301,6 +360,7 @@ class Payment(models.Model):
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     currency = models.CharField(max_length=10, default='UZS')
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING, db_index=True)
+    purpose = models.CharField(max_length=20, choices=Purpose.choices, default=Purpose.FULL, db_index=True)
     payment_method = models.CharField(max_length=50, blank=True, default='card')
     provider_response = models.JSONField(blank=True, null=True)
     error_message = models.TextField(blank=True)

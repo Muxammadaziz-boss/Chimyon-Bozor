@@ -2,7 +2,7 @@ import json
 from unittest.mock import patch
 from django.test import TestCase
 from django.urls import reverse
-from .models import Cart, CartProduct, Category, Product, User
+from .models import Cart, CartProduct, Category, Product, User, SiteSettings
 
 class ProductDetailTestCase(TestCase):
     def setUp(self):
@@ -149,6 +149,7 @@ class AuthAndCartFlowTestCase(TestCase):
         self.assertTrue(CartProduct.objects.filter(pk=delivered_item.pk).exists())
 
     def test_checkout_moves_active_cart_to_order(self):
+        SiteSettings.objects.create(site_name="Chimyon-bozor", prepayment_enabled=False)
         active_cart = Cart.objects.create(user=self.user, status=1)
         CartProduct.objects.create(cart=active_cart, product=self.product, count=2)
 

@@ -22,25 +22,9 @@
           </div>
           <div class="card-wrap">
             <div class="card-header">
-              <h4 style="color: #475569; font-weight: 600;">Jami Tranzaksiyalar</h4>
+              <h4 style="color: #475569; font-weight: 600;">Jami Tushum</h4>
             </div>
             <div class="card-body font-weight-bold" style="font-size: 1.25rem; color: #1e40af !important;">
-              {{ total_payments_count|intspace }} ta
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-lg-3 col-md-6 col-sm-6 col-12">
-        <div class="card card-statistic-1 shadow-sm border-0">
-          <div class="card-icon bg-success">
-            <i class="fas fa-check-circle text-white"></i>
-          </div>
-          <div class="card-wrap">
-            <div class="card-header">
-              <h4 style="color: #475569; font-weight: 600;">Muvaffaqiyatli To'lovlar</h4>
-            </div>
-            <div class="card-body font-weight-bold" style="font-size: 1.25rem; color: #166534 !important;">
               {{ total_paid_amount|uz_price }}
               <div class="small font-weight-normal text-muted mt-1" style="font-size: 0.85rem;">({{ paid_count|intspace }} ta to'langan)</div>
             </div>
@@ -50,15 +34,33 @@
 
       <div class="col-lg-3 col-md-6 col-sm-6 col-12">
         <div class="card card-statistic-1 shadow-sm border-0">
-          <div class="card-icon bg-warning">
-            <i class="fas fa-hourglass-half text-white"></i>
+          <div class="card-icon bg-success">
+            <i class="fas fa-adjust text-white"></i>
           </div>
           <div class="card-wrap">
             <div class="card-header">
-              <h4 style="color: #475569; font-weight: 600;">Kutilayotgan To'lovlar</h4>
+              <h4 style="color: #475569; font-weight: 600;">Oldindan To'lovlar</h4>
+            </div>
+            <div class="card-body font-weight-bold" style="font-size: 1.25rem; color: #166534 !important;">
+              {{ prepayment_collected|uz_price }}
+              <div class="small font-weight-normal text-muted mt-1" style="font-size: 0.85rem;">(Qisman avanslar)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-3 col-md-6 col-sm-6 col-12">
+        <div class="card card-statistic-1 shadow-sm border-0">
+          <div class="card-icon bg-warning" style="background-color: #d97706 !important;">
+            <i class="fas fa-hand-holding-usd text-white"></i>
+          </div>
+          <div class="card-wrap">
+            <div class="card-header">
+              <h4 style="color: #475569; font-weight: 600;">Kutilayotgan Qoldiqlar</h4>
             </div>
             <div class="card-body font-weight-bold" style="font-size: 1.25rem; color: #b45309 !important;">
-              {{ pending_count|intspace }} ta
+              {{ outstanding_balances|uz_price }}
+              <div class="small font-weight-normal text-muted mt-1" style="font-size: 0.85rem;">(Yetkazilganda olinadi)</div>
             </div>
           </div>
         </div>
@@ -85,13 +87,22 @@
     <div class="card shadow-sm mb-4">
       <div class="card-body py-3">
         <form method="GET" class="form-row align-items-center">
-          <div class="col-md-5 my-1">
+          <div class="col-md-4 my-1">
             <div class="input-group">
               <input type="text" name="query" value="{{ query|default:'' }}" class="form-control" placeholder="Tranzaksiya ID, buyurtma kodi yoki mijoz...">
               <div class="input-group-append">
                 <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i></button>
               </div>
             </div>
+          </div>
+
+          <div class="col-md-2 my-1">
+            <select name="purpose" class="form-control" onchange="this.form.submit()">
+              <option value="">Barcha maqsadlar</option>
+              {% for val, label in purpose_choices %}
+              <option value="{{ val }}" {% if purpose_filter == val %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
           </div>
 
           <div class="col-md-3 my-1">
@@ -103,7 +114,7 @@
             </select>
           </div>
 
-          <div class="col-md-3 my-1">
+          <div class="col-md-2 my-1">
             <select name="provider" class="form-control" onchange="this.form.submit()">
               <option value="">Barcha provayderlar</option>
               {% for val, label in provider_choices %}
@@ -129,6 +140,7 @@
                 <th>To'lov ID</th>
                 <th>Buyurtma</th>
                 <th>Mijoz</th>
+                <th>Maqsad</th>
                 <th>Provayder</th>
                 <th>Tranzaksiya ID</th>
                 <th>Summa</th>
@@ -151,6 +163,9 @@
                 <td>
                   <div><strong>{{ payment.order.user.get_full_name|default:payment.order.user.username }}</strong></div>
                   <small class="text-muted">{{ payment.order.user.phone|default:"" }}</small>
+                </td>
+                <td>
+                  <span class="badge badge-primary font-weight-bold">{{ payment.get_purpose_display }}</span>
                 </td>
                 <td>
                   {% if payment.provider == 'click' %}

@@ -1,5 +1,6 @@
 from collections import defaultdict
 from datetime import timedelta
+from decimal import Decimal
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import user_passes_test
@@ -751,10 +752,10 @@ def status_update(request, code):
                 log_admin_action(
                     request,
                     "ORDER_STATUS_UPDATE",
-                    f"Buyurtma #{order.code[:8]} statusi: {old_st} -> {new_st}. Izoh: {comment}"
+                    f"Buyurtma #{str(order.code)[:8]} statusi: {old_st} -> {new_st}. Izoh: {comment}"
                 )
 
-            messages.success(request, f"Buyurtma #{order.code[:8]} statusi '{status_labels.get(new_st)}' ga o'zgartirildi.")
+            messages.success(request, f"Buyurtma #{str(order.code)[:8]} statusi '{status_labels.get(new_st)}' ga o'zgartirildi.")
             return redirect(request.META.get('HTTP_REFERER', 'd_orders'))
 
     # Fallback to next step
@@ -771,8 +772,8 @@ def status_update(request, code):
                 changed_by=request.user,
                 comment=f"Keyingi bosqich: {status_labels.get(new_st)}"
             )
-            log_admin_action(request, "ORDER_STATUS_UPDATE", f"Buyurtma #{order.code[:8]}: {old_st} -> {new_st}")
-        messages.success(request, f"Buyurtma #{order.code[:8]} keyingi bosqichga o'tkazildi.")
+            log_admin_action(request, "ORDER_STATUS_UPDATE", f"Buyurtma #{str(order.code)[:8]}: {old_st} -> {new_st}")
+        messages.success(request, f"Buyurtma #{str(order.code)[:8]} keyingi bosqichga o'tkazildi.")
     else:
         messages.warning(request, "Ushbu buyurtma statusini avtomatik oshirib bo'lmaydi.")
 
@@ -799,9 +800,9 @@ def reject_cart(request, code):
                 changed_by=request.user,
                 comment="Admin tomonidan bekor qilindi / qaytarildi."
             )
-            log_admin_action(request, "ORDER_REJECT", f"Buyurtma #{order.code[:8]} bekor qilindi (Qaytarildi)")
+            log_admin_action(request, "ORDER_REJECT", f"Buyurtma #{str(order.code)[:8]} bekor qilindi (Qaytarildi)")
 
-        messages.success(request, f"Buyurtma #{order.code[:8]} bekor qilindi va mahsulotlar omborga qaytarildi.")
+        messages.success(request, f"Buyurtma #{str(order.code)[:8]} bekor qilindi va mahsulotlar omborga qaytarildi.")
     else:
         messages.warning(request, "Ushbu buyurtmani bekor qilib bo'lmaydi.")
     return redirect(request.META.get('HTTP_REFERER', 'd_orders'))
@@ -818,6 +819,9 @@ def cart_detail(request, code):
     total_amount = sum(cp.total_price for cp in cart_products)
     total_count = sum(cp.count for cp in cart_products)
 
+    from main.services.payment import PaymentManager
+    financials = PaymentManager.calculate_order_financials(order)
+
     # Customer Lifetime Statistics
     customer_orders_count = models.Cart.objects.filter(user=order.user).exclude(status=1).count()
     customer_completed_products = models.CartProduct.objects.filter(
@@ -827,7 +831,7 @@ def cart_detail(request, code):
 
     # Status History
     status_history = order.status_history.select_related('changed_by').all()
-    payments = order.payments.all()
+    payments = order.payments.all().order_by('-created_at')
     primary_payment = payments.first()
 
     context = {
@@ -835,6 +839,7 @@ def cart_detail(request, code):
         'cart_products': cart_products,
         'total_amount': total_amount,
         'total_count': total_count,
+        'financials': financials,
         'customer_orders_count': customer_orders_count,
         'customer_lifetime_spent': customer_lifetime_spent,
         'status_history': status_history,
@@ -845,13 +850,40 @@ def cart_detail(request, code):
 
 
 @staff_required
+@require_POST
+def settle_order_balance(request, code):
+    """
+    Buyurtmaning qoldiq summasini yetkazib berishda (naqd/terminal) qabul qilib to'liq to'langan deb belgilash.
+    """
+    order = get_object_or_404(models.Cart, code=code, status__gt=1)
+    amount_raw = request.POST.get('amount')
+    comment = request.POST.get('comment', '').strip()
+
+    try:
+        amount = Decimal(str(amount_raw)) if amount_raw else None
+        from main.services.payment import PaymentManager
+        PaymentManager.settle_cash_balance(
+            order=order,
+            amount=amount,
+            user=request.user,
+            comment=comment or "Yetkazib berishda naqd to'lov orqali qoldiq yopildi."
+        )
+        messages.success(request, f"Buyurtma #{str(order.code)[:8]} uchun qoldiq to'lov muvaffaqiyatli qabul qilindi!")
+    except Exception as e:
+        messages.error(request, f"Qoldiq to'lovni rasmiylashtirishda xatolik: {str(e)}")
+
+    return redirect('d_detail_orders', code=order.code)
+
+
+@staff_required
 def payments_list(request):
     """
-    To'lovlar monitoringi va boshqaruvi.
+    To'lovlar monitoringi va boshqaruvi (Prepayments, Balance settlements, Refunds).
     """
     query = request.GET.get('query', '').strip()
     status_filter = request.GET.get('status', '').strip()
     provider_filter = request.GET.get('provider', '').strip()
+    purpose_filter = request.GET.get('purpose', '').strip()
 
     payments_qs = models.Payment.objects.select_related('order', 'order__user').order_by('-created_at')
 
@@ -870,10 +902,19 @@ def payments_list(request):
     if provider_filter:
         payments_qs = payments_qs.filter(provider=provider_filter)
 
+    if purpose_filter:
+        payments_qs = payments_qs.filter(purpose=purpose_filter)
+
     # KPI Statistics
     total_payments_count = models.Payment.objects.count()
     paid_payments = models.Payment.objects.filter(status=models.Payment.Status.PAID)
     total_paid_amount = sum(float(p.amount) for p in paid_payments)
+    prepayment_collected = sum(float(p.amount) for p in paid_payments.filter(purpose=models.Payment.Purpose.PREPAYMENT))
+    balance_collected = sum(float(p.amount) for p in paid_payments.filter(purpose=models.Payment.Purpose.BALANCE))
+
+    outstanding_orders = models.Cart.objects.filter(status__in=[2, 3])
+    outstanding_balances = sum(float(o.remaining_amount) for o in outstanding_orders)
+
     paid_count = paid_payments.count()
     pending_count = models.Payment.objects.filter(status=models.Payment.Status.PENDING).count()
     failed_refunded_count = models.Payment.objects.filter(
@@ -893,13 +934,18 @@ def payments_list(request):
         'query': query,
         'status_filter': status_filter,
         'provider_filter': provider_filter,
+        'purpose_filter': purpose_filter,
         'total_payments_count': total_payments_count,
         'total_paid_amount': total_paid_amount,
+        'prepayment_collected': prepayment_collected,
+        'balance_collected': balance_collected,
+        'outstanding_balances': outstanding_balances,
         'paid_count': paid_count,
         'pending_count': pending_count,
         'failed_refunded_count': failed_refunded_count,
         'provider_choices': models.Payment.Provider.choices,
         'status_choices': models.Payment.Status.choices,
+        'purpose_choices': models.Payment.Purpose.choices,
     }
     return render(request, 'dashboard/payments.html', context)
 
@@ -921,9 +967,9 @@ def refund_payment(request, payment_id):
         log_admin_action(
             request,
             "PAYMENT_REFUND",
-            f"To'lov #{payment.code[:8]} qaytarildi. Summa: {payment.amount} {payment.currency}. Sabab: {reason}"
+            f"To'lov #{str(payment.code)[:8]} qaytarildi. Summa: {payment.amount} {payment.currency}. Sabab: {reason}"
         )
-        messages.success(request, f"To'lov #{payment.code[:8]} muvaffaqiyatli qaytarildi.")
+        messages.success(request, f"To'lov #{str(payment.code)[:8]} muvaffaqiyatli qaytarildi.")
     else:
         messages.error(request, result.get('message', "To'lovni qaytarishda xatolik."))
 
@@ -1122,8 +1168,8 @@ def export_orders(request):
 
     headers = [
         "№", "Buyurtma ID", "Mijoz Ismi", "Foydalanuvchi nomi",
-        "Telefon", "Status", "Sana", "Mahsulotlar soni",
-        "Jami Summa (so'm)", "Manzil"
+        "Telefon", "Status", "Moliyaviy Holat", "Oldindan To'lov (%)", "Sana", "Mahsulotlar soni",
+        "Jami Summa (so'm)", "To'langan Summa", "Qoldiq Summa", "Manzil"
     ]
     ws.append(headers)
 
@@ -1147,7 +1193,9 @@ def export_orders(request):
             order_date = timezone.make_naive(order_date).strftime('%d.%m.%Y %H:%M')
 
         cart_products = order.cartproduct_set.all()
-        total_price = sum(cp.total_price for cp in cart_products)
+        total_price = float(order.grand_total)
+        paid_price = float(order.paid_amount)
+        remaining_price = float(order.remaining_amount)
         count_product = sum(cp.count for cp in cart_products)
         user_full_name = order.user.get_full_name() or "—" if order.user else "—"
         user_phone = order.user.phone if hasattr(order.user, 'phone') and order.user.phone else '—'
@@ -1160,9 +1208,13 @@ def export_orders(request):
             order.user.username if order.user else "Anonim",
             user_phone,
             status_map.get(order.status, str(order.status)),
+            order.get_financial_status_display(),
+            f"{order.prepayment_percent}%" if order.prepayment_percent > 0 else "0%",
             order_date,
             count_product,
             total_price,
+            paid_price,
+            remaining_price,
             user_address
         ]
         ws.append(row)
@@ -1171,7 +1223,7 @@ def export_orders(request):
             cell = ws.cell(row=idx + 1, column=col_num)
             cell.font = data_font
             cell.border = thin_border
-            if col_num in (1, 8, 9):
+            if col_num in (1, 10, 11, 12, 13):
                 cell.alignment = Alignment(horizontal="right")
 
     # Auto-adjust column widths
@@ -1283,6 +1335,12 @@ def site_settings_view(request):
             settings_obj.telegram = request.POST.get('telegram', '').strip()
             settings_obj.instagram = request.POST.get('instagram', '').strip()
             settings_obj.facebook = request.POST.get('facebook', '').strip()
+
+            # Prepayment settings
+            settings_obj.prepayment_enabled = 'prepayment_enabled' in request.POST
+            settings_obj.prepayment_percent = int(request.POST.get('prepayment_percent', 30))
+            settings_obj.allow_cash_balance = 'allow_cash_balance' in request.POST
+            settings_obj.allow_online_balance_payment = 'allow_online_balance_payment' in request.POST
 
             logo = request.FILES.get('logo')
             if logo:

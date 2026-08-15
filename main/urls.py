@@ -25,6 +25,7 @@ urlpatterns = [
     path('payment/success/<str:code>/', views.payment_success, name='payment_success'),
     path('payment/failed/<str:code>/', views.payment_failed, name='payment_failed'),
     path('payment/retry/<str:code>/', views.retry_payment, name='retry_payment'),
+    path('payment/pay-balance/<str:code>/', views.pay_balance, name='pay_balance'),
     path('orders/', views.order_history, name='order_history'),
     path('orders/<str:code>/', views.order_detail, name='order_detail'),
     path('api/live-search/', views.live_search, name='live_search'),

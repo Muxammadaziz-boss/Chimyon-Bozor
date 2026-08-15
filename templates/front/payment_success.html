@@ -163,20 +163,16 @@
                     <strong>{{ payment.get_provider_display|default:"Yetkazilganda naqd to'lov" }}</strong>
                 </div>
                 <div class="receipt-row">
-                    <span class="text-muted font-weight-600">To'lov holati:</span>
+                    <span class="text-muted font-weight-600">Moliyaviy holati:</span>
                     <span>
-                        {% if payment.status == 'paid' %}
-                            <span class="status-badge status-badge--paid"><i class="fas fa-check-circle"></i> To'landi</span>
-                        {% elif payment.status == 'pending' %}
-                            <span class="status-badge status-badge--pending"><i class="fas fa-clock"></i> Kutilmoqda (Yetkazilganda to'lanadi)</span>
-                        {% elif payment.status == 'initiated' %}
-                            <span class="status-badge status-badge--initiated"><i class="fas fa-spinner fa-spin"></i> Boshlandi</span>
-                        {% elif payment.status == 'failed' %}
-                            <span class="status-badge status-badge--failed"><i class="fas fa-times-circle"></i> Xatolik</span>
-                        {% elif payment.status == 'refunded' %}
-                            <span class="status-badge status-badge--refunded"><i class="fas fa-undo"></i> Qaytarildi</span>
+                        {% if order.financial_status == 'fully_paid' %}
+                            <span class="status-badge status-badge--paid"><i class="fas fa-check-circle"></i> To'liq to'langan</span>
+                        {% elif order.financial_status == 'partially_paid' %}
+                            <span class="status-badge status-badge--initiated"><i class="fas fa-adjust"></i> Qisman to'langan ({{ order.prepayment_percent }}%)</span>
+                        {% elif order.financial_status == 'refunded' %}
+                            <span class="status-badge status-badge--refunded"><i class="fas fa-undo"></i> Qaytarilgan</span>
                         {% else %}
-                            <span class="status-badge status-badge--pending">{{ payment.get_status_display }}</span>
+                            <span class="status-badge status-badge--pending"><i class="fas fa-clock"></i> Kutilmoqda (Yetkazilganda to'lanadi)</span>
                         {% endif %}
                     </span>
                 </div>
@@ -194,9 +190,22 @@
                     <span class="text-muted font-weight-600">Yetkazish manzili:</span>
                     <strong>{{ order.user.address|default:"Manzil ko'rsatilmagan" }}</strong>
                 </div>
-                <div class="receipt-row border-top pt-3 mt-3">
-                    <span class="text-dark font-weight-bold" style="font-size: 1.1rem;">Jami To'lov:</span>
-                    <strong class="text-primary font-weight-bold" style="font-size: 1.3rem;">{{ order.total_price|uz_price }}</strong>
+
+                <div class="border-top pt-3 mt-3">
+                    <div class="receipt-row">
+                        <span class="text-dark font-weight-600">Jami Buyurtma Summasi:</span>
+                        <strong class="text-dark">{{ financials.grand_total|uz_price }}</strong>
+                    </div>
+                    <div class="receipt-row">
+                        <span class="text-success font-weight-600"><i class="fas fa-check-circle mr-1"></i> To'langan (Oldindan to'lov):</span>
+                        <strong class="text-success font-weight-bold">{{ financials.paid_amount|uz_price }}</strong>
+                    </div>
+                    {% if financials.remaining_amount > 0 %}
+                    <div class="receipt-row alert alert-warning mb-0 mt-2 py-2 px-3 border-0 d-flex justify-content-between align-items-center" style="border-radius: 8px;">
+                        <span class="text-warning-dark font-weight-bold" style="color: #92400e;"><i class="fas fa-truck mr-1"></i> Yetkazilganda To'lanadigan Qoldiq:</span>
+                        <strong class="font-weight-bold text-danger" style="font-size: 1.15rem;">{{ financials.remaining_amount|uz_price }}</strong>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
 

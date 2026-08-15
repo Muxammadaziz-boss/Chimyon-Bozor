@@ -6,6 +6,7 @@ from urllib.parse import urlencode
 
 from django.conf import settings
 from django.db import transaction
+from django.db.models import F
 from django.http import HttpRequest, JsonResponse
 from django.utils import timezone
 
@@ -17,6 +18,10 @@ logger = logging.getLogger(__name__)
 
 class ClickPaymentProvider(BasePaymentProvider):
     provider_name: str = "click"
+
+    # Click Actions
+    ACTION_PREPARE = '0'
+    ACTION_COMPLETE = '1'
 
     # Click Error Codes
     ERROR_SUCCESS = 0
@@ -208,23 +213,29 @@ class ClickPaymentProvider(BasePaymentProvider):
             locked_payment.provider_response = data
             locked_payment.save()
 
-            # Confirm order status
+            # Confirm order status & deduct stock ONCE
             order = locked_payment.order
             if order.status == 1:
+                for item in order.cart_products.filter(product__isnull=False):
+                    models.Product.objects.filter(pk=item.product.pk).update(count=F('count') - item.count)
                 order.status = 2  # Accepted / New
                 order.save(update_fields=['status'])
+
+            # Sync financial status
+            from .manager import PaymentManager
+            PaymentManager.sync_order_financial_status(order)
 
             models.OrderStatusHistory.objects.create(
                 order=order,
                 old_status=1,
                 new_status=order.status,
-                comment=f"Click orqali to'lov muvaffaqiyatli qabul qilindi. Tranzaksiya ID: {click_trans_id}"
+                comment=f"Click orqali to'lov ({locked_payment.get_purpose_display()}) muvaffaqiyatli qabul qilindi. Tranzaksiya ID: {click_trans_id}"
             )
 
             models.AuditLog.objects.create(
                 user=order.user,
                 action="PAYMENT_SUCCESS_CLICK",
-                details=f"Buyurtma #{order.code[:8]} uchun Click to'lovi: {locked_payment.amount} UZS. Tranzaksiya #{click_trans_id}"
+                details=f"Buyurtma #{order.code[:8]} uchun Click to'lovi: {locked_payment.amount} UZS ({locked_payment.get_purpose_display()}). Tranzaksiya #{click_trans_id}"
             )
 
         logger.info("Click payment #%s completed successfully.", payment.code)
@@ -248,8 +259,15 @@ class ClickPaymentProvider(BasePaymentProvider):
     def refund(self, payment, amount: Optional[float] = None, reason: str = "") -> Dict[str, Any]:
         if not payment.is_paid:
             return {'success': False, 'message': "Faqat to'langan to'lovlarni qaytarish mumkin."}
-        payment.status = models.Payment.Status.REFUNDED
-        payment.refund_amount = Decimal(str(amount)) if amount else payment.amount
+        refund_dec = Decimal(str(amount)) if amount else payment.amount
+        if refund_dec > payment.amount:
+            return {'success': False, 'message': "Qaytarish summasi to'lov summasidan ortiq bo'lishi mumkin emas."}
+        if refund_dec <= 0:
+            return {'success': False, 'message': "Qaytarish summasi 0 dan katta bo'lishi kerak."}
+
+        payment.refund_amount = (payment.refund_amount or Decimal('0.00')) + refund_dec
+        if payment.refund_amount >= payment.amount:
+            payment.status = models.Payment.Status.REFUNDED
         payment.refunded_at = timezone.now()
         payment.save(update_fields=['status', 'refund_amount', 'refunded_at', 'updated_at'])
         return {'success': True, 'message': "To'lov qaytarildi (Refund muvaffaqiyatli)."}

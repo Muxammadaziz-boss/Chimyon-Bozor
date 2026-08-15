@@ -191,10 +191,20 @@
                             <i class="fas fa-credit-card text-success"></i> 2. To'lov Usulini Tanlang
                         </div>
 
+                        {% if financials.prepayment_percent > 0 %}
+                        <div class="alert alert-info border-0 shadow-sm d-flex align-items-center mb-4" style="border-radius: 12px; background: #e0f2fe; color: #0369a1;">
+                            <i class="fas fa-info-circle mr-3" style="font-size: 1.5rem;"></i>
+                            <div>
+                                <strong>Oldindan to'lov sharti:</strong> Ushbu buyurtma uchun <strong>{{ financials.prepayment_percent }}% ({{ financials.prepayment_amount|uz_price }})</strong> oldindan to'lov talab qilinadi.
+                                Qolgan <strong>{{ financials.remaining_amount|uz_price }}</strong> buyurtma yetkazilganda to'lanadi.
+                            </div>
+                        </div>
+                        {% endif %}
+
                         <div class="payment-options-grid">
                             <!-- Click -->
-                            <label class="payment-option-card active" for="pay_click">
-                                <input type="radio" name="provider" value="click" id="pay_click" checked>
+                            <label class="payment-option-card {% if selected_provider == 'click' %}active{% endif %}" for="pay_click">
+                                <input type="radio" name="provider" value="click" id="pay_click" {% if selected_provider == 'click' %}checked{% endif %}>
                                 <div>
                                     <div class="payment-badge payment-badge-click mb-2"><i class="fas fa-bolt mr-1"></i> CLICK</div>
                                     <h6 class="font-weight-bold mb-1">Click orqali to'lov</h6>
@@ -203,8 +213,8 @@
                             </label>
 
                             <!-- Payme -->
-                            <label class="payment-option-card" for="pay_payme">
-                                <input type="radio" name="provider" value="payme" id="pay_payme">
+                            <label class="payment-option-card {% if selected_provider == 'payme' %}active{% endif %}" for="pay_payme">
+                                <input type="radio" name="provider" value="payme" id="pay_payme" {% if selected_provider == 'payme' %}checked{% endif %}>
                                 <div>
                                     <div class="payment-badge payment-badge-payme mb-2"><i class="fas fa-wallet mr-1"></i> PAYME</div>
                                     <h6 class="font-weight-bold mb-1">Payme orqali to'lov</h6>
@@ -213,24 +223,26 @@
                             </label>
 
                             <!-- Uzum Bank -->
-                            <label class="payment-option-card" for="pay_uzum">
-                                <input type="radio" name="provider" value="uzum" id="pay_uzum">
+                            <label class="payment-option-card {% if selected_provider == 'uzum' %}active{% endif %}" for="pay_uzum">
+                                <input type="radio" name="provider" value="uzum" id="pay_uzum" {% if selected_provider == 'uzum' %}checked{% endif %}>
                                 <div>
                                     <div class="payment-badge payment-badge-uzum mb-2"><i class="fas fa-university mr-1"></i> UZUM</div>
                                     <h6 class="font-weight-bold mb-1">Uzum Bank</h6>
-                                    <small class="text-muted d-block">Uzum Pay va kartalar</small>
+                                    <small class="text-muted d-block">Uzum Pay va barcha kartalar</small>
                                 </div>
                             </label>
 
+                            {% if financials.prepayment_percent == 0 %}
                             <!-- Cash on delivery -->
-                            <label class="payment-option-card" for="pay_cash">
-                                <input type="radio" name="provider" value="cash" id="pay_cash">
+                            <label class="payment-option-card {% if selected_provider == 'cash' %}active{% endif %}" for="pay_cash">
+                                <input type="radio" name="provider" value="cash" id="pay_cash" {% if selected_provider == 'cash' %}checked{% endif %}>
                                 <div>
                                     <div class="payment-badge payment-badge-cash mb-2"><i class="fas fa-hand-holding-usd mr-1"></i> NAQD</div>
                                     <h6 class="font-weight-bold mb-1">Yetkazilganda to'lash</h6>
                                     <small class="text-muted d-block">Kuryerga naqd yoki karta orqali</small>
                                 </div>
                             </label>
+                            {% endif %}
                         </div>
                     </div>
 
@@ -273,8 +285,8 @@
                         <h5 class="font-weight-bold text-dark mb-3">Buyurtma Xulosasi</h5>
 
                         <div class="summary-line">
-                            <span>Mahsulotlar ({{ cart_count }} dona):</span>
-                            <span class="font-weight-bold text-dark">{{ cart_total|uz_price }}</span>
+                            <span>Jami Mahsulotlar:</span>
+                            <span class="font-weight-bold text-dark">{{ financials.grand_total|uz_price }}</span>
                         </div>
 
                         <div class="summary-line">
@@ -282,18 +294,36 @@
                             <span class="badge badge-success px-2 py-1">Bepul</span>
                         </div>
 
+                        {% if financials.prepayment_percent > 0 %}
                         <div class="summary-line">
-                            <span>Xizmat haqi:</span>
-                            <span class="text-muted">0 so'm</span>
+                            <span>Oldindan to'lov:</span>
+                            <span class="badge badge-primary px-2 py-1">{{ financials.prepayment_percent }}%</span>
                         </div>
 
+                        <hr class="my-2">
+
+                        <div class="summary-line summary-total mb-1">
+                            <span style="color: #0f172a;">Hozir to'lanadi:</span>
+                            <span class="text-primary font-weight-bold" style="font-size: 1.3rem;">{{ financials.prepayment_amount|uz_price }}</span>
+                        </div>
+
+                        <div class="summary-line">
+                            <span class="text-muted">Yetkazilganda to'lanadi:</span>
+                            <span class="font-weight-bold text-dark">{{ financials.remaining_amount|uz_price }}</span>
+                        </div>
+                        {% else %}
                         <div class="summary-line summary-total">
                             <span>Jami To'lov:</span>
-                            <span class="text-primary font-weight-bold" style="font-size: 1.3rem;">{{ cart_total|uz_price }}</span>
+                            <span class="text-primary font-weight-bold" style="font-size: 1.3rem;">{{ financials.grand_total|uz_price }}</span>
                         </div>
+                        {% endif %}
 
-                        <button type="submit" class="checkout-submit-btn" id="submitBtn">
-                            <i class="fas fa-shield-alt mr-2"></i> To'lovga O'tish
+                        <button type="submit" class="checkout-submit-btn mt-3" id="submitBtn">
+                            {% if financials.prepayment_percent > 0 %}
+                            <i class="fas fa-shield-alt mr-2"></i> {{ financials.prepayment_amount|uz_price }} To'lash
+                            {% else %}
+                            <i class="fas fa-check mr-2"></i> Buyurtmani Tasdiqlash
+                            {% endif %}
                         </button>
 
                         <div class="text-center mt-3 small text-muted">
@@ -310,6 +340,8 @@
 document.addEventListener('DOMContentLoaded', function() {
     const optionCards = document.querySelectorAll('.payment-option-card');
     const submitBtn = document.getElementById('submitBtn');
+    const prepaymentAmount = "{{ financials.prepayment_amount|uz_price }}";
+    const prepaymentPercent = {{ financials.prepayment_percent|default:0 }};
 
     optionCards.forEach(card => {
         card.addEventListener('click', function() {
@@ -321,7 +353,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (radio.value === 'cash') {
                     submitBtn.innerHTML = '<i class="fas fa-check mr-2"></i> Buyurtmani Tasdiqlash';
                 } else {
-                    submitBtn.innerHTML = '<i class="fas fa-shield-alt mr-2"></i> To\'lovga O\'tish (' + radio.value.toUpperCase() + ')';
+                    if (prepaymentPercent > 0) {
+                        submitBtn.innerHTML = '<i class="fas fa-shield-alt mr-2"></i> ' + prepaymentAmount + ' To\'lash (' + radio.value.toUpperCase() + ')';
+                    } else {
+                        submitBtn.innerHTML = '<i class="fas fa-shield-alt mr-2"></i> To\'lovga O\'tish (' + radio.value.toUpperCase() + ')';
+                    }
                 }
             }
         });

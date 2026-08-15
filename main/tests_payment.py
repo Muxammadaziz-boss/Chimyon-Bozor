@@ -36,6 +36,10 @@ class PaymentIntegrationTestCase(TestCase):
             price=Decimal('1000000.00'),
             count=10
         )
+        self.site_settings = models.SiteSettings.objects.create(
+            site_name="Chimyon-bozor",
+            prepayment_enabled=False
+        )
 
     def test_payment_model_creation_and_properties(self):
         cart = models.Cart.objects.create(user=self.user, status=1)

@@ -42,8 +42,8 @@ class UserAdmin(admin.ModelAdmin):
 
 @admin.register(models.Cart)
 class CartAdmin(admin.ModelAdmin):
-    list_display = ('code', 'user', 'status', 'date')
-    list_filter = ('status',)
+    list_display = ('code', 'user', 'status', 'financial_status', 'prepayment_percent', 'prepayment_amount', 'date')
+    list_filter = ('status', 'financial_status', 'prepayment_percent')
     inlines = [CartProductInline]
 
 
@@ -59,7 +59,7 @@ class WishListAdmin(admin.ModelAdmin):
 
 @admin.register(models.SiteSettings)
 class SiteSettingsAdmin(admin.ModelAdmin):
-    list_display = ('site_name', 'phone', 'email')
+    list_display = ('site_name', 'prepayment_enabled', 'prepayment_percent', 'phone', 'email')
 
 
 @admin.register(models.Address)
@@ -78,8 +78,8 @@ class OTPCodeAdmin(admin.ModelAdmin):
 
 @admin.register(models.Payment)
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ('code', 'order', 'provider', 'amount', 'currency', 'status', 'transaction_id', 'created_at')
-    list_filter = ('status', 'provider', 'currency', 'created_at')
+    list_display = ('code', 'order', 'provider', 'purpose', 'amount', 'currency', 'status', 'transaction_id', 'created_at')
+    list_filter = ('status', 'provider', 'purpose', 'currency', 'created_at')
     search_fields = ('code', 'transaction_id', 'order__code', 'order__user__username')
     readonly_fields = ('code', 'created_at', 'updated_at', 'paid_at', 'refunded_at')
 

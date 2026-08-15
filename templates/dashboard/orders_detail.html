@@ -280,52 +280,34 @@
 
             <!-- To'lov Ma'lumotlari -->
             <div class="print-info-box" style="border-color: #3b82f6 !important;">
-              <h6 class="font-weight-bold text-primary"><i class="fas fa-credit-card mr-2 no-print"></i>To'lov Ma'lumotlari</h6>
-              {% if primary_payment %}
+              <h6 class="font-weight-bold text-primary"><i class="fas fa-credit-card mr-2 no-print"></i>Moliyaviy Holat & To'lov</h6>
               <p class="mb-1">
-                <strong>Provayder:</strong> 
-                {% if primary_payment.provider == 'click' %}
-                  <span class="badge badge-info"><i class="fas fa-bolt mr-1 no-print"></i> Click</span>
-                {% elif primary_payment.provider == 'payme' %}
-                  <span class="badge badge-success"><i class="fas fa-wallet mr-1 no-print"></i> Payme</span>
-                {% elif primary_payment.provider == 'uzum' %}
-                  <span class="badge badge-primary"><i class="fas fa-university mr-1 no-print"></i> Uzum Bank</span>
+                <strong>Moliyaviy status:</strong>
+                {% if order.financial_status == 'fully_paid' %}
+                  <span class="badge badge-success font-weight-bold"><i class="fas fa-check-circle mr-1 no-print"></i> To'liq to'langan</span>
+                {% elif order.financial_status == 'partially_paid' %}
+                  <span class="badge badge-info font-weight-bold"><i class="fas fa-adjust mr-1 no-print"></i> Qisman to'langan ({{ order.prepayment_percent }}%)</span>
+                {% elif order.financial_status == 'refunded' %}
+                  <span class="badge badge-secondary font-weight-bold"><i class="fas fa-undo mr-1 no-print"></i> Qaytarilgan</span>
                 {% else %}
-                  <span class="badge badge-warning" style="background-color: #fef3c7 !important; color: #92400e !important;"><i class="fas fa-hand-holding-usd mr-1 no-print"></i> Naqd to'lov</span>
+                  <span class="badge badge-warning font-weight-bold" style="background-color: #fef3c7 !important; color: #92400e !important; border: 1px solid #fde68a;"><i class="fas fa-clock mr-1 no-print"></i> To'lanmagan</span>
                 {% endif %}
               </p>
-              <p class="mb-1">
-                <strong>Holat:</strong> 
-                {% if primary_payment.status == 'paid' %}
-                  <span class="badge badge-success"><i class="fas fa-check-circle mr-1 no-print"></i> To'langan</span>
-                {% elif primary_payment.status == 'pending' %}
-                  <span class="badge badge-warning" style="background-color: #fef3c7 !important; color: #92400e !important; border: 1px solid #fde68a; font-weight: 700;"><i class="fas fa-clock mr-1 no-print"></i> Kutilmoqda</span>
-                {% elif primary_payment.status == 'refunded' %}
-                  <span class="badge badge-secondary"><i class="fas fa-undo mr-1 no-print"></i> Qaytarilgan</span>
-                {% else %}
-                  <span class="badge badge-info">{{ primary_payment.get_status_display }}</span>
-                {% endif %}
-              </p>
-              {% if primary_payment.transaction_id %}
-              <p class="mb-1"><strong>Tranzaksiya ID:</strong> <code>{{ primary_payment.transaction_id }}</code></p>
-              {% endif %}
-              <p class="mb-1"><strong>Summa:</strong> <span class="font-weight-bold text-dark">{{ primary_payment.amount|uz_price }}</span></p>
-              {% if primary_payment.paid_at %}
-              <p class="mb-0 text-muted small"><strong>To'langan vaqt:</strong> {{ primary_payment.paid_at|date:"d.m.Y H:i" }}</p>
-              {% endif %}
-
-              {% if primary_payment.status == 'paid' %}
-              <div class="mt-2 no-print">
-                <form method="POST" action="{% url 'd_refund_payment' primary_payment.id %}" onsubmit="return confirm('Haqiqatan ham ushbu to\'lovni qaytarmoqchimisiz?');">
-                  {% csrf_token %}
-                  <input type="hidden" name="reason" value="Admin tomonidan buyurtma bekor qilinganligi sababli">
-                  <button type="submit" class="btn btn-sm btn-outline-danger btn-block"><i class="fas fa-undo mr-1"></i> To'lovni Qaytarish (Refund)</button>
-                </form>
+              <p class="mb-1"><strong>Jami summa:</strong> <span class="font-weight-bold text-dark">{{ financials.grand_total|uz_price }}</span></p>
+              <p class="mb-1"><strong>To'langan summa:</strong> <span class="font-weight-bold text-success">{{ financials.paid_amount|uz_price }}</span></p>
+              
+              {% if financials.remaining_amount > 0 %}
+              <div class="p-2 rounded mt-2 mb-2" style="background: #fef2f2; border: 1px solid #fecaca;">
+                <span class="text-danger font-weight-bold small d-block">Qolgan Qoldiq Summa:</span>
+                <span class="font-weight-bold text-danger" style="font-size: 1.1rem;">{{ financials.remaining_amount|uz_price }}</span>
               </div>
-              {% endif %}
-
+              <div class="no-print mt-2">
+                <button type="button" class="btn btn-sm btn-success btn-block font-weight-bold" data-toggle="modal" data-target="#settleBalanceModal">
+                  <i class="fas fa-hand-holding-usd mr-1"></i> Qoldiq To'landi (Naqd)
+                </button>
+              </div>
               {% else %}
-              <p class="text-muted small mb-0">Ushbu buyurtmaga to'lov biriktirilmagan (Yetkazilganda naqd to'lov).</p>
+              <p class="mb-0 text-success font-weight-bold small mt-1"><i class="fas fa-check-double mr-1"></i> Qoldiq summa qolmagan</p>
               {% endif %}
             </div>
           </div>
@@ -441,6 +423,76 @@
             </div>
           </div>
 
+          <!-- 5.5 To'lovlar Jurnali (Payment Ledger - Screen Only) -->
+          <div class="row mt-4 no-print">
+            <div class="col-12">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="font-weight-bold text-dark mb-0"><i class="fas fa-receipt mr-2 text-success"></i>To'lovlar Jurnali (Payment Ledger)</h6>
+                {% if financials.remaining_amount > 0 %}
+                <button type="button" class="btn btn-sm btn-success font-weight-bold" data-toggle="modal" data-target="#settleBalanceModal">
+                  <i class="fas fa-hand-holding-usd mr-1"></i> Qoldiqni Qabul Qilish ({{ financials.remaining_amount|uz_price }})
+                </button>
+                {% endif %}
+              </div>
+              <div class="table-responsive">
+                <table class="table table-sm table-bordered table-striped mb-0">
+                  <thead class="bg-light">
+                    <tr>
+                      <th>Maqsad</th>
+                      <th>Provayder</th>
+                      <th>Summa</th>
+                      <th>Holati</th>
+                      <th>Tranzaksiya ID</th>
+                      <th>Sana</th>
+                      <th class="text-center" style="width: 130px;">Amal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for p in payments %}
+                    <tr>
+                      <td>
+                        <span class="badge badge-primary font-weight-bold">{{ p.get_purpose_display }}</span>
+                      </td>
+                      <td><strong>{{ p.get_provider_display }}</strong></td>
+                      <td class="font-weight-bold text-dark">{{ p.amount|uz_price }}</td>
+                      <td>
+                        {% if p.status == 'paid' %}
+                          <span class="badge badge-success"><i class="fas fa-check-circle mr-1"></i> To'langan</span>
+                        {% elif p.status == 'pending' %}
+                          <span class="badge badge-warning" style="background-color: #fef3c7 !important; color: #92400e !important;"><i class="fas fa-clock mr-1"></i> Kutilmoqda</span>
+                        {% elif p.status == 'refunded' %}
+                          <span class="badge badge-secondary"><i class="fas fa-undo mr-1"></i> Qaytarilgan</span>
+                        {% else %}
+                          <span class="badge badge-info">{{ p.get_status_display }}</span>
+                        {% endif %}
+                      </td>
+                      <td><code>{{ p.transaction_id|default:"—" }}</code></td>
+                      <td class="text-muted small">{{ p.created_at|date:"d.m.Y H:i" }}</td>
+                      <td class="text-center">
+                        {% if p.status == 'paid' %}
+                        <form method="POST" action="{% url 'd_refund_payment' p.id %}" onsubmit="return confirm('Haqiqatan ham ushbu to\'lovni ({{ p.amount|uz_price }}) qaytarmoqchimisiz?');" class="d-inline">
+                          {% csrf_token %}
+                          <input type="hidden" name="reason" value="Admin tomonidan buyurtma to'lovi qaytarildi">
+                          <button type="submit" class="btn btn-xs btn-outline-danger py-0 px-2 font-weight-bold" style="font-size: 11px;">
+                            <i class="fas fa-undo"></i> Qaytarish
+                          </button>
+                        </form>
+                        {% else %}
+                        <span class="text-muted small">—</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                      <td colspan="7" class="text-center py-2 text-muted small">Ushbu buyurtmada to'lovlar mavjud emas</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
           <!-- 6. Status O'zgarishlar Tarixi (Screen Only) -->
           <div class="row mt-4 no-print">
             <div class="col-12">
@@ -494,4 +546,44 @@
     </div>
   </section>
 </div>
+
+<!-- Settle Balance Modal (Admin) -->
+{% if financials.remaining_amount > 0 %}
+<div class="modal fade" id="settleBalanceModal" tabindex="-1" role="dialog" aria-labelledby="settleBalanceModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title font-weight-bold text-dark" id="settleBalanceModalLabel">Qoldiq To'lovni Qabul Qilish</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <form method="POST" action="{% url 'd_settle_order_balance' order.code %}">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="alert alert-info">
+            Buyurtma #{order.code[:8]} bo'yicha to'lanmagan qoldiq:
+            <strong class="d-block font-weight-bold" style="font-size: 1.25rem;">{{ financials.remaining_amount|uz_price }}</strong>
+          </div>
+          <div class="form-group">
+            <label class="font-weight-bold">Qabul qilingan summa (so'm):</label>
+            <input type="number" step="0.01" name="amount" class="form-control font-weight-bold" value="{{ financials.remaining_amount }}" max="{{ financials.remaining_amount }}" required>
+            <small class="text-muted">Standart holatda to'liq qoldiq kiritilgan.</small>
+          </div>
+          <div class="form-group">
+            <label class="font-weight-bold">To'lov usuli / Izoh:</label>
+            <input type="text" name="comment" class="form-control" placeholder="Masalan: Kuryer orqali naqd / POS-terminal orqali qabul qilindi">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Bekor qilish</button>
+          <button type="submit" class="btn btn-success font-weight-bold">
+            <i class="fas fa-check-circle mr-1"></i> Qoldiqni To'langan Deb Belgilash
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
 {% endblock %}

@@ -688,6 +688,7 @@ def cart(request):
 def checkout(request):
     """
     Checkout sahifasi (GET) va Buyurtma/To'lov yaratish (POST).
+    Partial Prepayment (0%, 30%, 50%, 100%) tizimi bilan to'liq integratsiya qilingan.
     """
     user = request.user
     cart = models.Cart.objects.filter(user=user, status=1).first()
@@ -696,13 +697,13 @@ def checkout(request):
         return redirect('cart')
 
     cart_products = list(cart.cart_products.filter(product__isnull=False).select_related('product', 'product__category'))
-    cart_total = sum(item.total_price for item in cart_products)
     cart_count = sum(item.count for item in cart_products)
+    financials = PaymentManager.calculate_order_financials(cart)
 
     if request.method == 'POST':
         phone = request.POST.get('phone', '').strip()
         address = request.POST.get('address', '').strip()
-        provider = request.POST.get('provider', models.Payment.Provider.CASH).strip().lower()
+        provider = request.POST.get('provider', models.Payment.Provider.CLICK if financials['prepayment_percent'] > 0 else models.Payment.Provider.CASH).strip().lower()
         payment_method = request.POST.get('payment_method', 'card').strip()
 
         # Update user profile details if provided
@@ -718,8 +719,9 @@ def checkout(request):
             return render(request, 'front/checkout.html', {
                 'cart': cart,
                 'cart_products': cart_products,
-                'cart_total': cart_total,
+                'cart_total': financials['grand_total'],
                 'cart_count': cart_count,
+                'financials': financials,
                 'selected_provider': provider,
             })
 
@@ -729,29 +731,30 @@ def checkout(request):
                 messages.error(request, f'"{item.product.name}" mahsulotidan omborda yetarli qoldiq mavjud emas (Mavjud: {item.product.count} dona).')
                 return redirect('cart')
 
-        try:
-            with transaction.atomic():
-                # Deduct stock atomically
-                for item in cart_products:
-                    updated = models.Product.objects.filter(
-                        pk=item.product.pk,
-                        count__gte=item.count,
-                    ).update(count=F('count') - item.count)
-                    if not updated:
-                        messages.error(request, "Ombor yangilanishida xatolik yuz berdi. Qayta urinib ko'ring.")
-                        return redirect('cart')
+        # Check prepayment requirements
+        if financials['prepayment_percent'] > 0 and provider == models.Payment.Provider.CASH:
+            messages.error(request, f"Ushbu buyurtma uchun {financials['prepayment_percent']}% oldindan to'lov talab qilinadi. Iltimos, onlayn to'lov usulini (Click, Payme, Uzum) tanlang.")
+            return render(request, 'front/checkout.html', {
+                'cart': cart,
+                'cart_products': cart_products,
+                'cart_total': financials['grand_total'],
+                'cart_count': cart_count,
+                'financials': financials,
+                'selected_provider': provider,
+            })
 
-                # Create payment & get checkout URL via PaymentManager
-                payment, checkout_url = PaymentManager.create_payment(
-                    order=cart,
-                    provider_name=provider,
-                    payment_method=payment_method,
-                    request=request
-                )
+        try:
+            # Create payment & get checkout URL via PaymentManager
+            payment, checkout_url = PaymentManager.create_payment(
+                order=cart,
+                provider_name=provider,
+                payment_method=payment_method,
+                request=request
+            )
 
             # Redirect to provider checkout or success page
             if provider == models.Payment.Provider.CASH:
-                messages.success(request, f"Buyurtmangiz muvaffaqiyatli qabul qilindi! Buyurtma kodi: #{cart.code[:8]}")
+                messages.success(request, f"Buyurtmangiz muvaffaqiyatli qabul qilindi! Buyurtma kodi: #{str(cart.code)[:8]}")
                 return redirect('payment_success', code=cart.code)
             else:
                 return redirect(checkout_url)
@@ -762,12 +765,14 @@ def checkout(request):
             return redirect('checkout')
 
     # GET request
+    default_provider = 'click' if financials['prepayment_percent'] > 0 else 'cash'
     context = {
         'cart': cart,
         'cart_products': cart_products,
-        'cart_total': cart_total,
+        'cart_total': financials['grand_total'],
         'cart_count': cart_count,
-        'selected_provider': models.Payment.Provider.CASH,
+        'financials': financials,
+        'selected_provider': default_provider,
     }
     return render(request, 'front/checkout.html', context)
 
@@ -784,15 +789,20 @@ def payment_webhook(request, provider):
 def payment_success(request, code):
     """
     To'lov muvaffaqiyatli amalga oshirilgandan keyingi sahifa.
+    Oldindan to'lov va qoldiq ma'lumotlarini aniq ko'rsatadi.
     """
     order = get_object_or_404(models.Cart, user=request.user, code=code)
-    payment = order.payments.first()
+    payments = order.payments.all().order_by('-created_at')
+    primary_payment = payments.first()
     cart_products = order.cart_products.filter(product__isnull=False).select_related('product', 'product__category')
+    financials = PaymentManager.calculate_order_financials(order)
 
     return render(request, 'front/payment_success.html', {
         'order': order,
-        'payment': payment,
+        'payment': primary_payment,
+        'payments': payments,
         'cart_products': cart_products,
+        'financials': financials,
     })
 
 
@@ -803,10 +813,12 @@ def payment_failed(request, code):
     """
     order = get_object_or_404(models.Cart, user=request.user, code=code)
     payment = order.payments.first()
+    financials = PaymentManager.calculate_order_financials(order)
 
     return render(request, 'front/payment_failed.html', {
         'order': order,
         'payment': payment,
+        'financials': financials,
     })
 
 
@@ -823,11 +835,41 @@ def retry_payment(request, code):
         payment, checkout_url = PaymentManager.create_payment(
             order=order,
             provider_name=provider,
+            purpose=models.Payment.Purpose.PREPAYMENT if order.prepayment_percent in (30, 50) else models.Payment.Purpose.FULL,
             request=request
         )
         return redirect(checkout_url)
     except Exception as e:
         messages.error(request, f"To'lovni qayta boshlashda xatolik: {str(e)}")
+        return redirect('order_detail', code=order.code)
+
+
+@login_required(login_url='login')
+@require_POST
+def pay_balance(request, code):
+    """
+    Mijoz tomonidan buyurtmaning qolgan qoldiq summasini onlayn to'lash.
+    """
+    order = get_object_or_404(models.Cart, user=request.user, code=code, status__gt=1)
+    if order.remaining_amount <= Decimal('0.00'):
+        messages.info(request, "Ushbu buyurtma allaqachon to'liq to'langan.")
+        return redirect('order_detail', code=order.code)
+
+    provider = request.POST.get('provider', models.Payment.Provider.CLICK).strip().lower()
+    if provider == models.Payment.Provider.CASH:
+        messages.info(request, "Qoldiq summa buyurtma yetkazilganda kuryerga naqd yoki karta orqali to'lanadi.")
+        return redirect('order_detail', code=order.code)
+
+    try:
+        payment, checkout_url = PaymentManager.create_payment(
+            order=order,
+            provider_name=provider,
+            purpose=models.Payment.Purpose.BALANCE,
+            request=request
+        )
+        return redirect(checkout_url)
+    except Exception as e:
+        messages.error(request, f"Qoldiq to'lovni boshlashda xatolik: {str(e)}")
         return redirect('order_detail', code=order.code)
 
 
@@ -840,11 +882,16 @@ def order_history(request):
 def order_detail(request, code):
     order = get_object_or_404(models.Cart, user=request.user, code=code, status__gt=1)
     cart_products = order.cart_products.filter(product__isnull=False)
-    payment = order.payments.first()
+    payments = order.payments.all().order_by('-created_at')
+    primary_payment = payments.first()
+    financials = PaymentManager.calculate_order_financials(order)
+
     return render(request, 'front/order_detail.html', {
         'order': order,
         'cart_products': cart_products,
-        'payment': payment,
+        'payment': primary_payment,
+        'payments': payments,
+        'financials': financials,
     })
 
 

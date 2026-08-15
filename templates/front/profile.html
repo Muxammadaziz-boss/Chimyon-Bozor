@@ -808,6 +808,7 @@
                                         <tr>
                                             <th class="ps-4">Kod</th>
                                             <th>Holat</th>
+                                            <th>To'lov holati</th>
                                             <th>Sana</th>
                                             <th>Mahsulotlar</th>
                                             <th>Jami summa</th>
@@ -831,6 +832,17 @@
                                                     <span class="status-badge status-badge-cancelled"><i class="fas fa-times-circle"></i> Qaytarilgan</span>
                                                 {% else %}
                                                     <span class="status-badge status-badge-default">{{ order.get_status_display }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if order.financial_status == 'fully_paid' %}
+                                                    <span class="badge bg-success text-white px-2 py-1"><i class="fas fa-check-circle mr-1"></i> To'liq to'langan</span>
+                                                {% elif order.financial_status == 'partially_paid' %}
+                                                    <span class="badge bg-info text-white px-2 py-1"><i class="fas fa-adjust mr-1"></i> Qisman ({{ order.prepayment_percent }}%)</span>
+                                                {% elif order.financial_status == 'refunded' %}
+                                                    <span class="badge bg-secondary text-white px-2 py-1"><i class="fas fa-undo mr-1"></i> Qaytarilgan</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning text-dark px-2 py-1"><i class="fas fa-clock mr-1"></i> To'lanmagan</span>
                                                 {% endif %}
                                             </td>
                                             <td class="text-muted">{{ order.date|date:"d.m.Y, H:i" }}</td>
