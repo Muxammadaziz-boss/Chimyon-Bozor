@@ -77,6 +77,51 @@
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
     }
+    .btn-orders-back {
+        background: #ffffff !important;
+        color: #1e293b !important;
+        font-weight: 700 !important;
+        font-size: 15px !important;
+        padding: 12px 26px !important;
+        border-radius: 999px !important;
+        border: 2px solid #cbd5e1 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+        transition: all 0.2s ease !important;
+        text-decoration: none !important;
+    }
+    .btn-orders-back:hover {
+        background: #f8fafc !important;
+        border-color: #7c3aed !important;
+        color: #7c3aed !important;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(124, 58, 237, 0.12) !important;
+    }
+    .btn-catalog-action {
+        background: linear-gradient(135deg, #7c3aed, #6d28d9) !important;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        font-size: 15px !important;
+        padding: 12px 26px !important;
+        border-radius: 999px !important;
+        border: none !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        box-shadow: 0 4px 14px rgba(124, 58, 237, 0.3) !important;
+        transition: all 0.2s ease !important;
+        text-decoration: none !important;
+    }
+    .btn-catalog-action:hover {
+        background: linear-gradient(135deg, #6d28d9, #5b21b6) !important;
+        color: #ffffff !important;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 22px rgba(124, 58, 237, 0.4) !important;
+    }
 </style>
 
 <section class="breadcrumb breadcrumb-one padding-y-60 section-bg position-relative z-index-1 overflow-hidden">
@@ -107,7 +152,9 @@
 
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <span class="text-muted font-weight-600">Buyurtma statusi:</span>
-                        <span class="badge badge-info px-2 py-1 font-weight-bold">{{ order.get_status_display }}</span>
+                        <span class="status-badge" style="background-color: #f1f5f9; color: #0f172a !important; border: 1.5px solid #cbd5e1; font-weight: 700; padding: 5px 14px; border-radius: 999px;">
+                            <i class="fas fa-box text-primary mr-1"></i> {{ order.get_status_display }}
+                        </span>
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -127,20 +174,20 @@
 
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span class="text-muted font-weight-600">Jami buyurtma:</span>
-                        <strong class="text-dark">{{ financials.grand_total|uz_price }}</strong>
+                        <strong class="text-dark font-weight-bold" style="color: #0f172a !important;">{{ financials.grand_total|uz_price }}</strong>
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span class="text-muted font-weight-600">To'langan summa:</span>
-                        <strong class="text-success">{{ financials.paid_amount|uz_price }}</strong>
+                        <strong class="text-success font-weight-bold">{{ financials.paid_amount|uz_price }}</strong>
                     </div>
 
-                    {% if order.prepayment_percent > 0 %}
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span class="text-muted font-weight-600">Oldindan to'lov foizi:</span>
-                        <span class="badge badge-light border">{{ order.prepayment_percent }}%</span>
+                        <span class="status-badge" style="background-color: #f3e8ff; color: #7c3aed !important; border: 1.5px solid #d8b4fe; font-size: 13px; font-weight: 700; padding: 4px 12px; border-radius: 999px;">
+                            <i class="fas fa-percentage mr-1"></i> {{ order.prepayment_percent|default:0 }}%
+                        </span>
                     </div>
-                    {% endif %}
 
                     {% if financials.remaining_amount > 0 %}
                     <div class="balance-box">
@@ -195,7 +242,7 @@
                                     <td>
                                         <div class="d-flex align-items-center gap-3">
                                             {% if item.product.image %}
-                                            <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" style="width:54px;height:54px;object-fit:cover;border-radius:10px;">
+                                             <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" style="width:54px;height:54px;object-fit:cover;border-radius:10px;">
                                             {% endif %}
                                             <div>
                                                 <h6 class="mb-0 font-weight-bold text-dark">{{ item.product.name }}</h6>
@@ -204,7 +251,7 @@
                                         </div>
                                     </td>
                                     <td>{{ item.unit_price|uz_price }}</td>
-                                    <td><span class="badge badge-light border px-2 py-1">{{ item.count }} dona</span></td>
+                                    <td><span style="background:#f1f5f9; color:#1e293b !important; font-weight:700; padding:4px 10px; border-radius:8px; border:1px solid #e2e8f0; display:inline-block;">{{ item.count }} dona</span></td>
                                     <td class="text-right font-weight-bold text-dark">{{ item.total_price|uz_price }}</td>
                                 </tr>
                                 {% endfor %}
@@ -265,11 +312,11 @@
                     {% endif %}
                 </div>
 
-                <div class="d-flex gap-3 flex-wrap">
-                    <a href="{% url 'order_history' %}" class="btn btn-outline-secondary pill px-4 py-2 font-weight-bold" style="border: 2px solid #cbd5e1; color: #1e293b;">
+                <div class="d-flex gap-3 flex-wrap align-items-center mt-3">
+                    <a href="{% url 'order_history' %}" class="btn-orders-back">
                         <i class="fas fa-arrow-left mr-1"></i> Barcha Buyurtmalar
                     </a>
-                    <a href="{% url 'all_products' %}" class="btn btn-main pill px-4 py-2 font-weight-bold">
+                    <a href="{% url 'all_products' %}" class="btn-catalog-action">
                         <i class="fas fa-shopping-bag mr-1"></i> Katalogga Qaytish
                     </a>
                 </div>
