@@ -1,7 +1,97 @@
 {% extends 'base.html' %}
 {% load static shop_extras %}
 
-{% block title %}{{ product.name }} | Chimyon-bozor{% endblock %}
+{% block title %}{{ product.name }} — narxi, xususiyatlari va sotib olish | Chimyon-bozor{% endblock %}
+
+{% block meta_description %}{{ product.name }} mahsulotini arzon narxda sotib oling. Narxi: {{ product.active_price|intspace }} so'm. {{ product.description|striptags|truncatechars:140 }}{% endblock %}
+
+{% block canonical %}
+<link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{% url 'product_detail' product.code %}">
+{% endblock %}
+
+{% block og_type %}product{% endblock %}
+{% block og_title %}{{ product.name }} | Chimyon-bozor{% endblock %}
+{% block og_description %}{{ product.name }} — {{ product.active_price|intspace }} so'm. {{ product.description|striptags|truncatechars:150 }}{% endblock %}
+
+{% block og_image_block %}
+{% if product.image %}
+<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ product.image.url }}">
+{% else %}
+<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'assets/images/thumbs/product-details.png' %}">
+{% endif %}
+{% endblock %}
+
+{% block twitter_title %}{{ product.name }} | Chimyon-bozor{% endblock %}
+{% block twitter_description %}{{ product.name }} — {{ product.active_price|intspace }} so'm. {{ product.description|striptags|truncatechars:150 }}{% endblock %}
+{% block twitter_image_block %}
+{% if product.image %}
+<meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{{ product.image.url }}">
+{% else %}
+<meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'assets/images/thumbs/product-details.png' %}">
+{% endif %}
+{% endblock %}
+
+{% block structured_data %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "{{ product.name|escapejs }}",
+  "image": [
+    {% if product.image %}"{{ request.scheme }}://{{ request.get_host }}{{ product.image.url }}"{% else %}"{{ request.scheme }}://{{ request.get_host }}{% static 'assets/images/thumbs/product-details.png' %}"{% endif %}
+  ],
+  "description": "{{ product.description|striptags|escapejs }}",
+  "sku": "{{ product.code }}",
+  "category": "{{ product.category.name|escapejs }}",
+  "offers": {
+    "@type": "Offer",
+    "url": "{{ request.scheme }}://{{ request.get_host }}{% url 'product_detail' product.code %}",
+    "priceCurrency": "UZS",
+    "price": "{{ product.active_price }}",
+    "itemCondition": "https://schema.org/NewCondition",
+    "availability": "{% if product.count > 0 %}https://schema.org/InStock{% else %}https://schema.org/OutOfStock{% endif %}",
+    "seller": {
+      "@type": "Organization",
+      "name": "Chimyon-bozor"
+    }
+  }
+  {% if product.reviews_count and product.reviews_count > 0 %}
+  ,
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "{{ product.avg_rating }}",
+    "reviewCount": "{{ product.reviews_count }}"
+  }
+  {% endif %}
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Bosh sahifa",
+      "item": "{{ request.scheme }}://{{ request.get_host }}/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "{{ product.category.name|escapejs }}",
+      "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'category_filter' product.category.id %}"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "{{ product.name|escapejs }}",
+      "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'product_detail' product.code %}"
+    }
+  ]
+}
+</script>
+{% endblock %}
 
 {% block content %}
 <style>
@@ -391,7 +481,7 @@
                     <span class="badge bg-light text-muted border px-3 py-1 rounded-pill font-13 fw-600 mb-2">
                         <i class="fas fa-layer-group me-1 text-main"></i> {{ product.category.name }}
                     </span>
-                    <h1 class="fw-800 text-heading mb-2" style="font-size: 24px; line-height: 1.25;">{{ product.name }}</h1>
+                    <div class="h2 fw-800 text-heading mb-2" style="font-size: 24px; line-height: 1.25;">{{ product.name }}</div>
                     <div class="d-flex align-items-center gap-2 mb-3">
                         <div class="text-warning font-14">
                             <i class="fas fa-star"></i> <strong class="text-dark">{{ product.avg_rating }}</strong>

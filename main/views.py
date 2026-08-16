@@ -22,6 +22,8 @@ from .validators import validate_image_file, normalize_uz_phone, PHONE_RE
 from .services.payment import PaymentManager
 from .services.payment.base import PaymentConfigurationError
 from django.contrib.auth import authenticate, login, logout
+from django.urls import reverse
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 send_otp_sms = send_sms_code
@@ -431,6 +433,18 @@ def _build_catalog_context(request, products_qs, active_category=None):
     total_matching_products = products_qs.count()
     page_obj = paginate_queryset(request, products_qs, per_page=20)
 
+    # SEO indexing policy & canonical URL calculation
+    is_filtered = bool(search_query or min_price or max_price or discount_filter or stock_filter or rating_filter or (sort and sort != 'recommended'))
+    page_num = request.GET.get('page')
+    is_paginated = bool(page_num and str(page_num).strip() not in ('1', ''))
+    is_thin_or_duplicate_seo = is_filtered or is_paginated
+
+    if active_category:
+        canonical_path = reverse('category_filter', kwargs={'category_id': active_category.id})
+    else:
+        canonical_path = reverse('all_products')
+    canonical_url = request.build_absolute_uri(canonical_path)
+
     context = {
         'categories': sidebar_categories,
         'top_categories': sidebar_categories[:7],
@@ -453,6 +467,8 @@ def _build_catalog_context(request, products_qs, active_category=None):
         'view_mode': view_mode,
         'active_chips': active_chips,
         'active_chips_count': len(active_chips),
+        'is_thin_or_duplicate_seo': is_thin_or_duplicate_seo,
+        'canonical_url': canonical_url,
     }
     _attach_cart_wishlist_context(request, context)
     return context
@@ -1546,6 +1562,112 @@ def custom_500_view(request):
 
 def custom_400_view(request, exception=None):
     return render(request, '400.html', status=400)
+
+
+def robots_txt_view(request):
+    """
+    Standard robots.txt allowing public search crawling and protecting private sections.
+    """
+    site_url = getattr(settings, 'SITE_URL', 'https://chimyon-bozor.uz').rstrip('/')
+    if request:
+        scheme = 'https' if request.is_secure() else 'http'
+        host = request.get_host()
+        if host and 'localhost' not in host and '127.0.0.1' not in host:
+            site_url = f"{scheme}://{host}"
+
+    lines = [
+        "User-agent: *",
+        "Allow: /",
+        "Allow: /categories/",
+        "Allow: /products/all/",
+        "Allow: /category-filter/",
+        "Allow: /products/category/",
+        "Allow: /product-detail/",
+        "Allow: /static/",
+        "Allow: /media/",
+        "",
+        "# Private & Transactional Paths (Disallowed from Crawling)",
+        "Disallow: /dashboard/",
+        "Disallow: /profile/",
+        "Disallow: /cart/",
+        "Disallow: /checkout/",
+        "Disallow: /orders/",
+        "Disallow: /payment/",
+        "Disallow: /api/",
+        "Disallow: /admin/",
+        "Disallow: /login/",
+        "Disallow: /register/",
+        "Disallow: /verify-otp/",
+        "Disallow: /resend-otp/",
+        "Disallow: /logout/",
+        "Disallow: /wishlist/",
+        "",
+        f"Sitemap: {site_url}/sitemap.xml",
+    ]
+    return HttpResponse("\n".join(lines), content_type="text/plain; charset=utf-8")
+
+
+def sitemap_xml_view(request):
+    """
+    Dynamic XML sitemap including only active public pages, categories, and products.
+    """
+    site_url = getattr(settings, 'SITE_URL', 'https://chimyon-bozor.uz').rstrip('/')
+    if request:
+        scheme = 'https' if request.is_secure() else 'http'
+        host = request.get_host()
+        if host and 'localhost' not in host and '127.0.0.1' not in host:
+            site_url = f"{scheme}://{host}"
+
+    categories = models.Category.objects.filter(is_active=True).order_by('name')
+    products = models.Product.objects.filter(category__is_active=True).select_related('category').order_by('-id')
+
+    xml_lines = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+        '  <!-- Static Core Pages -->',
+        '  <url>',
+        f'    <loc>{site_url}/</loc>',
+        '    <changefreq>daily</changefreq>',
+        '    <priority>1.0</priority>',
+        '  </url>',
+        '  <url>',
+        f'    <loc>{site_url}/categories/</loc>',
+        '    <changefreq>weekly</changefreq>',
+        '    <priority>0.8</priority>',
+        '  </url>',
+        '  <url>',
+        f'    <loc>{site_url}/products/all/</loc>',
+        '    <changefreq>daily</changefreq>',
+        '    <priority>0.9</priority>',
+        '  </url>',
+    ]
+
+    xml_lines.append('  <!-- Active Categories -->')
+    for cat in categories:
+        cat_url = f"{site_url}/category-filter/{cat.id}/"
+        xml_lines.extend([
+            '  <url>',
+            f'    <loc>{cat_url}</loc>',
+            '    <changefreq>daily</changefreq>',
+            '    <priority>0.8</priority>',
+            '  </url>',
+        ])
+
+    xml_lines.append('  <!-- Active Public Products -->')
+    for prod in products:
+        prod_url = f"{site_url}/product-detail/{prod.code}/"
+        lastmod = prod.updated_at.strftime('%Y-%m-%d') if prod.updated_at else (prod.created_at.strftime('%Y-%m-%d') if prod.created_at else None)
+        xml_lines.append('  <url>')
+        xml_lines.append(f'    <loc>{prod_url}</loc>')
+        if lastmod:
+            xml_lines.append(f'    <lastmod>{lastmod}</lastmod>')
+        xml_lines.append('    <changefreq>daily</changefreq>')
+        xml_lines.append('    <priority>0.7</priority>')
+        xml_lines.append('  </url>')
+
+    xml_lines.append('</urlset>')
+    xml_content = '\n'.join(xml_lines)
+    return HttpResponse(xml_content, content_type="application/xml; charset=utf-8")
 
 
 

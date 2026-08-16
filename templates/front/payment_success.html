@@ -1,7 +1,11 @@
 {% extends 'base.html' %}
 {% load static shop_extras %}
 
-{% block title %}To'lov Muvaffaqiyatli | {{ site_settings.site_name|default:"Chimyon-bozor" }}{% endblock %}
+{% block title %}To'lov muvaffaqiyatli | {{ site_settings.site_name|default:"Chimyon-bozor" }}{% endblock %}
+
+{% block meta_robots %}
+<meta name="robots" content="noindex, nofollow">
+{% endblock %}
 
 {% block content %}
 <style>

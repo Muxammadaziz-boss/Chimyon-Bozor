@@ -1,13 +1,47 @@
 {% extends 'base.html' %}
 {% load static shop_extras %}
 
-{% block title %}Bosh sahifa | {{ site_settings.site_name|default:"Chimyon-bozor" }}{% endblock %}
+{% block title %}Chimyon-bozor — Sifatli va hamyonbop mahsulotlar internet do'koni{% endblock %}
 
-{% block extra_css %}
-<meta name="description" content="{{ site_settings.tagline|default:'Sifatli mahsulotlarni qulay narxlarda xarid qiling. Tez yetkazib berish, kafolat va ishonchli xizmat.' }}">
+{% block meta_description %}Chimyon-bozor internet do'koni — sifatli mahsulotlar, qulay narxlar va tezkor yetkazib berish. Minglab mahsulotlar, chegirmalar va ishonchli xizmat.{% endblock %}
+
+{% block canonical %}
+<link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}/">
+{% endblock %}
+
+{% block structured_data %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Chimyon-bozor",
+  "url": "{{ request.scheme }}://{{ request.get_host }}/",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": {
+      "@type": "EntryPoint",
+      "urlTemplate": "{{ request.scheme }}://{{ request.get_host }}/products/all/?q={search_term_string}"
+    },
+    "query-input": "required name=search_term_string"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Chimyon-bozor",
+  "url": "{{ request.scheme }}://{{ request.get_host }}/",
+  "logo": "{{ request.scheme }}://{{ request.get_host }}{% static 'assets/images/logo/logo.png' %}",
+  "sameAs": [
+    "https://t.me/chimyon_bozor"
+  ]
+}
+</script>
 {% endblock %}
 
 {% block content %}
+<h1 class="visually-hidden">Chimyon-bozor — Sifatli va hamyonbop mahsulotlar internet do'koni</h1>
 
 
 <!-- Custom Hero Auto-Slide Banner Section (With Progress Line Indicator) -->

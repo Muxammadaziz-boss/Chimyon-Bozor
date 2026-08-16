@@ -36,5 +36,7 @@ urlpatterns = [
     path('api/check-username/', views.check_username_api, name='check_username_api'),
     path('api/check-phone/', views.check_phone_api, name='check_phone_api'),
     path('product-detail/<str:product_code>/add-review/', views.add_review, name='add_review'),
+    path('robots.txt', views.robots_txt_view, name='robots_txt'),
+    path('sitemap.xml', views.sitemap_xml_view, name='sitemap_xml'),
 ]
 

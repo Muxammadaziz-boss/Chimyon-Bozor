@@ -3,6 +3,10 @@
 
 {% block title %}Savatcha | {{ site_settings.site_name|default:"Chimyon-bozor" }}{% endblock %}
 
+{% block meta_robots %}
+<meta name="robots" content="noindex, nofollow">
+{% endblock %}
+
 {% block content %}
 <style>
     .cart-shell {

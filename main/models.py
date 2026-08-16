@@ -70,8 +70,13 @@ class Category(models.Model):
     logo = models.ImageField(upload_to='categories')
     name = models.CharField(max_length=150)
     is_active = models.BooleanField(default=False,null=True,blank=True)
+
     def __str__(self):
         return self.name
+
+    def get_absolute_url(self):
+        from django.urls import reverse
+        return reverse('category_filter', kwargs={'category_id': self.id})
 
 
 
@@ -86,6 +91,10 @@ class Product(Code):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     count = models.IntegerField(default=0)
+
+    def get_absolute_url(self):
+        from django.urls import reverse
+        return reverse('product_detail', kwargs={'code': self.code})
 
     @property
     def active_price(self):

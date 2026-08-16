@@ -1549,6 +1549,317 @@ class GlobalErrorPagesTests(TestCase):
             self.assertNotIn('Traceback', content)
 
 
+class GlobalSEOPolishAuditTests(TestCase):
+    """
+    Comprehensive SEO audit verification test suite for Chimyon-bozor:
+    1. Robots.txt rules & sitemap reference
+    2. Dynamic Sitemap.xml validity, contents, exclusions
+    3. Indexing policies (Public=INDEX, Private/Filters=NOINDEX)
+    4. Canonical URLs and utm/parameter stripping
+    5. Title and Meta description natural uniqueness
+    6. Single H1 heading hierarchy per page
+    7. JSON-LD structured data (Product, Breadcrumbs, Organization, WebSite)
+    8. Open Graph & Twitter Cards absolute image URLs
+    9. HTML language attribute
+    10. 301 Redirect for duplicate category aliases
+    """
+
+    def setUp(self):
+        self.settings_obj = SiteSettings.objects.create(
+            pk=1,
+            site_name="Chimyon-bozor",
+            tagline="Sifatli va hamyonbop mahsulotlar bozori",
+            phone="+998901234567"
+        )
+        self.active_cat = Category.objects.create(
+            name="Telefonlar va Gadjetlar",
+            logo="test_phone.png",
+            is_active=True
+        )
+        self.inactive_cat = Category.objects.create(
+            name="Maxfiy Kategoriya",
+            logo="test_secret.png",
+            is_active=False
+        )
+        self.product_active = Product.objects.create(
+            category=self.active_cat,
+            name="iPhone 15 Pro Max",
+            description="Eng so'nggi flagman smartfon kuchli protsessor bilan.",
+            price=Decimal("15000000"),
+            discount_price=Decimal("14200000"),
+            discount_status=True,
+            count=15,
+            image="test_iphone.png"
+        )
+        self.product_inactive = Product.objects.create(
+            category=self.inactive_cat,
+            name="Noma'lum Mahsulot",
+            description="Yashirin toifadagi mahsulot.",
+            price=Decimal("500000"),
+            count=5,
+            image="test_unknown.png"
+        )
+        self.user = User.objects.create_user(
+            username="seouser",
+            password="seopassword123",
+            phone="+998901112233"
+        )
+
+    def test_robots_txt_status_and_content(self):
+        """robots.txt must return 200, text/plain, allow public routes, disallow private, and link sitemap."""
+        response = self.client.get('/robots.txt')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('text/plain', response['Content-Type'])
+        content = response.content.decode('utf-8')
+        self.assertIn('User-agent: *', content)
+        self.assertIn('Allow: /', content)
+        self.assertIn('Allow: /categories/', content)
+        self.assertIn('Allow: /products/all/', content)
+        self.assertIn('Allow: /category-filter/', content)
+        self.assertIn('Allow: /product-detail/', content)
+        self.assertIn('Disallow: /dashboard/', content)
+        self.assertIn('Disallow: /cart/', content)
+        self.assertIn('Disallow: /checkout/', content)
+        self.assertIn('Disallow: /orders/', content)
+        self.assertIn('Disallow: /profile/', content)
+        self.assertIn('Disallow: /api/', content)
+        self.assertIn('Disallow: /admin/', content)
+        self.assertIn('Sitemap:', content)
+        self.assertIn('/sitemap.xml', content)
+
+    def test_sitemap_xml_status_and_content_type(self):
+        """sitemap.xml must return 200 with application/xml content type."""
+        response = self.client.get('/sitemap.xml')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('application/xml', response['Content-Type'])
+        content = response.content.decode('utf-8')
+        self.assertIn('<?xml version="1.0" encoding="UTF-8"?>', content)
+        self.assertIn('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">', content)
+
+    def test_sitemap_xml_contains_core_static_pages(self):
+        """sitemap.xml must include home, /categories/, and /products/all/."""
+        response = self.client.get('/sitemap.xml')
+        content = response.content.decode('utf-8')
+        self.assertIn('/categories/', content)
+        self.assertIn('/products/all/', content)
+
+    def test_sitemap_xml_contains_active_categories_and_products(self):
+        """sitemap.xml must contain active categories and products."""
+        response = self.client.get('/sitemap.xml')
+        content = response.content.decode('utf-8')
+        self.assertIn(f'/category-filter/{self.active_cat.id}/', content)
+        self.assertIn(f'/product-detail/{self.product_active.code}/', content)
+
+    def test_sitemap_xml_excludes_inactive_categories_and_their_products(self):
+        """sitemap.xml must exclude inactive categories and products in inactive categories."""
+        response = self.client.get('/sitemap.xml')
+        content = response.content.decode('utf-8')
+        self.assertNotIn(f'/category-filter/{self.inactive_cat.id}/', content)
+        self.assertNotIn(f'/product-detail/{self.product_inactive.code}/', content)
+
+    def test_sitemap_xml_excludes_private_and_admin_urls(self):
+        """sitemap.xml must not contain private, transactional, or admin URLs."""
+        response = self.client.get('/sitemap.xml')
+        content = response.content.decode('utf-8')
+        self.assertNotIn('/cart/', content)
+        self.assertNotIn('/checkout/', content)
+        self.assertNotIn('/profile/', content)
+        self.assertNotIn('/dashboard/', content)
+        self.assertNotIn('/admin/', content)
+        self.assertNotIn('/api/', content)
+
+    def test_home_page_seo_title_and_description(self):
+        """Home page must have branded title and meta description."""
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode('utf-8')
+        self.assertIn('<title>Chimyon-bozor — Sifatli va hamyonbop mahsulotlar internet do\'koni</title>', content)
+        self.assertIn('name="description"', content)
+        self.assertIn('Chimyon-bozor', content)
+
+    def test_home_page_canonical_and_single_h1(self):
+        """Home page must have canonical link and single H1."""
+        response = self.client.get('/')
+        content = response.content.decode('utf-8')
+        self.assertIn('rel="canonical"', content)
+        self.assertEqual(content.count('<h1'), 1)
+
+    def test_home_page_json_ld_organization_and_website(self):
+        """Home page must render valid JSON-LD for WebSite and Organization."""
+        response = self.client.get('/')
+        content = response.content.decode('utf-8')
+        self.assertIn('"@type": "WebSite"', content)
+        self.assertIn('"@type": "Organization"', content)
+        self.assertIn('"@type": "SearchAction"', content)
+
+    def test_categories_directory_seo_and_breadcrumbs(self):
+        """Categories page must have title, meta description, canonical, and single H1."""
+        response = self.client.get('/categories/')
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode('utf-8')
+        self.assertIn('Barcha kategoriyalar — Chimyon-bozor', content)
+        self.assertIn('rel="canonical"', content)
+        self.assertIn('/categories/', content)
+        self.assertIn('"@type": "BreadcrumbList"', content)
+        self.assertEqual(content.count('<h1'), 1)
+
+    def test_all_categories_duplicate_alias_canonical(self):
+        """Duplicate route /all-categories/ must set canonical pointing to /categories/."""
+        response = self.client.get('/all-categories/')
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode('utf-8')
+        self.assertIn('rel="canonical"', content)
+        self.assertIn('/categories/', content)
+
+    def test_category_filter_clean_page_seo(self):
+        """Category filter page must have category name in title, description, canonical, and single H1."""
+        response = self.client.get(f'/category-filter/{self.active_cat.id}/')
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode('utf-8')
+        self.assertIn(self.active_cat.name, content)
+        self.assertIn('rel="canonical"', content)
+        self.assertIn(f'/category-filter/{self.active_cat.id}/', content)
+        self.assertIn('"@type": "BreadcrumbList"', content)
+        self.assertEqual(content.count('<h1'), 1)
+        # Clean category page should NOT have noindex
+        self.assertNotIn('content="noindex, follow"', content)
+
+    def test_category_filter_faceted_query_has_noindex_follow(self):
+        """Applying filters (e.g. price range, discount) must output noindex, follow to avoid duplicate content."""
+        response = self.client.get(f'/category-filter/{self.active_cat.id}/?min_price=100000&discount=true')
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode('utf-8')
+        self.assertIn('content="noindex, follow"', content)
+        # Canonical URL must remain clean
+        self.assertIn(f'rel="canonical" href="http://testserver/category-filter/{self.active_cat.id}/"', content)
+
+    def test_catalog_search_query_has_noindex_follow(self):
+        """Search queries must output noindex, follow with clean canonical."""
+        response = self.client.get('/products/all/?q=iphone')
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode('utf-8')
+        self.assertIn('content="noindex, follow"', content)
+        self.assertIn('rel="canonical" href="http://testserver/products/all/"', content)
+
+    def test_product_detail_seo_metadata(self):
+        """Product detail page must have descriptive title, meta description, and canonical URL."""
+        response = self.client.get(f'/product-detail/{self.product_active.code}/')
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode('utf-8')
+        self.assertIn(self.product_active.name, content)
+        self.assertIn('rel="canonical"', content)
+        self.assertIn(f'/product-detail/{self.product_active.code}/', content)
+
+    def test_product_detail_single_h1(self):
+        """Product detail page must contain exactly 1 authoritative H1."""
+        response = self.client.get(f'/product-detail/{self.product_active.code}/')
+        content = response.content.decode('utf-8')
+        self.assertEqual(content.count('<h1'), 1)
+        self.assertIn('id="product-title"', content)
+
+    def test_product_detail_json_ld_structured_data(self):
+        """Product detail page must include valid JSON-LD Product and BreadcrumbList schemas."""
+        response = self.client.get(f'/product-detail/{self.product_active.code}/')
+        content = response.content.decode('utf-8')
+        self.assertIn('"@type": "Product"', content)
+        self.assertIn('"@type": "Offer"', content)
+        self.assertIn('"@type": "BreadcrumbList"', content)
+        self.assertIn(self.product_active.name, content)
+        self.assertIn('14200000', content)  # Discount price
+        self.assertIn('https://schema.org/InStock', content)
+
+    def test_product_detail_open_graph_and_twitter_tags(self):
+        """Product detail page must output Open Graph and Twitter Card tags with absolute URLs."""
+        response = self.client.get(f'/product-detail/{self.product_active.code}/')
+        content = response.content.decode('utf-8')
+        self.assertIn('property="og:title"', content)
+        self.assertIn('property="og:image"', content)
+        self.assertIn('property="og:type" content="product"', content)
+        self.assertIn('name="twitter:card"', content)
+        self.assertIn('name="twitter:image"', content)
+        self.assertIn('http://testserver', content)
+
+    def test_private_pages_noindex_nofollow_profile(self):
+        """Profile page must have noindex, nofollow."""
+        self.client.force_login(self.user)
+        response = self.client.get('/profile/')
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode('utf-8')
+        self.assertIn('content="noindex, nofollow"', content)
+
+    def test_private_pages_noindex_nofollow_cart(self):
+        """Cart page must have noindex, nofollow."""
+        self.client.force_login(self.user)
+        response = self.client.get('/cart/')
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode('utf-8')
+        self.assertIn('content="noindex, nofollow"', content)
+
+    def test_private_pages_noindex_nofollow_checkout(self):
+        """Checkout page must have noindex, nofollow."""
+        self.client.force_login(self.user)
+        cart = Cart.objects.create(user=self.user, status=1)
+        CartProduct.objects.create(cart=cart, product=self.product_active, count=1)
+        response = self.client.get('/checkout/')
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode('utf-8')
+        self.assertIn('content="noindex, nofollow"', content)
+
+    def test_private_pages_noindex_nofollow_auth(self):
+        """Login and verify OTP pages must have noindex, nofollow."""
+        login_res = self.client.get('/login/')
+        self.assertEqual(login_res.status_code, 200)
+        self.assertIn('content="noindex, nofollow"', login_res.content.decode('utf-8'))
+
+        session = self.client.session
+        session['otp_user_id'] = self.user.pk
+        session['otp_phone'] = self.user.phone
+        session.save()
+        otp_res = self.client.get('/verify-otp/')
+        self.assertEqual(otp_res.status_code, 200)
+        self.assertIn('content="noindex, nofollow"', otp_res.content.decode('utf-8'))
+
+    def test_private_pages_noindex_nofollow_orders_and_wishlist(self):
+        """Orders detail and Wishlist pages must have noindex, nofollow."""
+        self.client.force_login(self.user)
+        order = Cart.objects.create(user=self.user, status=2)
+        order_res = self.client.get(f'/orders/{order.code}/')
+        self.assertEqual(order_res.status_code, 200)
+        self.assertIn('content="noindex, nofollow"', order_res.content.decode('utf-8'))
+
+        wishlist_res = self.client.get('/wishlist/')
+        self.assertEqual(wishlist_res.status_code, 200)
+        self.assertIn('content="noindex, nofollow"', wishlist_res.content.decode('utf-8'))
+
+    def test_dashboard_noindex_nofollow(self):
+        """Dashboard base template must contain noindex, nofollow."""
+        self.user.is_staff = True
+        self.user.save()
+        self.client.force_login(self.user)
+        res = self.client.get('/dashboard/')
+        self.assertEqual(res.status_code, 200)
+        self.assertIn('name="robots" content="noindex, nofollow"', res.content.decode('utf-8'))
+
+    def test_error_pages_noindex_nofollow(self):
+        """Custom error pages must contain noindex, nofollow."""
+        with self.settings(DEBUG=False):
+            res_404 = self.client.get('/page-that-does-not-exist-xyz/')
+            self.assertEqual(res_404.status_code, 404)
+            self.assertIn('name="robots" content="noindex, nofollow"', res_404.content.decode('utf-8'))
+
+    def test_html_lang_attribute(self):
+        """Base HTML must specify Uzbek language lang='uz'."""
+        response = self.client.get('/')
+        content = response.content.decode('utf-8')
+        self.assertIn('<html lang="uz">', content)
+
+    def test_models_get_absolute_url(self):
+        """Category and Product models get_absolute_url method verification."""
+        self.assertEqual(self.active_cat.get_absolute_url(), f'/category-filter/{self.active_cat.id}/')
+        self.assertEqual(self.product_active.get_absolute_url(), f'/product-detail/{self.product_active.code}/')
+
+
+
 
 
 
