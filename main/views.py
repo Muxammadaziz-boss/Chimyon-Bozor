@@ -11,6 +11,7 @@ from django.db.models import F, Count, Q, Avg, Sum, Case, When, DecimalField, In
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, render, redirect
 from django.http import JsonResponse, HttpResponse
+from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -789,6 +790,16 @@ def resend_otp(request):
         messages.error(request, "Seans eskirgan.")
         return redirect('login')
 
+    # Rate limiting: 60 seconds cooldown between OTP resends
+    last_resend = request.session.get('otp_last_resend')
+    now_ts = timezone.now().timestamp()
+    if last_resend and (now_ts - last_resend) < 60:
+        remaining_secs = int(60 - (now_ts - last_resend))
+        messages.warning(request, f"Iltimos, yangi SMS kod so'rash uchun {remaining_secs} soniya kuting.")
+        return redirect('verify_otp')
+
+    request.session['otp_last_resend'] = now_ts
+
     user = models.User.objects.filter(pk=user_id).first()
     if user:
         # Invalidate old OTPs
@@ -810,11 +821,17 @@ def resend_otp(request):
 
 def log_in(request):
     if request.method == "POST":
-        username = request.POST['username']
-        password = request.POST['password']
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '')
         next_url = request.POST.get('next') or 'index'
         if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
             next_url = 'index'
+
+        if not username or not password:
+            return render(request, 'front/login.html', {
+                'next': request.POST.get('next', ''),
+                'error': "Foydalanuvchi nomi va parol kiritilishi shart.",
+            })
 
         # Check if user exists but unverified
         existing_user = models.User.objects.filter(username__iexact=username).first()

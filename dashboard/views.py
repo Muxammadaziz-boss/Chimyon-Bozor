@@ -11,6 +11,7 @@ from django.db.models.functions import Coalesce, TruncDate, TruncMonth
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 from openpyxl import Workbook
@@ -1551,7 +1552,9 @@ def log_in(request):
             login(request, user)
             log_admin_action(request, "ADMIN_LOGIN", f"Admin tizimga kirdi: {user.username}")
             messages.success(request, f"Xush kelibsiz, {user.username}!")
-            next_url = request.GET.get('next') or 'd_index'
+            next_url = request.POST.get('next') or request.GET.get('next') or 'd_index'
+            if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+                next_url = 'd_index'
             return redirect(next_url)
         messages.error(request, "Foydalanuvchi nomi yoki parol noto'g'ri yoxud admin ruxsati yo'q.")
         return redirect('d_login')
