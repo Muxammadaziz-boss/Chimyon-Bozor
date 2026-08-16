@@ -149,7 +149,11 @@ class UIVisibilityAndInteractionTests(TestCase):
         self.assertIn("header-search-btn", content)
         self.assertIn("Mahsulotlarni qidirish...", content)
         self.assertIn("outline: none !important;", content)
-        self.assertIn("border: none !important;", content)
+        # Refined soft focus shadow & z-index
+        self.assertIn("0 8px 28px rgba(109, 40, 217, 0.12)", content)
+        self.assertIn("z-index: 1080;", content)
+        self.assertIn("site-main-content", content)
+        self.assertIn("box-shadow: 0 4px 20px rgba(76, 29, 149, 0.04);", content)
 
         # Search functionality test
         search_res = self.client.get(reverse('all_products') + '?search=Test+Phone')
