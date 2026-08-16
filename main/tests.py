@@ -3,6 +3,7 @@ from decimal import Decimal
 from unittest.mock import patch
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.html import escape
 from .models import Cart, CartProduct, Category, Product, User, SiteSettings, Payment, Review, Address
 from .views import get_active_cart
@@ -2710,6 +2711,61 @@ class ProductDetailAndVerifiedReviewsTests(TestCase):
         self.assertIn('copyProductLinkBtn', card3_html)
         self.assertNotIn('Sotuvda mavjud', card3_html)
         self.assertNotIn('Mavjud qoldiq', card3_html)
+
+    def test_order_invoice_print_layout(self):
+        """Order detail page must render a dedicated A4 invoice-print container and proper print CSS."""
+        self.client.force_login(self.buyer)
+        cart = models.Cart.objects.create(user=self.buyer, status=2)
+        models.CartProduct.objects.create(cart=cart, product=self.product, count=2)
+        models.Payment.objects.create(
+            order=cart,
+            provider='click',
+            purpose=models.Payment.Purpose.PREPAYMENT,
+            amount=Decimal('600000.00'),
+            status=models.Payment.Status.PAID,
+            paid_at=timezone.now(),
+            transaction_id='click_invoice_tx_123'
+        )
+
+        response = self.client.get(reverse('order_detail', kwargs={'code': cart.code}))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode('utf-8')
+
+        # 1. Dedicated .invoice-print container exists
+        self.assertIn('invoice-print', content)
+        self.assertIn('id="invoicePrintArea"', content)
+
+        # 2. Invoice contains order code and truncated reference
+        self.assertIn(str(cart.code), content)
+        self.assertIn(str(cart.code)[:8], content)
+        self.assertIn('HISOB-FAKTURA', content)
+        self.assertIn('BUYURTMA TAFSILOTI', content)
+
+        # 3. Cart products loop rendered in invoice
+        self.assertIn(self.product.name, content)
+        self.assertIn(self.category.name, content)
+
+        # 4. Payment ledger rendered in invoice
+        self.assertIn('click_invoice_tx_123', content)
+        self.assertIn('TO\'LOVLAR TARIXI', content)
+
+        # 5. Customer & Delivery info rendered
+        self.assertIn('MIJOZ VA YETKAZISH MA\'LUMOTLARI', content)
+        self.assertIn(self.buyer.username, content)
+
+        # 6. Print button has .print-hide and window.print()
+        self.assertIn('window.print()', content)
+        self.assertIn('print-hide', content)
+
+        # 7. Print CSS rules & @page A4 declaration present
+        self.assertIn('@page', content)
+        self.assertIn('size: A4 portrait;', content)
+        self.assertIn('@media print', content)
+
+        # 8. Web UI elements hidden in @media print
+        self.assertIn('.invoice-print {', content)
+        self.assertIn('display: none;', content)
+
 
 
 

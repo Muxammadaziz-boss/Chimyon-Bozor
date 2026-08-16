@@ -320,6 +320,445 @@
         background: #e2e8f0;
         color: #0f172a !important;
     }
+
+    /* Screen mode: hide print invoice container */
+    .invoice-print {
+        display: none;
+    }
+
+    /* =========================================================================
+       A4 PRINT STYLESHEET (Professional A4 Invoice Layout)
+       ========================================================================= */
+    @page {
+        size: A4 portrait;
+        margin: 12mm 12mm 12mm 12mm;
+    }
+
+    @media print {
+        * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            box-sizing: border-box !important;
+        }
+
+        html, body {
+            width: 100% !important;
+            height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+            color: #0f172a !important;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif !important;
+            font-size: 9.5pt !important;
+            line-height: 1.35 !important;
+        }
+
+        /* Hide ALL web navigation, header, footer and UI elements */
+        header,
+        nav,
+        footer,
+        .header,
+        .modern-footer,
+        .mobile-bottom-nav,
+        .breadcrumb,
+        .order-detail-section,
+        .modal,
+        .modal-backdrop,
+        .chimyon-top-progress,
+        .toast-container,
+        .print-hide,
+        .btn,
+        .btn-orders-back,
+        .btn-catalog-action,
+        #floatingContactBtn,
+        #quickViewModal {
+            display: none !important;
+            visibility: hidden !important;
+            height: 0 !important;
+            max-height: 0 !important;
+            overflow: hidden !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        /* Show ONLY invoice print container */
+        .invoice-print {
+            display: block !important;
+            visibility: visible !important;
+            position: relative !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 auto !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+            box-shadow: none !important;
+            border: none !important;
+        }
+
+        .invoice-print * {
+            visibility: visible !important;
+        }
+
+        /* Header */
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #0f172a;
+            padding-bottom: 12px;
+            margin-bottom: 14px;
+        }
+        .invoice-brand-text {
+            font-size: 18pt;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: #0f172a;
+            line-height: 1;
+        }
+        .invoice-brand-text span {
+            color: #7c3aed;
+        }
+        .invoice-logo {
+            max-height: 38px;
+            width: auto;
+            object-fit: contain;
+            margin-bottom: 4px;
+        }
+        .invoice-tagline {
+            font-size: 8.5pt;
+            color: #475569;
+            margin-top: 3px;
+            margin-bottom: 4px;
+        }
+        .invoice-company-meta {
+            font-size: 8pt;
+            color: #64748b;
+            display: flex;
+            gap: 12px;
+        }
+        .invoice-header-right {
+            text-align: right;
+        }
+        .invoice-doc-title {
+            font-size: 16pt;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0;
+            line-height: 1.1;
+            letter-spacing: 0.5px;
+        }
+        .invoice-doc-subtitle {
+            font-size: 8.5pt;
+            font-weight: 700;
+            color: #7c3aed;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .invoice-meta-grid {
+            display: inline-flex;
+            flex-direction: column;
+            gap: 2px;
+            text-align: right;
+        }
+        .invoice-meta-row {
+            font-size: 8.5pt;
+        }
+        .invoice-meta-label {
+            color: #64748b;
+            margin-right: 6px;
+        }
+        .invoice-meta-val {
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .invoice-code-full {
+            font-family: monospace;
+            font-size: 7.5pt;
+            color: #475569;
+        }
+
+        /* Info Grid (Customer & Status) */
+        .invoice-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 14px;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+        .invoice-info-card {
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            overflow: hidden;
+            background: #ffffff;
+        }
+        .invoice-card-head {
+            background: #f1f5f9;
+            font-size: 8.5pt;
+            font-weight: 700;
+            color: #1e293b;
+            padding: 5px 10px;
+            border-bottom: 1px solid #cbd5e1;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+        .invoice-card-body {
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .invoice-info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            font-size: 8.5pt;
+            line-height: 1.3;
+        }
+        .invoice-info-row .info-k {
+            color: #64748b;
+            font-weight: 500;
+            min-width: 110px;
+        }
+        .invoice-info-row .info-v {
+            color: #0f172a;
+            text-align: right;
+            word-break: break-word;
+            max-width: 65%;
+        }
+
+        /* Status Pills in Print */
+        .invoice-status-pill {
+            display: inline-block;
+            font-size: 7.5pt;
+            font-weight: 700;
+            padding: 1.5px 7px;
+            border-radius: 4px;
+            border: 1px solid #cbd5e1;
+        }
+        .status-paid {
+            background-color: #dcfce7 !important;
+            color: #166534 !important;
+            border-color: #86efac !important;
+        }
+        .status-partial {
+            background-color: #fef3c7 !important;
+            color: #92400e !important;
+            border-color: #fde68a !important;
+        }
+        .status-unpaid {
+            background-color: #fee2e2 !important;
+            color: #991b1b !important;
+            border-color: #fecaca !important;
+        }
+        .status-refunded {
+            background-color: #f1f5f9 !important;
+            color: #334155 !important;
+            border-color: #cbd5e1 !important;
+        }
+        .status-failed {
+            background-color: #fee2e2 !important;
+            color: #991b1b !important;
+            border-color: #fca5a5 !important;
+        }
+
+        /* Section Title */
+        .invoice-section-title {
+            font-size: 9pt;
+            font-weight: 700;
+            color: #0f172a;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .invoice-ledger-title {
+            margin-top: 12px;
+        }
+
+        /* Tables */
+        .invoice-table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            margin-bottom: 10px !important;
+            font-size: 8.5pt !important;
+        }
+        .invoice-table thead {
+            display: table-header-group !important;
+        }
+        .invoice-table th {
+            background: #0f172a !important;
+            color: #ffffff !important;
+            font-weight: 700 !important;
+            font-size: 8pt !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.3px !important;
+            padding: 5px 8px !important;
+            border: 1px solid #0f172a !important;
+        }
+        .invoice-table td {
+            padding: 5px 8px !important;
+            border: 1px solid #cbd5e1 !important;
+            color: #0f172a !important;
+            vertical-align: middle !important;
+            font-size: 8.5pt !important;
+        }
+        .invoice-table tbody tr {
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+        .invoice-table tbody tr:nth-child(even) {
+            background-color: #f8fafc !important;
+        }
+        .invoice-table .product-cell {
+            word-break: break-word;
+            overflow-wrap: anywhere;
+        }
+        .invoice-table .code-cell {
+            font-family: monospace;
+            font-size: 7.5pt;
+            word-break: break-all;
+        }
+        .invoice-ledger-status {
+            display: inline-block;
+            font-size: 7pt;
+            font-weight: 700;
+            padding: 1px 5px;
+            border-radius: 3px;
+            border: 1px solid #cbd5e1;
+        }
+
+        /* Totals Wrapper */
+        .invoice-totals-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            margin-top: 6px;
+            margin-bottom: 12px;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+        .invoice-totals-left {
+            flex: 1;
+        }
+        .invoice-note-box {
+            border: 1px dashed #cbd5e1;
+            border-radius: 6px;
+            padding: 8px 10px;
+            background: #f8fafc;
+            font-size: 7.5pt;
+            color: #475569;
+            line-height: 1.35;
+        }
+        .invoice-note-box strong {
+            color: #1e293b;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .invoice-note-box p {
+            margin: 0;
+        }
+        .invoice-totals-right {
+            width: 320px;
+            flex-shrink: 0;
+        }
+        .invoice-summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8.5pt;
+        }
+        .invoice-summary-table td {
+            padding: 4px 8px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .invoice-summary-table .sum-label {
+            color: #475569;
+            font-weight: 500;
+        }
+        .invoice-summary-table .sum-val {
+            text-align: right;
+            font-weight: 700;
+            color: #0f172a;
+            white-space: nowrap;
+        }
+        .invoice-summary-table .sum-paid {
+            color: #166534 !important;
+        }
+        .invoice-summary-table .sum-rem-label {
+            color: #92400e;
+            font-weight: 700;
+        }
+        .invoice-summary-table .sum-rem-val {
+            color: #b91c1c !important;
+            font-weight: 800;
+        }
+        .invoice-summary-table .sum-grand-row td {
+            border-top: 2px solid #0f172a;
+            border-bottom: 2px solid #0f172a;
+            font-size: 9.5pt;
+            font-weight: 800;
+            background: #f1f5f9 !important;
+            padding: 6px 8px;
+        }
+
+        /* Signatures */
+        .invoice-sign-area {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 18px;
+            margin-bottom: 14px;
+            padding-top: 10px;
+            border-top: 1px solid #e2e8f0;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+        .sign-col {
+            width: 45%;
+        }
+        .sign-title {
+            font-size: 8pt;
+            font-weight: 600;
+            color: #475569;
+            display: block;
+            margin-bottom: 16px;
+        }
+        .sign-line {
+            font-size: 8pt;
+            color: #64748b;
+        }
+
+        /* Footer */
+        .invoice-footer {
+            border-top: 1px solid #cbd5e1;
+            padding-top: 8px;
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 7.5pt;
+            color: #64748b;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+        .invoice-footer-left strong {
+            color: #0f172a;
+        }
+        .invoice-footer-right {
+            display: flex;
+            gap: 6px;
+        }
+
+        /* Utility helpers */
+        .font-bold { font-weight: 700 !important; }
+        .text-right { text-align: right !important; }
+        .text-center { text-align: center !important; }
+        .text-danger { color: #b91c1c !important; }
+        .text-muted { color: #64748b !important; }
+    }
 </style>
 
 <section class="breadcrumb breadcrumb-one padding-y-60 section-bg position-relative z-index-1 overflow-hidden">
@@ -479,12 +918,12 @@
                     </div>
                 </div>
 
-                <!-- 4. Harakat tugmalari -->
-                <div class="d-flex gap-3 flex-wrap align-items-center mt-4 pt-2 mb-4">
+                    <!-- 4. Harakat tugmalari -->
+                <div class="d-flex gap-3 flex-wrap align-items-center mt-4 pt-2 mb-4 print-hide">
                     <a href="{% url 'order_history' %}" class="btn-orders-back">
                         <i class="fas fa-arrow-left mr-1"></i> Barcha Buyurtmalar
                     </a>
-                    <button type="button" onclick="window.print();" class="btn-orders-back" style="background: #f8fafc !important; border-color: #cbd5e1 !important;">
+                    <button type="button" onclick="window.print();" class="btn-orders-back print-hide" style="background: #f8fafc !important; border-color: #cbd5e1 !important;">
                         <i class="fas fa-print mr-1"></i> Hisob-fakturani Chop Etish
                     </button>
                     <a href="{% url 'all_products' %}" class="btn-catalog-action">
@@ -586,6 +1025,266 @@
         </div>
     </div>
 </section>
+
+<!-- =========================================================================
+     PROFESSIONAL A4 PRINT INVOICE (Chop etish uchun alohida A4 Hisob-faktura)
+     ========================================================================= -->
+<div class="invoice-print" id="invoicePrintArea">
+    <!-- Invoice Header -->
+    <div class="invoice-header">
+        <div class="invoice-header-left">
+            <div class="invoice-brand">
+                {% if site_settings.logo %}
+                <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name|default:'Chimyon-bozor' }}" class="invoice-logo">
+                {% else %}
+                <span class="invoice-brand-text">CHIMYON<span>-BOZOR</span></span>
+                {% endif %}
+            </div>
+            <div class="invoice-tagline">{{ site_settings.tagline|default:"Rasmiy internet do'kon • Qulay va ishonchli xarid" }}</div>
+            <div class="invoice-company-meta">
+                <span><i class="fas fa-phone-alt"></i> {{ site_settings.phone|default:"+998 90 123 45 67" }}</span>
+                <span><i class="fas fa-map-marker-alt"></i> {{ site_settings.address|default:"Farg'ona viloyati, Chimyon" }}</span>
+            </div>
+        </div>
+        <div class="invoice-header-right">
+            <h1 class="invoice-doc-title">HISOB-FAKTURA</h1>
+            <div class="invoice-doc-subtitle">BUYURTMA TAFSILOTI</div>
+            <div class="invoice-meta-grid">
+                <div class="invoice-meta-row">
+                    <span class="invoice-meta-label">Buyurtma kodi:</span>
+                    <span class="invoice-meta-val">#{{ order.code|slice:":8" }}</span>
+                </div>
+                <div class="invoice-meta-row">
+                    <span class="invoice-meta-label">To'liq ID:</span>
+                    <span class="invoice-meta-val invoice-code-full">{{ order.code }}</span>
+                </div>
+                <div class="invoice-meta-row">
+                    <span class="invoice-meta-label">Buyurtma sanasi:</span>
+                    <span class="invoice-meta-val">{{ order.date|date:"d.m.Y H:i" }}</span>
+                </div>
+                <div class="invoice-meta-row">
+                    <span class="invoice-meta-label">Hujjat sanasi:</span>
+                    <span class="invoice-meta-val">{% now "d.m.Y H:i" %}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer & Order Meta Summary Box -->
+    <div class="invoice-info-grid">
+        <!-- Mijoz ma'lumotlari -->
+        <div class="invoice-info-card">
+            <div class="invoice-card-head">
+                <i class="fas fa-user"></i> MIJOZ VA YETKAZISH MA'LUMOTLARI
+            </div>
+            <div class="invoice-card-body">
+                <div class="invoice-info-row">
+                    <span class="info-k">Qabul qiluvchi:</span>
+                    <span class="info-v font-bold">{{ order.user.get_full_name|default:order.user.username }}</span>
+                </div>
+                <div class="invoice-info-row">
+                    <span class="info-k">Telefon raqam:</span>
+                    <span class="info-v">{{ order.user.phone|default:"Kiritilmagan" }}</span>
+                </div>
+                <div class="invoice-info-row">
+                    <span class="info-k">Yetkazish manzili:</span>
+                    <span class="info-v">{{ order.user.address|default:"Manzil ko'rsatilmagan" }}</span>
+                </div>
+                <div class="invoice-info-row">
+                    <span class="info-k">Buyurtma sanasi:</span>
+                    <span class="info-v">{{ order.date|date:"d.m.Y H:i" }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buyurtma va To'lov holati -->
+        <div class="invoice-info-card">
+            <div class="invoice-card-head">
+                <i class="fas fa-file-invoice-dollar"></i> BUYURTMA VA MOLIYAVIY HOLAT
+            </div>
+            <div class="invoice-card-body">
+                <div class="invoice-info-row">
+                    <span class="info-k">Buyurtma holati:</span>
+                    <span class="info-v">
+                        <span class="invoice-status-pill status-order-{{ order.status }}">
+                            {{ order.get_status_display }}
+                        </span>
+                    </span>
+                </div>
+                <div class="invoice-info-row">
+                    <span class="info-k">Moliyaviy holat:</span>
+                    <span class="info-v">
+                        {% if order.financial_status == 'fully_paid' %}
+                            <span class="invoice-status-pill status-paid">To'liq to'langan</span>
+                        {% elif order.financial_status == 'partially_paid' %}
+                            <span class="invoice-status-pill status-partial">Qisman to'langan ({{ order.prepayment_percent|default:0 }}%)</span>
+                        {% elif order.financial_status == 'refunded' %}
+                            <span class="invoice-status-pill status-refunded">Qaytarilgan</span>
+                        {% else %}
+                            <span class="invoice-status-pill status-unpaid">To'lanmagan</span>
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="invoice-info-row">
+                    <span class="info-k">Oldindan to'lov:</span>
+                    <span class="info-v font-bold">{{ order.prepayment_percent|default:0 }}% ({{ order.prepayment_amount|uz_price }})</span>
+                </div>
+                <div class="invoice-info-row">
+                    <span class="info-k">Qoldiq summa:</span>
+                    <span class="info-v font-bold text-danger">{{ financials.remaining_amount|uz_price }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Items Table -->
+    <div class="invoice-section-title">
+        <i class="fas fa-boxes"></i> BUYURTMA TARKIBI
+    </div>
+    <table class="invoice-table">
+        <thead>
+            <tr>
+                <th style="width: 5%; text-align: center;">№</th>
+                <th style="width: 45%;">Mahsulot nomi</th>
+                <th style="width: 20%;">Kategoriya</th>
+                <th style="width: 14%; text-align: right;">Dona narxi</th>
+                <th style="width: 6%; text-align: center;">Soni</th>
+                <th style="width: 10%; text-align: right;">Jami</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in cart_products %}
+            <tr>
+                <td style="text-align: center;">{{ forloop.counter }}</td>
+                <td class="product-cell font-bold">
+                    {{ item.product.name }}
+                </td>
+                <td>{{ item.product.category.name|default:"—" }}</td>
+                <td style="text-align: right;">{{ item.unit_price|uz_price }}</td>
+                <td style="text-align: center;" class="font-bold">{{ item.count }}</td>
+                <td style="text-align: right;" class="font-bold">{{ item.total_price|uz_price }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 12px;" class="text-muted">Mahsulotlar mavjud emas</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Financial Totals Summary Row -->
+    <div class="invoice-totals-wrapper">
+        <div class="invoice-totals-left">
+            <div class="invoice-note-box">
+                <strong>To'lov eslatmasi:</strong>
+                <p>Ushbu hisob-faktura "Chimyon-bozor" savdo platformasi orqali rasmiylashtirilgan buyurtmani tasdiqlovchi rasmiy hisob hujjati hisoblanadi. Tovarni qabul qilish vaqtida hisob-faktura va tovar butunligini tekshiring.</p>
+            </div>
+        </div>
+        <div class="invoice-totals-right">
+            <table class="invoice-summary-table">
+                <tr>
+                    <td class="sum-label">Jami mahsulotlar:</td>
+                    <td class="sum-val">{{ financials.grand_total|uz_price }}</td>
+                </tr>
+                <tr>
+                    <td class="sum-label">To'langan (Tasdiqlangan):</td>
+                    <td class="sum-val sum-paid">{{ financials.paid_amount|uz_price }}</td>
+                </tr>
+                {% if financials.remaining_amount > 0 %}
+                <tr>
+                    <td class="sum-label sum-rem-label">Yetkazilganda to'lanadigan qoldiq:</td>
+                    <td class="sum-val sum-rem-val">{{ financials.remaining_amount|uz_price }}</td>
+                </tr>
+                {% endif %}
+                <tr class="sum-grand-row">
+                    <td class="sum-label">JAMI BUYURTMA SUMMASI:</td>
+                    <td class="sum-val">{{ financials.grand_total|uz_price }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- Payments Ledger (if exists) -->
+    {% if payments %}
+    <div class="invoice-section-title invoice-ledger-title">
+        <i class="fas fa-receipt"></i> TO'LOVLAR TARIXI (LEDGER)
+    </div>
+    <table class="invoice-table invoice-ledger-table">
+        <thead>
+            <tr>
+                <th style="width: 5%; text-align: center;">№</th>
+                <th style="width: 18%;">To'lov maqsadi</th>
+                <th style="width: 15%;">Provayder</th>
+                <th style="width: 18%; text-align: right;">Summa</th>
+                <th style="width: 14%;">Holati</th>
+                <th style="width: 18%;">Tranzaksiya ID</th>
+                <th style="width: 12%;">Sana</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in payments %}
+            <tr>
+                <td style="text-align: center;">{{ forloop.counter }}</td>
+                <td>
+                    {% if p.purpose == 'prepayment' or p.purpose == 'PREPAYMENT' %}
+                        Oldindan to'lov ({{ order.prepayment_percent|default:0 }}%)
+                    {% elif p.purpose == 'balance' or p.purpose == 'BALANCE' %}
+                        Qoldiq to'lov
+                    {% else %}
+                        To'liq to'lov
+                    {% endif %}
+                </td>
+                <td class="font-bold">{{ p.get_provider_display|upper }}</td>
+                <td style="text-align: right;" class="font-bold">{{ p.amount|uz_price }}</td>
+                <td>
+                    {% if p.status == 'paid' %}
+                        <span class="invoice-ledger-status status-paid">To'langan</span>
+                    {% elif p.status == 'initiated' %}
+                        <span class="invoice-ledger-status status-partial">Boshlangan</span>
+                    {% elif p.status == 'pending' %}
+                        <span class="invoice-ledger-status status-unpaid">Kutilmoqda</span>
+                    {% elif p.status == 'failed' %}
+                        <span class="invoice-ledger-status status-failed">Xatolik</span>
+                    {% elif p.status == 'refunded' %}
+                        <span class="invoice-ledger-status status-refunded">Qaytarildi</span>
+                    {% else %}
+                        <span class="invoice-ledger-status">{{ p.get_status_display }}</span>
+                    {% endif %}
+                </td>
+                <td class="code-cell">{{ p.transaction_id|default:"—" }}</td>
+                <td>{{ p.created_at|date:"d.m.Y H:i" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    <!-- Signatures & Stamp area -->
+    <div class="invoice-sign-area">
+        <div class="sign-col">
+            <span class="sign-title">Topshirdi (Kuryer / Mas'ul):</span>
+            <div class="sign-line">_____________________ / (Imzo)</div>
+        </div>
+        <div class="sign-col">
+            <span class="sign-title">Qabul qildi (Xaridor):</span>
+            <div class="sign-line">_____________________ / (Imzo)</div>
+        </div>
+    </div>
+
+    <!-- Invoice Footer -->
+    <div class="invoice-footer">
+        <div class="invoice-footer-left">
+            <strong>{{ site_settings.site_name|default:"CHIMYON-BOZOR" }}</strong> — Xaridingiz uchun rahmat!
+        </div>
+        <div class="invoice-footer-right">
+            <span>{{ site_settings.phone|default:"+998 90 123 45 67" }}</span>
+            <span>•</span>
+            <span>{{ site_settings.email|default:"info@chimyon-bozor.uz" }}</span>
+            <span>•</span>
+            <span>www.chimyon-bozor.uz</span>
+        </div>
+    </div>
+</div>
 
 <!-- Qoldiq To'lov Modali (Pay Balance Modal) -->
 {% if financials.remaining_amount > 0 %}
