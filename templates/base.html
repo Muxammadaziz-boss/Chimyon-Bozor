@@ -1969,37 +1969,88 @@
         });
 
         // ==========================================================
-        // TOP NAVIGATION PROGRESS BAR (Smooth Page Loading Feedback)
+        // TOP NAVIGATION PROGRESS BAR (Smooth, Non-Stuck Page Feedback)
         // ==========================================================
         const navProgressBar = document.getElementById('topNavigationProgressBar');
-        let navProgressTimer = null;
+        let navProgressTimers = [];
+        let navSafetyTimer = null;
+
+        function clearAllNavTimers() {
+            navProgressTimers.forEach(t => clearTimeout(t));
+            navProgressTimers = [];
+            if (navSafetyTimer) clearTimeout(navSafetyTimer);
+            navSafetyTimer = null;
+        }
 
         function startNavProgress() {
             if (!navProgressBar) return;
-            clearTimeout(navProgressTimer);
-            navProgressBar.style.transition = 'width 0.3s ease-out, opacity 0.2s ease';
-            navProgressBar.style.width = '25%';
+            clearAllNavTimers();
+
+            navProgressBar.style.transition = 'none';
+            navProgressBar.style.width = '0%';
             navProgressBar.classList.add('active');
-            navProgressTimer = setTimeout(() => {
-                navProgressBar.style.width = '70%';
-            }, 250);
+
+            // Force reflow
+            void navProgressBar.offsetWidth;
+
+            navProgressBar.style.transition = 'width 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease';
+            navProgressBar.style.width = '20%';
+
+            navProgressTimers.push(setTimeout(() => {
+                if (navProgressBar.classList.contains('active')) {
+                    navProgressBar.style.transition = 'width 0.35s ease';
+                    navProgressBar.style.width = '45%';
+                }
+            }, 150));
+
+            navProgressTimers.push(setTimeout(() => {
+                if (navProgressBar.classList.contains('active')) {
+                    navProgressBar.style.transition = 'width 0.5s ease';
+                    navProgressBar.style.width = '70%';
+                }
+            }, 450));
+
+            navProgressTimers.push(setTimeout(() => {
+                if (navProgressBar.classList.contains('active')) {
+                    navProgressBar.style.transition = 'width 0.8s ease';
+                    navProgressBar.style.width = '85%';
+                }
+            }, 950));
+
+            // Safety Fallback (Auto-Reset after 3.5s if navigation is cancelled/downloaded/aborted)
+            navSafetyTimer = setTimeout(() => {
+                finishNavProgress();
+            }, 3500);
         }
 
         function finishNavProgress() {
             if (!navProgressBar) return;
-            clearTimeout(navProgressTimer);
+            clearAllNavTimers();
+
+            navProgressBar.style.transition = 'width 0.15s ease-out, opacity 0.25s ease 0.1s';
             navProgressBar.style.width = '100%';
+            navProgressBar.style.opacity = '0';
+
             setTimeout(() => {
                 navProgressBar.classList.remove('active');
-                setTimeout(() => {
-                    navProgressBar.style.width = '0%';
-                }, 200);
-            }, 150);
+                navProgressBar.style.width = '0%';
+                navProgressBar.style.opacity = '';
+                navProgressBar.style.transition = '';
+            }, 350);
         }
 
-        // Finish progress on page load / bfcache restore
+        // Finish progress on page load / BFCache restore / history traversal
         window.addEventListener('pageshow', finishNavProgress);
+        window.addEventListener('popstate', finishNavProgress);
         window.addEventListener('load', finishNavProgress);
+
+        // Smooth acceleration on real unload
+        window.addEventListener('beforeunload', function() {
+            if (navProgressBar && navProgressBar.classList.contains('active')) {
+                navProgressBar.style.transition = 'width 0.2s ease-out';
+                navProgressBar.style.width = '95%';
+            }
+        });
 
         // Start progress on real internal link navigation
         document.addEventListener('click', function(e) {
@@ -2007,20 +2058,21 @@
             if (!link || !link.href) return;
             if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
             if (link.target && link.target !== '_self') return;
-            if (link.href.startsWith('javascript:') || link.href.includes('#') || link.classList.contains('no-progress') || link.getAttribute('data-bs-toggle')) return;
+            if (link.hasAttribute('download')) return;
+            if (link.href.startsWith('javascript:') || link.href.startsWith('tel:') || link.href.startsWith('mailto:') || link.href.includes('#') || link.classList.contains('no-progress') || link.getAttribute('data-bs-toggle')) return;
             
             try {
                 const targetUrl = new URL(link.href, window.location.origin);
-                if (targetUrl.origin === window.location.origin && targetUrl.pathname !== window.location.pathname) {
+                if (targetUrl.origin === window.location.origin && (targetUrl.pathname !== window.location.pathname || targetUrl.search !== window.location.search)) {
                     startNavProgress();
                 }
             } catch (err) {}
         });
 
-        // Start progress on standard form submits
+        // Start progress on standard non-AJAX form submits
         document.addEventListener('submit', function(e) {
             const form = e.target;
-            if (form && !e.defaultPrevented && !form.classList.contains('no-progress') && !form.action.includes('?ajax=1')) {
+            if (form && !e.defaultPrevented && !form.classList.contains('no-progress') && !form.action.includes('?ajax=1') && !form.action.includes('delete_wishlist') && !form.action.includes('add_wishlist')) {
                 startNavProgress();
             }
         });

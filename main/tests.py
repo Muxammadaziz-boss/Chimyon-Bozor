@@ -615,6 +615,9 @@ class ProductDetailUXTests(TestCase):
 
     def test_product_review_and_avg_rating(self):
         self.client.login(username='detailtester', password='password123')
+        # Create successful purchase so user is verified buyer
+        cart = Cart.objects.create(user=self.user, status=2)
+        CartProduct.objects.create(cart=cart, product=self.in_stock_product, count=1)
         
         # Add review
         response = self.client.post(
@@ -1279,10 +1282,12 @@ class CatalogSortingBusinessMetricsTests(TestCase):
 
         # Reviews setup:
         # Product D has 5 reviews with average rating 4.8
-        for r in [5, 5, 5, 5, 4]:
-            Review.objects.create(user=self.user, product=self.prod_d, rating=r, text="Ajoyib")
+        for i, r in enumerate([5, 5, 5, 5, 4]):
+            u = User.objects.create_user(username=f'revuser_d_{i}', password='password123', phone=f'+99890100000{i}')
+            Review.objects.create(user=u, product=self.prod_d, rating=r, text="Ajoyib")
         # Product A has 1 review with rating 5.0
-        Review.objects.create(user=self.user, product=self.prod_a, rating=5, text="Yaxshi")
+        u_a = User.objects.create_user(username='revuser_a_1', password='password123', phone='+998901000099')
+        Review.objects.create(user=u_a, product=self.prod_a, rating=5, text="Yaxshi")
 
     # 1. Price Ascending (effective discount price taken into account)
     def test_price_asc_sorting(self):
@@ -2060,6 +2065,266 @@ class GlobalLoadingAndSkeletonUXTests(TestCase):
         data = response.json()
         self.assertIn('html', data)
         self.assertIn('count', data)
+
+
+class ProductDetailAndVerifiedReviewsTests(TestCase):
+    """
+    Comprehensive tests for:
+    1. Verified purchase only review system
+    2. Rating computation & no-fake-5.0 behavior
+    3. New product badge (7 days)
+    4. Action button compact UX styles
+    5. Top navigation progress bar stepped logic and BFCache safety
+    """
+
+    def setUp(self):
+        self.site_settings = SiteSettings.objects.create(
+            pk=1,
+            site_name="Chimyon-bozor",
+            tagline="Sifatli mahsulotlar"
+        )
+        self.category = Category.objects.create(
+            name="Telefonlar",
+            logo="test_logo.png",
+            is_active=True
+        )
+        self.product = Product.objects.create(
+            category=self.category,
+            name="iPhone 15 Pro",
+            description="Eng so'nggi model",
+            price=Decimal("12000000"),
+            count=15,
+            image="test_iphone.png"
+        )
+        self.buyer = User.objects.create_user(
+            username="buyer1",
+            password="password123",
+            phone="+998901112233"
+        )
+        self.non_buyer = User.objects.create_user(
+            username="nonbuyer1",
+            password="password123",
+            phone="+998904445566"
+        )
+
+    def test_anonymous_user_cannot_review(self):
+        """Anonymous user cannot POST review and is redirected to login."""
+        url = reverse('add_review', kwargs={'product_code': self.product.code})
+        response = self.client.post(url, {
+            'rating': 5,
+            'text': 'Ajoyib mahsulot!'
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/login/', response.url)
+        self.assertEqual(Review.objects.filter(product=self.product).count(), 0)
+
+    def test_authenticated_non_buyer_cannot_review(self):
+        """Authenticated user without a successful purchase cannot submit review."""
+        self.client.force_login(self.non_buyer)
+        url = reverse('add_review', kwargs={'product_code': self.product.code})
+        response = self.client.post(url, {
+            'rating': 5,
+            'text': 'Men sotib olmaganman lekin yozyapman'
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Review.objects.filter(product=self.product).count(), 0)
+
+    def test_cancelled_or_returned_order_cannot_review(self):
+        """User whose order status is 5 (Returned/Cancelled) cannot submit review."""
+        self.client.force_login(self.buyer)
+        cart = Cart.objects.create(user=self.buyer, status=5)
+        CartProduct.objects.create(cart=cart, product=self.product, count=1)
+
+        url = reverse('add_review', kwargs={'product_code': self.product.code})
+        response = self.client.post(url, {
+            'rating': 5,
+            'text': 'Bekor qilingan buyurtma'
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Review.objects.filter(product=self.product).count(), 0)
+
+    def test_active_cart_status_cannot_review(self):
+        """User who only has product in active cart (status 1) cannot submit review."""
+        self.client.force_login(self.buyer)
+        cart = Cart.objects.create(user=self.buyer, status=1)
+        CartProduct.objects.create(cart=cart, product=self.product, count=1)
+
+        url = reverse('add_review', kwargs={'product_code': self.product.code})
+        response = self.client.post(url, {
+            'rating': 5,
+            'text': 'Faqat savatda bor'
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Review.objects.filter(product=self.product).count(), 0)
+
+    def test_verified_buyer_can_review(self):
+        """User with fulfilled order (status in [2, 3, 4]) can submit review."""
+        self.client.force_login(self.buyer)
+        cart = Cart.objects.create(user=self.buyer, status=2)
+        CartProduct.objects.create(cart=cart, product=self.product, count=1)
+
+        url = reverse('add_review', kwargs={'product_code': self.product.code})
+        response = self.client.post(url, {
+            'rating': 5,
+            'text': 'Haqiqatan xarid qildim, ajoyib sifat!'
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Review.objects.filter(product=self.product).count(), 1)
+        review = Review.objects.get(product=self.product)
+        self.assertEqual(review.user, self.buyer)
+        self.assertEqual(review.rating, 5)
+
+    def test_duplicate_review_rejected(self):
+        """User cannot post multiple reviews for the same product."""
+        self.client.force_login(self.buyer)
+        cart = Cart.objects.create(user=self.buyer, status=2)
+        CartProduct.objects.create(cart=cart, product=self.product, count=1)
+
+        url = reverse('add_review', kwargs={'product_code': self.product.code})
+        # First review
+        self.client.post(url, {
+            'rating': 5,
+            'text': 'Birinchi fikr'
+        })
+        self.assertEqual(Review.objects.filter(product=self.product, user=self.buyer).count(), 1)
+
+        # Second review attempt
+        self.client.post(url, {
+            'rating': 4,
+            'text': 'Ikkinchi takroriy fikr'
+        })
+        self.assertEqual(Review.objects.filter(product=self.product, user=self.buyer).count(), 1)
+
+    def test_rating_clamped_between_1_and_5(self):
+        """Rating values outside 1-5 are clamped to default valid rating."""
+        self.client.force_login(self.buyer)
+        cart = Cart.objects.create(user=self.buyer, status=2)
+        CartProduct.objects.create(cart=cart, product=self.product, count=1)
+
+        url = reverse('add_review', kwargs={'product_code': self.product.code})
+        self.client.post(url, {
+            'rating': 99,
+            'text': 'Noodatiy yuqori baho'
+        })
+        review = Review.objects.get(product=self.product, user=self.buyer)
+        self.assertEqual(review.rating, 5)
+
+    def test_no_reviews_no_fake_rating(self):
+        """Product with 0 reviews must not show fake 5.0 rating (shows 'Yangi' if new, 'Hali baholanmagan' if older)."""
+        from django.utils import timezone
+        from datetime import timedelta
+
+        self.assertEqual(self.product.reviews_count, 0)
+        self.assertEqual(self.product.avg_rating, 0.0)
+
+        # 1. New product (< 7 days) with 0 reviews
+        response = self.client.get(f'/product-detail/{self.product.code}/')
+        content = response.content.decode('utf-8')
+        self.assertIn('Yangi', content)
+        self.assertNotIn('5.0 (0)', content)
+
+        # 2. Older product (> 7 days) with 0 reviews
+        old_prod = Product.objects.create(
+            category=self.category,
+            name="Eski Telefon",
+            price=Decimal("500000"),
+            count=10,
+            image="old_phone.png"
+        )
+        Product.objects.filter(id=old_prod.id).update(created_at=timezone.now() - timedelta(days=10))
+        old_prod.refresh_from_db()
+
+        response_old = self.client.get(f'/product-detail/{old_prod.code}/')
+        content_old = response_old.content.decode('utf-8')
+        self.assertIn('Hali baholanmagan', content_old)
+        self.assertNotIn('5.0 (0)', content_old)
+
+    def test_one_and_multiple_reviews_average_rating(self):
+        """Product average rating is calculated accurately from database reviews."""
+        # 1 review: 4 stars
+        Review.objects.create(user=self.buyer, product=self.product, rating=4, text="Yaxshi")
+        self.assertEqual(self.product.reviews_count, 1)
+        self.assertEqual(self.product.avg_rating, 4.0)
+
+        # 2nd review: 5 stars (avg 4.5)
+        u2 = User.objects.create_user(username="buyer2", password="pwd", phone="+998902223344")
+        Review.objects.create(user=u2, product=self.product, rating=5, text="A'lo")
+        self.assertEqual(self.product.reviews_count, 2)
+        self.assertEqual(self.product.avg_rating, 4.5)
+
+    def test_verified_badge_rendered_in_review_item(self):
+        """Reviews list renders verified buyer badge."""
+        Review.objects.create(user=self.buyer, product=self.product, rating=5, text="Zo'r mahsulot")
+        response = self.client.get(f'/product-detail/{self.product.code}/')
+        content = response.content.decode('utf-8')
+        self.assertIn('Xarid qilgan', content)
+
+    def test_new_badge_first_7_days_and_expiration(self):
+        """Product is new within 7 days and expires after 7 days."""
+        from django.utils import timezone
+        from datetime import timedelta
+
+        # Product created now -> is_new is True
+        self.assertTrue(self.product.is_new)
+
+        # Product created 8 days ago -> is_new is False
+        old_product = Product.objects.create(
+            category=self.category,
+            name="Eski mahsulot",
+            price=Decimal("100000"),
+            count=5,
+            image="test_old.png"
+        )
+        Product.objects.filter(id=old_product.id).update(created_at=timezone.now() - timedelta(days=8))
+        old_product.refresh_from_db()
+        self.assertFalse(old_product.is_new)
+
+    def test_sorting_excludes_no_review_fake_rating_advantage(self):
+        """Sorting by rating prioritizes products with real positive reviews over 0-review products."""
+        # p_reviewed has 1 review with 5 stars
+        p_reviewed = Product.objects.create(
+            category=self.category,
+            name="Baholangan Mahsulot",
+            price=Decimal("200000"),
+            count=10,
+            image="test_rev.png"
+        )
+        Review.objects.create(user=self.buyer, product=p_reviewed, rating=5, text="A'lo")
+
+        # p_unreviewed has 0 reviews
+        p_unreviewed = Product.objects.create(
+            category=self.category,
+            name="Baholanmagan Mahsulot",
+            price=Decimal("200000"),
+            count=10,
+            image="test_unrev.png"
+        )
+
+        response = self.client.get(f'/category-filter/{self.category.id}/?sort=rating')
+        products = list(response.context['products'])
+        p_reviewed_idx = [p.id for p in products].index(p_reviewed.id)
+        p_unreviewed_idx = [p.id for p in products].index(p_unreviewed.id)
+        self.assertLess(p_reviewed_idx, p_unreviewed_idx)
+
+    def test_product_detail_action_button_compact_styles(self):
+        """Product detail action buttons must have compact, modern styling without bloated heights."""
+        response = self.client.get(f'/product-detail/{self.product.code}/')
+        content = response.content.decode('utf-8')
+        self.assertIn('.btn-action-lg', content)
+        self.assertIn('height: 46px;', content)
+        self.assertIn('.btn-buy-now', content)
+        self.assertIn('.btn-wishlist-outline', content)
+
+    def test_top_navigation_progress_bar_stepped_and_safety_reset(self):
+        """base.html top progress bar must have stepped progression, safety timeout, and BFCache reset."""
+        response = self.client.get('/')
+        content = response.content.decode('utf-8')
+        self.assertIn('topNavigationProgressBar', content)
+        self.assertIn('clearAllNavTimers', content)
+        self.assertIn('navSafetyTimer', content)
+        self.assertIn('popstate', content)
+        self.assertIn('pageshow', content)
+
 
 
 

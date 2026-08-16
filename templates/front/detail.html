@@ -224,10 +224,10 @@
 
     /* ── Action Buttons ── */
     .btn-action-lg {
-        height: 54px;
-        border-radius: 16px;
-        font-weight: 700;
-        font-size: 15.5px;
+        height: 46px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 14.5px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -235,35 +235,54 @@
         transition: all 0.2s ease;
         border: none;
         cursor: pointer;
+        padding: 0 18px;
     }
     .btn-buy-now {
         background: linear-gradient(135deg, #10B981 0%, #059669 100%);
         color: #ffffff !important;
-        box-shadow: 0 6px 18px -4px rgba(16, 185, 129, 0.4);
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
     }
     .btn-buy-now:hover:not(:disabled) {
         background: linear-gradient(135deg, #059669 0%, #047857 100%);
-        transform: translateY(-2px);
-        box-shadow: 0 10px 22px -4px rgba(16, 185, 129, 0.5);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
     }
     .btn-wishlist-outline {
-        border: 2px solid #ef4444 !important;
+        height: 42px;
+        border: 1.5px solid #ef4444 !important;
         color: #ef4444 !important;
         background: #fff;
+        border-radius: 12px;
+        font-size: 13.5px;
     }
     .btn-wishlist-outline:hover {
         background: #fef2f2;
         color: #dc2626 !important;
-        transform: translateY(-2px);
+        transform: translateY(-1px);
     }
     .btn-wishlist-solid {
+        height: 42px;
         background: #ef4444 !important;
         color: #ffffff !important;
-        box-shadow: 0 6px 18px -4px rgba(239, 68, 68, 0.35);
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
+        border-radius: 12px;
+        font-size: 13.5px;
     }
     .btn-wishlist-solid:hover {
         background: #dc2626 !important;
-        transform: translateY(-2px);
+        transform: translateY(-1px);
+    }
+
+    @media (max-width: 576px) {
+        .btn-action-lg {
+            height: 44px;
+            font-size: 14px;
+        }
+        .btn-wishlist-outline,
+        .btn-wishlist-solid {
+            height: 40px;
+            font-size: 13px;
+        }
     }
     
     /* ── Meta Items ── */
@@ -483,16 +502,31 @@
                     </span>
                     <div class="h2 fw-800 text-heading mb-2" style="font-size: 24px; line-height: 1.25;">{{ product.name }}</div>
                     <div class="d-flex align-items-center gap-2 mb-3">
+                        {% if product.reviews_count and product.reviews_count > 0 %}
                         <div class="text-warning font-14">
                             <i class="fas fa-star"></i> <strong class="text-dark">{{ product.avg_rating }}</strong>
                         </div>
                         <span class="text-muted font-13">({{ product.reviews_count }} ta sharh)</span>
+                        {% elif product.is_new %}
+                        <span class="badge bg-success text-white font-12 fw-700 px-2 py-1 rounded-pill">
+                            <i class="fas fa-bolt me-1"></i> Yangi mahsulot
+                        </span>
+                        {% else %}
+                        <span class="badge bg-light text-muted border font-12 fw-600 px-2 py-1 rounded-pill">
+                            <i class="far fa-star text-warning me-1"></i> Hali baholanmagan
+                        </span>
+                        {% endif %}
                     </div>
                 </div>
 
                 <!-- Product Main Image -->
                 <div class="product-detail-thumb-container mb-4" id="mainProductThumb">
                     <div class="product-img-overlay-badges">
+                        {% if product.is_new %}
+                        <span class="badge bg-success text-white px-3 py-2 rounded-pill font-13 fw-700 shadow-sm">
+                            <i class="fas fa-bolt me-1"></i> Yangi
+                        </span>
+                        {% endif %}
                         {% if product.discount_status and product.discount_percent > 0 %}
                         <span class="badge bg-danger text-white px-3 py-2 rounded-pill font-13 fw-700 shadow-sm">
                             <i class="fas fa-fire me-1"></i> -{{ product.discount_percent }}%
@@ -561,12 +595,17 @@
                                 <div class="review-item mb-4 pb-4 border-bottom">
                                     <div class="d-flex align-items-center justify-content-between mb-2">
                                         <div class="d-flex align-items-center gap-2">
-                                            <div class="avatar text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 42px; height: 42px; background: linear-gradient(135deg, #7C3AED, #EC4899); font-size: 15px;">
+                                            <div class="avatar text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 40px; height: 40px; background: linear-gradient(135deg, #7C3AED, #EC4899); font-size: 14px;">
                                                 {{ review.user.username|make_list|first|upper }}
                                             </div>
                                             <div>
-                                                <h6 class="mb-0 fw-700 text-dark">{{ review.user.get_full_name|default:review.user.username }}</h6>
-                                                <span class="text-muted" style="font-size: 12.5px;">{{ review.created_at|date:"d.m.Y H:i" }}</span>
+                                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                                    <h6 class="mb-0 fw-700 text-dark" style="font-size: 14px;">{{ review.user.get_full_name|default:review.user.username }}</h6>
+                                                    <span class="badge bg-success text-white px-2 py-0 rounded-pill fw-600" style="font-size: 11px;">
+                                                        <i class="fas fa-check-circle me-1"></i> Xarid qilgan
+                                                    </span>
+                                                </div>
+                                                <span class="text-muted" style="font-size: 12px;">{{ review.created_at|date:"d.m.Y H:i" }}</span>
                                             </div>
                                         </div>
                                         <div class="text-warning">
@@ -575,7 +614,7 @@
                                             {% endfor %}
                                         </div>
                                     </div>
-                                    <p class="mb-0 text-body" style="font-size: 15px; line-height: 1.6; color: #475569;">{{ review.text }}</p>
+                                    <p class="mb-0 text-body" style="font-size: 14.5px; line-height: 1.6; color: #475569;">{{ review.text }}</p>
                                 </div>
                                 {% empty %}
                                 <div class="text-center py-5 bg-light rounded-4 mb-4">
@@ -583,20 +622,20 @@
                                         <i class="far fa-comment-dots"></i>
                                     </div>
                                     <h6 class="fw-700 text-dark mb-1">Hozircha xaridorlar fikri yo'q</h6>
-                                    <p class="text-muted mb-0 font-14">Ushbu mahsulot haqida birinchi bo'lib o'z fikringizni qoldiring!</p>
+                                    <p class="text-muted mb-0 font-14">Ushbu mahsulotni xarid qilgan bo'lsangiz, birinchi bo'lib o'z fikringizni qoldiring!</p>
                                 </div>
                                 {% endfor %}
                             </div>
 
-                            <!-- Add Review Form -->
-                            {% if request.user.is_authenticated %}
+                            <!-- Add Review Form (Verified Buyers Only) -->
+                            {% if can_review %}
                             <div class="add-review-card bg-light p-4 rounded-4 border">
                                 <h5 class="fw-700 mb-3 text-dark"><i class="fas fa-pen-nib me-2 text-main"></i> Fikr qoldirish</h5>
                                 <form action="{% url 'add_review' product.code %}" method="POST">
                                     {% csrf_token %}
                                     <div class="mb-3">
                                         <label class="form-label font-14 fw-600 text-dark">Bahoyingiz (1 dan 5 gacha)</label>
-                                        <select name="rating" class="form-select border shadow-sm" required style="border-radius: 12px; height: 48px; font-weight: 500;">
+                                        <select name="rating" class="form-select border shadow-sm" required style="border-radius: 12px; height: 44px; font-weight: 500;">
                                             <option value="5">⭐⭐⭐⭐⭐ 5 - A'lo darajada</option>
                                             <option value="4">⭐⭐⭐⭐ 4 - Yaxshi</option>
                                             <option value="3">⭐⭐⭐ 3 - O'rtacha</option>
@@ -606,16 +645,34 @@
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label font-14 fw-600 text-dark">Fikringiz matni</label>
-                                        <textarea name="text" rows="3" class="form-control border shadow-sm" style="border-radius: 14px; resize: vertical;" placeholder="Mahsulotning sifati, yetkazib berilishi va taassurotlaringiz haqida yozing..." required></textarea>
+                                        <textarea name="text" rows="3" class="form-control border shadow-sm" style="border-radius: 12px; resize: vertical;" placeholder="Mahsulotning sifati, yetkazib berilishi va taassurotlaringiz haqida yozing..." required></textarea>
                                     </div>
                                     <button type="submit" class="btn btn-main pill px-4 py-2 fw-700">
                                         <i class="fas fa-paper-plane me-1"></i> Fikrni yuborish
                                     </button>
                                 </form>
                             </div>
+                            {% elif request.user.is_authenticated and has_reviewed %}
+                            <div class="alert alert-success border-0 shadow-sm d-flex align-items-center gap-3 p-3 rounded-4" style="background: #ecfdf5; color: #065f46;">
+                                <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(16, 185, 129, 0.2); color: #059669; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <div class="font-14">
+                                    <strong>Rahmat!</strong> Siz ushbu mahsulot uchun fikringizni qoldirgansiz.
+                                </div>
+                            </div>
+                            {% elif request.user.is_authenticated and not has_purchased %}
+                            <div class="alert alert-light border shadow-sm d-flex align-items-center gap-3 p-3 rounded-4">
+                                <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(245, 158, 11, 0.15); color: #d97706; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                    <i class="fas fa-shield-alt"></i>
+                                </div>
+                                <div class="font-14 text-dark">
+                                    Fikr qoldirish faqat <strong>haqiqiy xaridorlar</strong> uchun ochiq. Ushbu mahsulotni xarid qilganingizdan so'ng baholashingiz mumkin.
+                                </div>
+                            </div>
                             {% else %}
                             <div class="alert alert-light border shadow-sm d-flex align-items-center gap-3 p-3 rounded-4">
-                                <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(124, 58, 237, 0.1); color: #7C3AED; font-size: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(124, 58, 237, 0.1); color: #7C3AED; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                                     <i class="fas fa-user-lock"></i>
                                 </div>
                                 <div class="font-14 text-dark">
@@ -637,9 +694,21 @@
                             <span class="badge bg-light text-muted border px-3 py-1 rounded-pill font-13 fw-600">
                                 <i class="fas fa-layer-group me-1 text-main"></i> {{ product.category.name }}
                             </span>
-                            <div class="d-flex align-items-center gap-1 font-13 text-warning">
-                                <i class="fas fa-star"></i> <strong class="text-dark">{{ product.avg_rating }}</strong>
-                                <span class="text-muted">({{ product.reviews_count }})</span>
+                            <div class="d-flex align-items-center gap-1 font-13">
+                                {% if product.reviews_count and product.reviews_count > 0 %}
+                                <div class="text-warning">
+                                    <i class="fas fa-star"></i> <strong class="text-dark">{{ product.avg_rating }}</strong>
+                                    <span class="text-muted font-12 ms-1">({{ product.reviews_count }})</span>
+                                </div>
+                                {% elif product.is_new %}
+                                <span class="badge bg-success text-white font-12 fw-700 px-2 py-1 rounded-pill">
+                                    <i class="fas fa-bolt me-1"></i> Yangi
+                                </span>
+                                {% else %}
+                                <span class="badge bg-light text-muted border font-12 fw-600 px-2 py-1 rounded-pill">
+                                    <i class="far fa-star text-warning me-1"></i> Hali baholanmagan
+                                </span>
+                                {% endif %}
                             </div>
                         </div>
                         <h1 class="fw-800 text-heading mb-0" id="product-title" style="font-size: 26px; line-height: 1.3;">{{ product.name }}</h1>

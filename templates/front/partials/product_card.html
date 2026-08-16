@@ -2,6 +2,20 @@
 <div class="product-item-card h-100 d-flex flex-column bg-white rounded-4 p-2 border transition-all">
     <!-- Image Box -->
     <div class="product-item-img-box position-relative overflow-hidden rounded-3 mb-2">
+        <!-- Floating Badges (New & Discount) -->
+        <div class="position-absolute top-0 start-0 m-2 d-flex flex-column gap-1" style="z-index: 2; pointer-events: none;">
+            {% if product.is_new %}
+            <span class="badge bg-success text-white font-11 fw-700 rounded-pill px-2 py-1 shadow-sm">
+                <i class="fas fa-bolt me-1"></i> Yangi
+            </span>
+            {% endif %}
+            {% if product.discount_status and product.discount_percent and product.discount_percent > 0 %}
+            <span class="badge bg-danger text-white font-11 fw-700 rounded-pill px-2 py-1 shadow-sm">
+                -{{ product.discount_percent }}%
+            </span>
+            {% endif %}
+        </div>
+
         <a href="{% url 'product_detail' product.code %}" class="d-block w-100 h-100">
             {% if product.image %}
             <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-item-img">
@@ -62,10 +76,21 @@
 
         <!-- Rating & Stock Info -->
         <div class="product-item-meta d-flex align-items-center justify-content-between mb-3 mt-auto font-12">
+            {% if product.reviews_count and product.reviews_count > 0 %}
             <div class="d-flex align-items-center fw-700" style="color: #d97706;">
-                <i class="fas fa-star me-1"></i> 4.8
+                <i class="fas fa-star me-1"></i> {{ product.avg_rating }}
+                <span class="text-muted font-11 ms-1">({{ product.reviews_count }})</span>
             </div>
-            <span class="fw-600" style="color: #475569;">{{ product.count }} ta sotilgan</span>
+            {% elif product.is_new %}
+            <div class="d-flex align-items-center fw-700 text-success font-11">
+                <i class="fas fa-bolt me-1"></i> Yangi
+            </div>
+            {% else %}
+            <div class="d-flex align-items-center text-muted font-11">
+                <i class="far fa-star me-1"></i> Baholanmagan
+            </div>
+            {% endif %}
+            <span class="fw-600" style="color: #475569;">{{ product.count }} ta mavjud</span>
         </div>
 
         <!-- Full-width Action Button -->

@@ -117,16 +117,24 @@ class Product(Code):
         return self.count <= 0
 
     @property
+    def is_new(self):
+        if not self.created_at:
+            return False
+        from django.utils import timezone
+        from datetime import timedelta
+        return self.created_at >= timezone.now() - timedelta(days=7)
+
+    @property
     def avg_rating(self):
         if hasattr(self, '_avg_rating_val'):
             return self._avg_rating_val
         from django.db.models import Avg
         val = self.reviews.aggregate(Avg('rating'))['rating__avg']
-        return round(val, 1) if val else 5.0
+        return round(val, 1) if val is not None else 0.0
 
     @avg_rating.setter
     def avg_rating(self, val):
-        self._avg_rating_val = round(val, 1) if val is not None else 5.0
+        self._avg_rating_val = round(val, 1) if val is not None else 0.0
 
     @property
     def reviews_count(self):
@@ -276,6 +284,7 @@ class Review(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        unique_together = ('user', 'product')
 
 
 class SiteSettings(models.Model):

@@ -148,6 +148,9 @@ def product_detail(request, code):
         "wishlist_ids": [],
         "cart_qty": 1,
         "is_in_wishlist": False,
+        "has_purchased": False,
+        "has_reviewed": False,
+        "can_review": False,
     }
     if request.user.is_authenticated:
         wishlist_ids = list(models.WishList.objects.filter(
@@ -164,6 +167,20 @@ def product_detail(request, code):
         ).first()
         if cart_product:
             context['cart_qty'] = cart_product.count
+
+        # Check verified purchase status (order status in [2, 3, 4])
+        has_purchased = models.CartProduct.objects.filter(
+            cart__user=request.user,
+            cart__status__in=[2, 3, 4],
+            product=product
+        ).exists()
+        has_reviewed = models.Review.objects.filter(
+            user=request.user,
+            product=product
+        ).exists()
+        context['has_purchased'] = has_purchased
+        context['has_reviewed'] = has_reviewed
+        context['can_review'] = has_purchased and not has_reviewed
 
     return render(request, 'front/detail.html', context=context)
 
@@ -187,7 +204,31 @@ def load_more_related_products(request, code):
 def add_review(request, product_code):
     if request.method == 'POST':
         product = get_object_or_404(models.Product, code=product_code)
-        rating = int(request.POST.get('rating', 5))
+
+        # 1. Authoritative verified purchase verification
+        has_purchased = models.CartProduct.objects.filter(
+            cart__user=request.user,
+            cart__status__in=[2, 3, 4],
+            product=product
+        ).exists()
+
+        if not has_purchased:
+            messages.error(request, "Fikr qoldirish uchun ushbu mahsulotni xarid qilgan bo'lishingiz kerak.")
+            return redirect('product_detail', code=product_code)
+
+        # 2. Duplicate review protection
+        if models.Review.objects.filter(user=request.user, product=product).exists():
+            messages.warning(request, "Siz ushbu mahsulot uchun allaqachon fikr qoldirgansiz.")
+            return redirect('product_detail', code=product_code)
+
+        # 3. Rating validation (1 to 5 integer)
+        try:
+            rating = int(request.POST.get('rating', 5))
+            if rating < 1 or rating > 5:
+                rating = 5
+        except (ValueError, TypeError):
+            rating = 5
+
         text = request.POST.get('text', '').strip()
         if text:
             models.Review.objects.create(
@@ -196,6 +237,10 @@ def add_review(request, product_code):
                 rating=rating,
                 text=text
             )
+            messages.success(request, "Fikringiz muvaffaqiyatli saqlandi! Rahmat.")
+        else:
+            messages.warning(request, "Iltimos, fikringiz matnini kiriting.")
+
         return redirect('product_detail', code=product_code)
     return redirect('index')
 
