@@ -2311,11 +2311,12 @@ class ProductDetailAndVerifiedReviewsTests(TestCase):
         response = self.client.get(f'/product-detail/{self.product.code}/')
         content = response.content.decode('utf-8')
         self.assertIn('.btn-action-lg', content)
-        self.assertIn('height: 42px;', content)
-        self.assertIn('height: 40px;', content)
-        self.assertIn('height: 38px;', content)
+        self.assertIn('height: 36px;', content)
+        self.assertIn('height: 34px;', content)
+        self.assertIn('height: 32px;', content)
         self.assertIn('.btn-buy-now', content)
         self.assertIn('.btn-wishlist-outline', content)
+        self.assertIn('action-buttons-group', content)
 
     def test_top_navigation_progress_bar_stepped_and_safety_reset(self):
         """base.html top progress bar must have stepped progression, safety timeout, and BFCache reset."""
@@ -2353,7 +2354,7 @@ class ProductDetailAndVerifiedReviewsTests(TestCase):
         self.assertIn('Mastercard', content)
 
     def test_image_overlay_no_stock_badge_and_right_stock_preserved(self):
-        """Stock badge must be removed from image overlay, but preserved on right-side summary."""
+        """Stock and new status badges must be removed from image overlay, but preserved on summary."""
         response = self.client.get(f'/product-detail/{self.product.code}/')
         content = response.content.decode('utf-8')
         # Extract product-img-overlay-badges block
@@ -2364,6 +2365,7 @@ class ProductDetailAndVerifiedReviewsTests(TestCase):
         self.assertNotIn('Sotuvda mavjud', overlay_content)
         self.assertNotIn('Kam qoldi', overlay_content)
         self.assertNotIn('Sotuvda qolmagan', overlay_content)
+        self.assertNotIn('Yangi', overlay_content)
 
         # But right side has stock
         self.assertIn('Sotuvda mavjud', content)
