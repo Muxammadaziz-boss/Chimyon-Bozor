@@ -131,3 +131,29 @@ class UIVisibilityAndInteractionTests(TestCase):
         self.assertIn("scrollbar-color: #7C3AED #F8FAFC;", content_dash)
         self.assertIn("::-webkit-scrollbar", content_dash)
 
+    # 12. Header Search Bar Variant 4 Design & Functionality
+    def test_header_search_bar_variant_4_design(self):
+        res = self.client.get(reverse('index'))
+        self.assertEqual(res.status_code, 200)
+        content = res.content.decode('utf-8')
+
+        # Pill-shaped container & border styling
+        self.assertIn("border: 2px solid #7C3AED;", content)
+        self.assertIn("border-radius: 999px;", content)
+        self.assertIn(".search-input-group:focus-within", content)
+        self.assertIn("border-color: #6D28D9;", content)
+
+        # Left icon, input, divider, and gradient button
+        self.assertIn("header-search-left-icon", content)
+        self.assertIn("header-search-divider", content)
+        self.assertIn("header-search-btn", content)
+        self.assertIn("Mahsulotlarni qidirish...", content)
+        self.assertIn("outline: none !important;", content)
+        self.assertIn("border: none !important;", content)
+
+        # Search functionality test
+        search_res = self.client.get(reverse('all_products') + '?search=Test+Phone')
+        self.assertEqual(search_res.status_code, 200)
+        search_content = search_res.content.decode('utf-8')
+        self.assertIn("Test Phone Pro", search_content)
+

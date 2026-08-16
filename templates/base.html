@@ -335,37 +335,135 @@
             transform: rotate(180deg);
         }
         .header-search-wrap {
-            max-width: 650px;
+            max-width: 680px;
             width: 100%;
         }
+        .header-search-form {
+            display: flex;
+            width: 100%;
+            margin: 0;
+        }
         .search-input-group {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            height: 56px;
             background: #ffffff;
-            border: 2px solid rgba(183, 135, 253, 0.45);
-            border-radius: 35px;
-            padding: 4px 4px 4px 22px;
-            box-shadow: 0 4px 18px rgba(183, 135, 253, 0.1);
-            transition: all 0.25s ease;
+            border: 2px solid #7C3AED;
+            border-radius: 999px;
+            padding: 4px 6px 4px 18px;
+            box-shadow: 0 2px 12px rgba(124, 58, 237, 0.08);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
         }
         .search-input-group:focus-within {
-            border-color: hsl(var(--main));
-            box-shadow: 0 6px 24px rgba(183, 135, 253, 0.25);
+            border-color: #6D28D9;
+            box-shadow: 0 0 0 4px rgba(109, 40, 217, 0.12), 0 4px 20px rgba(124, 58, 237, 0.15);
         }
-        .header-search-input {
+        .header-search-left-icon {
+            color: #7C3AED;
+            font-size: 17px;
+            margin-right: 12px;
+            flex-shrink: 0;
+            pointer-events: none;
+        }
+        .header-search-input,
+        .header-search-input:focus,
+        .header-search-input:focus-visible,
+        .header-search-input:active {
+            flex: 1 1 auto;
+            min-width: 0;
+            width: 100%;
+            height: 100%;
             border: none !important;
-            background: transparent !important;
+            outline: none !important;
             box-shadow: none !important;
-            font-size: 16px;
-            color: hsl(var(--heading-color));
-            padding: 8px 0;
+            background: transparent !important;
+            font-size: 15px;
+            font-weight: 500;
+            color: #1E293B;
+            padding: 0 8px 0 0;
+            line-height: 1.5;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
         }
         .header-search-input::placeholder {
             color: #94a3b8;
+            font-weight: 400;
+        }
+        .header-search-divider {
+            height: 28px;
+            width: 1px;
+            background-color: #E2E8F0;
+            margin: 0 10px;
+            flex-shrink: 0;
         }
         .header-search-btn {
-            border-radius: 30px !important;
-            padding: 10px 28px !important;
-            font-weight: 600;
+            height: 44px;
+            background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%) !important;
+            color: #ffffff !important;
+            border: none !important;
+            border-radius: 999px !important;
+            padding: 0 24px !important;
+            font-weight: 700;
             font-size: 15px;
+            letter-spacing: 0.2px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(109, 40, 217, 0.25);
+            white-space: nowrap;
+        }
+        .header-search-btn:hover {
+            background: linear-gradient(135deg, #6D28D9 0%, #5B21B6 100%) !important;
+            box-shadow: 0 4px 14px rgba(109, 40, 217, 0.35) !important;
+            transform: translateY(-1px);
+            color: #ffffff !important;
+        }
+        .header-search-btn:active {
+            transform: scale(0.98);
+            box-shadow: 0 2px 6px rgba(109, 40, 217, 0.2) !important;
+        }
+        .header-search-btn-icon {
+            font-size: 13px;
+        }
+        @media (max-width: 575.98px) {
+            .header-search-wrap {
+                order: 3;
+                width: 100%;
+                margin-top: 10px;
+            }
+            .search-input-group {
+                height: 48px;
+                padding: 3px 4px 3px 14px;
+            }
+            .header-search-left-icon {
+                font-size: 15px;
+                margin-right: 8px;
+            }
+            .header-search-input {
+                font-size: 14px;
+            }
+            .header-search-divider {
+                height: 22px;
+                margin: 0 6px;
+            }
+            .header-search-btn {
+                height: 40px;
+                padding: 0 16px !important;
+                font-size: 13px;
+            }
+        }
+        @media (max-width: 380px) {
+            .header-search-btn {
+                padding: 0 12px !important;
+            }
         }
         .header-search-results-popup {
             position: absolute;
@@ -1274,18 +1372,21 @@
                         </div>
                     </div>
 
-                    <!-- Center: Long Search Bar -->
-                    <div class="header-search-wrap flex-grow-1 mx-lg-4 mx-2 position-relative d-none d-sm-block">
-                        <form action="{% url 'all_products' %}" method="get" class="d-flex w-100 position-relative">
-                            <div class="input-group search-input-group w-100">
-                                <input type="text" name="search" id="header-live-search-input" class="form-control header-search-input" placeholder="Mahsulotlarni qidirish..." autocomplete="off" value="{{ request.GET.search|default:'' }}">
-                                <button type="submit" class="btn btn-main header-search-btn px-4">
-                                    <i class="fas fa-search me-1"></i> <span>Qidirish</span>
+                    <!-- Center: Long Search Bar (Design Variant 4) -->
+                    <div class="header-search-wrap flex-grow-1 mx-lg-4 mx-2 position-relative">
+                        <form action="{% url 'all_products' %}" method="get" class="header-search-form w-100 position-relative">
+                            <div class="search-input-group w-100">
+                                <i class="fas fa-search header-search-left-icon" aria-hidden="true"></i>
+                                <input type="text" name="search" id="header-live-search-input" class="header-search-input" placeholder="Mahsulotlarni qidirish..." autocomplete="off" value="{{ request.GET.search|default:'' }}" aria-label="Mahsulotlarni qidirish">
+                                <div class="header-search-divider" aria-hidden="true"></div>
+                                <button type="submit" class="btn header-search-btn" aria-label="Qidirish">
+                                    <i class="fas fa-search header-search-btn-icon"></i>
+                                    <span class="header-search-btn-text">Qidirish</span>
                                 </button>
                             </div>
                         </form>
                         <!-- Live Search Pop-up Results -->
-                        <div id="header-live-search-results" class="header-search-results-popup" style="display:none;"></div>
+                        <div id="header-live-search-results" class="header-search-results-popup" style="display:none;" role="region" aria-live="polite"></div>
                     </div>
 
 
