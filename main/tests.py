@@ -2325,6 +2325,31 @@ class ProductDetailAndVerifiedReviewsTests(TestCase):
         self.assertIn('popstate', content)
         self.assertIn('pageshow', content)
 
+    def test_reviews_rendered_before_description(self):
+        """Reviews section must appear before product description section in HTML flow."""
+        response = self.client.get(f'/product-detail/{self.product.code}/')
+        content = response.content.decode('utf-8')
+        reviews_idx = content.find('id="reviews-section"')
+        desc_idx = content.find('id="description-section"')
+        self.assertNotEqual(reviews_idx, -1, "reviews-section must exist")
+        self.assertNotEqual(desc_idx, -1, "description-section must exist")
+        self.assertLess(reviews_idx, desc_idx, "reviews-section must come before description-section")
+
+    def test_service_cards_and_payment_methods_rendered(self):
+        """Product detail must render the 3 service cards and payment methods pills."""
+        response = self.client.get(f'/product-detail/{self.product.code}/')
+        content = response.content.decode('utf-8')
+        self.assertIn('Ertaga yetkazib beramiz', content)
+        self.assertIn("Xavfsiz to'lov", content)
+        self.assertIn('Qaytarish oson va tez', content)
+        self.assertIn('Click', content)
+        self.assertIn('Payme', content)
+        self.assertIn('Uzum', content)
+        self.assertIn('Humo', content)
+        self.assertIn('Uzcard', content)
+        self.assertIn('Visa', content)
+        self.assertIn('Mastercard', content)
+
 
 
 

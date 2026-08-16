@@ -211,15 +211,15 @@
         transform: rotate(90deg);
     }
 
-    /* ── Glass Sidebar ── */
+    /* ── Action Card / Glass Sidebar ── */
     .glass-sidebar {
         background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 24px;
-        padding: 32px;
-        box-shadow: 0 16px 40px -12px rgba(124, 58, 237, 0.08), 0 2px 10px rgba(0, 0, 0, 0.02);
+        border: 1px solid #E5E7EB;
+        border-radius: 18px;
+        padding: 24px;
+        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05), 0 2px 8px rgba(0, 0, 0, 0.02);
         position: sticky;
-        top: 100px;
+        top: 90px;
     }
 
     /* ── Action Buttons ── */
@@ -235,12 +235,15 @@
         transition: all 0.2s ease;
         border: none;
         cursor: pointer;
-        padding: 0 18px;
+        padding: 0 16px;
     }
     .btn-buy-now {
+        height: 44px;
         background: linear-gradient(135deg, #10B981 0%, #059669 100%);
         color: #ffffff !important;
         box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+        border-radius: 12px;
+        font-size: 14px;
     }
     .btn-buy-now:hover:not(:disabled) {
         background: linear-gradient(135deg, #059669 0%, #047857 100%);
@@ -278,27 +281,107 @@
             height: 44px;
             font-size: 14px;
         }
+        .btn-buy-now {
+            height: 42px;
+            font-size: 13.5px;
+        }
         .btn-wishlist-outline,
         .btn-wishlist-solid {
             height: 40px;
             font-size: 13px;
         }
     }
+
+    /* ── Detail Section Cards ── */
+    .detail-section-card {
+        background: #ffffff;
+        border: 1px solid #E5E7EB;
+        border-radius: 18px;
+        padding: 24px;
+        box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.03);
+        margin-bottom: 24px;
+    }
+    .detail-section-card-title {
+        font-size: 18px;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* ── Service Block Cards ── */
+    .service-info-card {
+        background: #ffffff;
+        border: 1px solid #E5E7EB;
+        border-radius: 16px;
+        padding: 18px;
+        transition: all 0.2s ease;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    .service-info-card:hover {
+        border-color: #CBD5E1;
+        box-shadow: 0 6px 18px -4px rgba(0, 0, 0, 0.05);
+        transform: translateY(-2px);
+    }
+    .service-info-icon-wrap {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        margin-bottom: 12px;
+        flex-shrink: 0;
+    }
+    .service-info-icon-delivery { background: rgba(124, 58, 237, 0.1); color: #7C3AED; }
+    .service-info-icon-payment { background: rgba(16, 185, 129, 0.1); color: #10B981; }
+    .service-info-icon-returns { background: rgba(236, 72, 153, 0.1); color: #EC4899; }
+    .service-info-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 6px;
+    }
+    .service-info-desc {
+        font-size: 13px;
+        color: #64748b;
+        line-height: 1.5;
+        margin: 0;
+    }
+
+    /* ── Payment Methods Pill Row ── */
+    .payment-pill-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: #334155;
+    }
     
     /* ── Meta Items ── */
     .meta-list {
         list-style: none;
         padding: 0;
-        margin: 24px 0 0;
+        margin: 20px 0 0;
         border-top: 1px dashed #e2e8f0;
-        padding-top: 20px;
+        padding-top: 16px;
     }
     .meta-list li {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 12px;
-        font-size: 14.5px;
+        margin-bottom: 10px;
+        font-size: 14px;
     }
     .meta-list li span:first-child {
         color: #64748b;
@@ -312,19 +395,19 @@
     .qty-control-wrapper {
         background: #f8fafc;
         border: 1.5px solid #e2e8f0;
-        border-radius: 16px;
-        padding: 4px;
+        border-radius: 14px;
+        padding: 3px;
         display: flex;
         align-items: center;
         justify-content: space-between;
     }
     .qty-control-wrapper button {
-        width: 42px;
-        height: 42px;
+        width: 38px;
+        height: 38px;
         border: none;
         background: #ffffff;
-        border-radius: 12px;
-        font-size: 18px;
+        border-radius: 10px;
+        font-size: 16px;
         font-weight: 600;
         color: #334155;
         cursor: pointer;
@@ -332,7 +415,7 @@
         align-items: center;
         justify-content: center;
         transition: all 0.2s;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
     .qty-control-wrapper button:hover:not(:disabled) {
         background: #7C3AED;
@@ -350,11 +433,11 @@
         background: transparent;
         text-align: center;
         font-weight: 700;
-        font-size: 17px;
+        font-size: 16px;
         color: #0f172a !important;
         appearance: none;
         -moz-appearance: textfield;
-        width: 60px;
+        width: 50px;
     }
     .qty-control-wrapper input::-webkit-outer-spin-button,
     .qty-control-wrapper input::-webkit-inner-spin-button {
@@ -365,19 +448,19 @@
     /* ── Social Share ── */
     .share-btn-wrap {
         display: flex;
-        gap: 10px;
-        margin-top: 12px;
+        gap: 8px;
+        margin-top: 10px;
         flex-wrap: wrap;
     }
     .share-btn {
-        width: 42px;
-        height: 42px;
-        border-radius: 12px;
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
         color: #fff;
-        font-size: 16px;
+        font-size: 15px;
         transition: all 0.2s ease;
         text-decoration: none;
         border: none;
@@ -395,71 +478,42 @@
     /* ── Perks Card ── */
     .perks-card {
         background: #f8fafc;
-        border-radius: 16px;
-        padding: 16px;
+        border-radius: 14px;
+        padding: 14px;
         border: 1px solid #e2e8f0;
-        margin-top: 20px;
+        margin-top: 16px;
     }
     .perk-item {
         display: flex;
         align-items: center;
-        gap: 12px;
-        font-size: 13.5px;
+        gap: 10px;
+        font-size: 13px;
         color: #334155;
         font-weight: 500;
     }
     .perk-item:not(:last-child) {
-        margin-bottom: 10px;
-        padding-bottom: 10px;
+        margin-bottom: 8px;
+        padding-bottom: 8px;
         border-bottom: 1px dashed #e2e8f0;
     }
     .perk-icon {
-        width: 32px;
-        height: 32px;
+        width: 28px;
+        height: 28px;
         border-radius: 8px;
         background: rgba(124, 58, 237, 0.1);
         color: #7C3AED;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 14px;
+        font-size: 13px;
         flex-shrink: 0;
-    }
-
-    /* ── Product Tabs ── */
-    .product-nav-tabs {
-        border-bottom: 2px solid #e2e8f0;
-        gap: 24px;
-    }
-    .product-nav-tabs .nav-link {
-        border: none;
-        padding: 12px 4px;
-        font-weight: 600;
-        font-size: 16px;
-        color: #64748b;
-        background: transparent;
-        position: relative;
-        transition: all 0.2s;
-    }
-    .product-nav-tabs .nav-link.active {
-        color: #7C3AED;
-    }
-    .product-nav-tabs .nav-link.active::after {
-        content: '';
-        position: absolute;
-        bottom: -2px;
-        left: 0;
-        right: 0;
-        height: 3px;
-        border-radius: 3px;
-        background: #7C3AED;
     }
 
     @media (max-width: 991px) {
         .glass-sidebar {
             position: static;
-            margin-top: 24px;
-            padding: 24px;
+            margin-top: 20px;
+            padding: 20px;
         }
     }
 </style>
@@ -558,128 +612,217 @@
                     </button>
                 </div>
 
-                <!-- Product Tabs: Description & Reviews -->
-                <div class="product-tabs-wrapper mt-5 pt-3">
-                    <ul class="nav product-nav-tabs mb-4" id="productTab" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="desc-tab" data-bs-toggle="tab" data-bs-target="#desc-content" type="button" role="tab" aria-controls="desc-content" aria-selected="true">
-                                <i class="fas fa-info-circle me-1"></i> Mahsulot tavsifi
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews-content" type="button" role="tab" aria-controls="reviews-content" aria-selected="false">
-                                <i class="fas fa-comment-alt me-1"></i> Fikrlar ({{ product.reviews_count }})
-                            </button>
-                        </li>
-                    </ul>
-
-                    <div class="tab-content" id="productTabContent">
-                        <!-- Description Tab -->
-                        <div class="tab-pane fade show active" id="desc-content" role="tabpanel" aria-labelledby="desc-tab">
-                            {% if product.description %}
-                            <div class="text-body font-16" style="line-height: 1.8; color: #334155;">
-                                {{ product.description|linebreaks }}
+                <!-- ── 1. REVIEWS SECTION (FIRST SECTION) ── -->
+                <div class="detail-section-card mt-4" id="reviews-section">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4 pb-3 border-bottom">
+                        <div class="d-flex align-items-center gap-2">
+                            <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(124,58,237,0.1); color: #7C3AED; display: flex; align-items: center; justify-content: center; font-size: 16px;">
+                                <i class="fas fa-comment-dots"></i>
                             </div>
-                            {% else %}
-                            <div class="text-center py-4 bg-light rounded-4 text-muted">
-                                <i class="fas fa-align-left font-24 mb-2 d-block"></i>
-                                Ushbu mahsulot uchun batafsil tavsif hali kiritilmagan.
+                            <div>
+                                <h3 class="fw-800 text-dark m-0" style="font-size: 19px;">Xaridorlar fikrlari</h3>
                             </div>
-                            {% endif %}
+                            <span class="badge bg-light text-muted border font-12 fw-700 rounded-pill px-2 py-1">{{ product.reviews_count }}</span>
                         </div>
+                        {% if product.reviews_count and product.reviews_count > 0 %}
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="font-16 fw-800 text-warning"><i class="fas fa-star me-1"></i>{{ product.avg_rating }}</span>
+                            <span class="text-muted font-13">({{ product.reviews_count }} ta baho)</span>
+                        </div>
+                        {% else %}
+                        <span class="badge bg-light text-muted border font-12 fw-600 px-2 py-1 rounded-pill">
+                            <i class="far fa-star text-warning me-1"></i> Hali baholanmagan
+                        </span>
+                        {% endif %}
+                    </div>
 
-                        <!-- Reviews Tab -->
-                        <div class="tab-pane fade" id="reviews-content" role="tabpanel" aria-labelledby="reviews-tab">
-                            <div class="reviews-list mb-5">
-                                {% for review in product.reviews.all %}
-                                <div class="review-item mb-4 pb-4 border-bottom">
-                                    <div class="d-flex align-items-center justify-content-between mb-2">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <div class="avatar text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 40px; height: 40px; background: linear-gradient(135deg, #7C3AED, #EC4899); font-size: 14px;">
-                                                {{ review.user.username|make_list|first|upper }}
-                                            </div>
-                                            <div>
-                                                <div class="d-flex align-items-center gap-2 flex-wrap">
-                                                    <h6 class="mb-0 fw-700 text-dark" style="font-size: 14px;">{{ review.user.get_full_name|default:review.user.username }}</h6>
-                                                    <span class="badge bg-success text-white px-2 py-0 rounded-pill fw-600" style="font-size: 11px;">
-                                                        <i class="fas fa-check-circle me-1"></i> Xarid qilgan
-                                                    </span>
-                                                </div>
-                                                <span class="text-muted" style="font-size: 12px;">{{ review.created_at|date:"d.m.Y H:i" }}</span>
-                                            </div>
-                                        </div>
-                                        <div class="text-warning">
-                                            {% for i in "12345"|make_list %}
-                                            <i class="fas fa-star{% if forloop.counter > review.rating %} text-muted opacity-25{% endif %}" style="font-size: 13px;"></i>
-                                            {% endfor %}
-                                        </div>
+                    <!-- Reviews List -->
+                    <div class="reviews-list mb-4">
+                        {% for review in product.reviews.all %}
+                        <div class="review-item mb-3 pb-3 border-bottom">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="avatar text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 38px; height: 38px; background: linear-gradient(135deg, #7C3AED, #EC4899); font-size: 13px;">
+                                        {{ review.user.username|make_list|first|upper }}
                                     </div>
-                                    <p class="mb-0 text-body" style="font-size: 14.5px; line-height: 1.6; color: #475569;">{{ review.text }}</p>
-                                </div>
-                                {% empty %}
-                                <div class="text-center py-5 bg-light rounded-4 mb-4">
-                                    <div style="width: 60px; height: 60px; border-radius: 50%; background: #ede9fe; color: #7C3AED; font-size: 24px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">
-                                        <i class="far fa-comment-dots"></i>
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                                            <h6 class="mb-0 fw-700 text-dark font-14">{{ review.user.get_full_name|default:review.user.username }}</h6>
+                                            <span class="badge bg-success text-white px-2 py-0 rounded-pill fw-600" style="font-size: 10.5px;">
+                                                <i class="fas fa-check-circle me-1"></i> Xarid qilgan
+                                            </span>
+                                        </div>
+                                        <span class="text-muted" style="font-size: 12px;">{{ review.created_at|date:"d.m.Y H:i" }}</span>
                                     </div>
-                                    <h6 class="fw-700 text-dark mb-1">Hozircha xaridorlar fikri yo'q</h6>
-                                    <p class="text-muted mb-0 font-14">Ushbu mahsulotni xarid qilgan bo'lsangiz, birinchi bo'lib o'z fikringizni qoldiring!</p>
                                 </div>
-                                {% endfor %}
+                                <div class="text-warning">
+                                    {% for i in "12345"|make_list %}
+                                    <i class="fas fa-star{% if forloop.counter > review.rating %} text-muted opacity-25{% endif %}" style="font-size: 12px;"></i>
+                                    {% endfor %}
+                                </div>
                             </div>
+                            <p class="mb-0 text-body" style="font-size: 14.5px; line-height: 1.6; color: #475569;">{{ review.text }}</p>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-4 bg-light rounded-4 mb-3">
+                            <div style="width: 48px; height: 48px; border-radius: 50%; background: #ede9fe; color: #7C3AED; font-size: 20px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 8px;">
+                                <i class="far fa-comment-dots"></i>
+                            </div>
+                            <h6 class="fw-700 text-dark mb-1 font-15">Hozircha xaridorlar fikri yo'q</h6>
+                            <p class="text-muted mb-0 font-13">Ushbu mahsulotni xarid qilgan bo'lsangiz, birinchi bo'lib fikringizni qoldiring!</p>
+                        </div>
+                        {% endfor %}
+                    </div>
 
-                            <!-- Add Review Form (Verified Buyers Only) -->
-                            {% if can_review %}
-                            <div class="add-review-card bg-light p-4 rounded-4 border">
-                                <h5 class="fw-700 mb-3 text-dark"><i class="fas fa-pen-nib me-2 text-main"></i> Fikr qoldirish</h5>
-                                <form action="{% url 'add_review' product.code %}" method="POST">
-                                    {% csrf_token %}
-                                    <div class="mb-3">
-                                        <label class="form-label font-14 fw-600 text-dark">Bahoyingiz (1 dan 5 gacha)</label>
-                                        <select name="rating" class="form-select border shadow-sm" required style="border-radius: 12px; height: 44px; font-weight: 500;">
-                                            <option value="5">⭐⭐⭐⭐⭐ 5 - A'lo darajada</option>
-                                            <option value="4">⭐⭐⭐⭐ 4 - Yaxshi</option>
-                                            <option value="3">⭐⭐⭐ 3 - O'rtacha</option>
-                                            <option value="2">⭐⭐ 2 - Qoniqarsiz</option>
-                                            <option value="1">⭐ 1 - Juda yomon</option>
-                                        </select>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label font-14 fw-600 text-dark">Fikringiz matni</label>
-                                        <textarea name="text" rows="3" class="form-control border shadow-sm" style="border-radius: 12px; resize: vertical;" placeholder="Mahsulotning sifati, yetkazib berilishi va taassurotlaringiz haqida yozing..." required></textarea>
-                                    </div>
-                                    <button type="submit" class="btn btn-main pill px-4 py-2 fw-700">
-                                        <i class="fas fa-paper-plane me-1"></i> Fikrni yuborish
-                                    </button>
-                                </form>
+                    <!-- Add Review Form (Verified Buyers Only) -->
+                    {% if can_review %}
+                    <div class="add-review-card bg-light p-3 rounded-4 border">
+                        <h6 class="fw-700 mb-3 text-dark font-15"><i class="fas fa-pen-nib me-2 text-main"></i> Fikr qoldirish</h6>
+                        <form action="{% url 'add_review' product.code %}" method="POST">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label class="form-label font-13 fw-600 text-dark mb-1">Bahoyingiz (1 dan 5 gacha)</label>
+                                <select name="rating" class="form-select border shadow-sm" required style="border-radius: 10px; height: 42px; font-weight: 500; font-size: 13.5px;">
+                                    <option value="5">⭐⭐⭐⭐⭐ 5 - A'lo darajada</option>
+                                    <option value="4">⭐⭐⭐⭐ 4 - Yaxshi</option>
+                                    <option value="3">⭐⭐⭐ 3 - O'rtacha</option>
+                                    <option value="2">⭐⭐ 2 - Qoniqarsiz</option>
+                                    <option value="1">⭐ 1 - Juda yomon</option>
+                                </select>
                             </div>
-                            {% elif request.user.is_authenticated and has_reviewed %}
-                            <div class="alert alert-success border-0 shadow-sm d-flex align-items-center gap-3 p-3 rounded-4" style="background: #ecfdf5; color: #065f46;">
-                                <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(16, 185, 129, 0.2); color: #059669; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                    <i class="fas fa-check-circle"></i>
-                                </div>
-                                <div class="font-14">
-                                    <strong>Rahmat!</strong> Siz ushbu mahsulot uchun fikringizni qoldirgansiz.
-                                </div>
+                            <div class="mb-3">
+                                <label class="form-label font-13 fw-600 text-dark mb-1">Fikringiz matni</label>
+                                <textarea name="text" rows="3" class="form-control border shadow-sm font-14" style="border-radius: 10px; resize: vertical;" placeholder="Mahsulotning sifati va yetkazib berilishi haqida yozing..." required></textarea>
                             </div>
-                            {% elif request.user.is_authenticated and not has_purchased %}
-                            <div class="alert alert-light border shadow-sm d-flex align-items-center gap-3 p-3 rounded-4">
-                                <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(245, 158, 11, 0.15); color: #d97706; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                    <i class="fas fa-shield-alt"></i>
-                                </div>
-                                <div class="font-14 text-dark">
-                                    Fikr qoldirish faqat <strong>haqiqiy xaridorlar</strong> uchun ochiq. Ushbu mahsulotni xarid qilganingizdan so'ng baholashingiz mumkin.
-                                </div>
+                            <button type="submit" class="btn btn-main pill px-4 py-2 font-14 fw-700">
+                                <i class="fas fa-paper-plane me-1"></i> Fikrni yuborish
+                            </button>
+                        </form>
+                    </div>
+                    {% elif request.user.is_authenticated and has_reviewed %}
+                    <div class="alert alert-success border-0 shadow-sm d-flex align-items-center gap-3 p-3 rounded-3 mb-0" style="background: #ecfdf5; color: #065f46;">
+                        <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(16, 185, 129, 0.2); color: #059669; font-size: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="font-13">
+                            <strong>Rahmat!</strong> Siz ushbu mahsulot uchun fikringizni qoldirgansiz.
+                        </div>
+                    </div>
+                    {% elif request.user.is_authenticated and not has_purchased %}
+                    <div class="alert alert-light border shadow-sm d-flex align-items-center gap-3 p-3 rounded-3 mb-0">
+                        <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(245, 158, 11, 0.15); color: #d97706; font-size: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="font-13 text-dark">
+                            Fikr qoldirish faqat <strong>haqiqiy xaridorlar</strong> uchun ochiq. Ushbu mahsulotni xarid qilganingizdan so'ng baholashingiz mumkin.
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-light border shadow-sm d-flex align-items-center gap-3 p-3 rounded-3 mb-0">
+                        <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(124, 58, 237, 0.1); color: #7C3AED; font-size: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <i class="fas fa-user-lock"></i>
+                        </div>
+                        <div class="font-13 text-dark">
+                            Fikr qoldirish uchun tizimga <a href="{% url 'login' %}?next={{ request.path }}" class="fw-bold text-main text-decoration-underline">Kiring</a> yoki <a href="{% url 'register' %}?next={{ request.path }}" class="fw-bold text-main text-decoration-underline">Ro'yxatdan o'ting</a>.
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- ── 2. PRODUCT DESCRIPTION (SECOND SECTION) ── -->
+                <div class="detail-section-card" id="description-section">
+                    <div class="d-flex align-items-center gap-2 mb-3 pb-3 border-bottom">
+                        <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(124,58,237,0.1); color: #7C3AED; display: flex; align-items: center; justify-content: center; font-size: 16px;">
+                            <i class="fas fa-align-left"></i>
+                        </div>
+                        <h3 class="fw-800 text-dark m-0" style="font-size: 19px;">Mahsulot tavsifi</h3>
+                    </div>
+
+                    {% if product.description %}
+                    <div class="text-body font-15 mb-4" style="line-height: 1.8; color: #334155;">
+                        {{ product.description|linebreaks }}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4 bg-light rounded-4 text-muted mb-4 font-14">
+                        <i class="fas fa-align-left font-20 mb-2 d-block opacity-50"></i>
+                        Ushbu mahsulot uchun batafsil tavsif hali kiritilmagan.
+                    </div>
+                    {% endif %}
+
+                    <!-- Key Specifications / Attributes Grid -->
+                    <div class="row g-2 font-13">
+                        <div class="col-sm-6">
+                            <div class="p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
+                                <span class="text-muted">Mahsulot kodi:</span>
+                                <span class="fw-700 text-dark font-monospace">#{{ product.code }}</span>
                             </div>
-                            {% else %}
-                            <div class="alert alert-light border shadow-sm d-flex align-items-center gap-3 p-3 rounded-4">
-                                <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(124, 58, 237, 0.1); color: #7C3AED; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                    <i class="fas fa-user-lock"></i>
-                                </div>
-                                <div class="font-14 text-dark">
-                                    Fikr qoldirish uchun tizimga <a href="{% url 'login' %}?next={{ request.path }}" class="fw-bold text-main text-decoration-underline">Kiring</a> yoki <a href="{% url 'register' %}?next={{ request.path }}" class="fw-bold text-main text-decoration-underline">Ro'yxatdan o'ting</a>.
-                                </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
+                                <span class="text-muted">Kategoriya:</span>
+                                <span class="fw-700 text-main">{{ product.category.name }}</span>
                             </div>
-                            {% endif %}
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
+                                <span class="text-muted">Mavjudlik:</span>
+                                <span class="fw-700 {% if product.count > 0 %}text-success{% else %}text-danger{% endif %}">
+                                    {% if product.count > 0 %}{{ product.count }} dona mavjud{% else %}Tugagan{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
+                                <span class="text-muted">Sifat kafolati:</span>
+                                <span class="fw-700 text-dark">100% Asl mahsulot</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── 3. DELIVERY & SERVICE INFORMATION (3 CARDS) ── -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4 col-12">
+                        <div class="service-info-card">
+                            <div class="service-info-icon-wrap service-info-icon-delivery">
+                                <i class="fas fa-truck-fast"></i>
+                            </div>
+                            <h4 class="service-info-title">🚚 Ertaga yetkazib beramiz</h4>
+                            <p class="service-info-desc">Topshirish punkti yoki kuryer orqali eshigingizgacha xavfsiz yetkazish.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-12">
+                        <div class="service-info-card">
+                            <div class="service-info-icon-wrap service-info-icon-payment">
+                                <i class="fas fa-shield-check"></i>
+                            </div>
+                            <h4 class="service-info-title">🔒 Xavfsiz to'lov</h4>
+                            <p class="service-info-desc">Click, Payme, Uzum, karta yoki qabul qilganda naqd to'lash.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 col-12">
+                        <div class="service-info-card">
+                            <div class="service-info-icon-wrap service-info-icon-returns">
+                                <i class="fas fa-rotate-left"></i>
+                            </div>
+                            <h4 class="service-info-title">↩ Qaytarish oson va tez</h4>
+                            <p class="service-info-desc">Qaytarish shartlari mahsulot toifasiga bog'liq. 100% sifat kafolati.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── 4. ACCEPTED PAYMENT METHODS ROW ── -->
+                <div class="detail-section-card py-3 mb-0">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <span class="font-13 fw-700 text-muted"><i class="fas fa-credit-card me-1 text-main"></i> To'lov usullari:</span>
+                        <div class="d-flex align-items-center flex-wrap gap-2">
+                            <span class="payment-pill-badge"><i class="fas fa-wallet text-primary"></i> Click</span>
+                            <span class="payment-pill-badge"><i class="fas fa-mobile-alt text-success"></i> Payme</span>
+                            <span class="payment-pill-badge"><i class="fas fa-gem" style="color: #7C3AED;"></i> Uzum</span>
+                            <span class="payment-pill-badge"><i class="fas fa-credit-card text-info"></i> Humo</span>
+                            <span class="payment-pill-badge"><i class="fas fa-credit-card text-primary"></i> Uzcard</span>
+                            <span class="payment-pill-badge"><i class="fab fa-cc-visa text-primary"></i> Visa</span>
+                            <span class="payment-pill-badge"><i class="fab fa-cc-mastercard text-danger"></i> Mastercard</span>
                         </div>
                     </div>
                 </div>
