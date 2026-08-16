@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 36" fill="none">
-  <rect width="120" height="36" rx="6" fill="#00CCCC" fill-opacity="0.08"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="36" viewBox="0 0 120 36" fill="none">
+  <rect width="120" height="36" rx="6" fill="#F0FDFA"/>
   <rect x="8" y="8" width="20" height="20" rx="5" fill="#00CCCC"/>
-  <path d="M14 14H22V17H14V14ZM14 19H20V22H14V19Z" fill="#FFFFFF"/>
-  <text x="36" y="23" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="800" fill="#009999" letter-spacing="-0.3">payme</text>
+  <path d="M14 13H22V16H14V13ZM14 18H20V21H14V18ZM14 23H18V24H14V23Z" fill="#FFFFFF"/>
+  <text x="35" y="24" font-family="'Segoe UI', -apple-system, Roboto, sans-serif" font-size="16" font-weight="900" fill="#008080" letter-spacing="-0.3">payme</text>
 </svg>

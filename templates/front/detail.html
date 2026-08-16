@@ -443,7 +443,7 @@
     }
     .payment-logo-pill {
         height: 32px;
-        padding: 4px 8px;
+        padding: 0 6px;
         background: #FFFFFF;
         border: 1px solid #E2E8F0;
         border-radius: 8px;
@@ -452,6 +452,7 @@
         justify-content: center;
         transition: all 0.2s ease;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+        flex-shrink: 0;
     }
     .payment-logo-pill:hover {
         border-color: #CBD5E1;
@@ -459,12 +460,12 @@
         transform: translateY(-1px);
     }
     .payment-brand-logo {
-        max-height: 18px;
-        max-width: 64px;
-        width: auto;
-        height: auto;
+        height: 18px;
+        width: 54px;
+        max-width: 60px;
         object-fit: contain;
-        display: block;
+        display: inline-block;
+        vertical-align: middle;
     }
     
     /* ── Meta Items ── */
@@ -986,25 +987,25 @@
                         </div>
                         <div class="buybox-payment-grid">
                             <div class="payment-logo-pill" title="Click orqali to'lov">
-                                <img src="{% static 'assets/images/payments/click.svg' %}" alt="Click" class="payment-brand-logo" loading="lazy">
+                                <img src="{% static 'assets/images/payments/click.svg' %}" alt="Click" class="payment-brand-logo" width="54" height="18" loading="lazy">
                             </div>
                             <div class="payment-logo-pill" title="Payme orqali to'lov">
-                                <img src="{% static 'assets/images/payments/payme.svg' %}" alt="Payme" class="payment-brand-logo" loading="lazy">
+                                <img src="{% static 'assets/images/payments/payme.svg' %}" alt="Payme" class="payment-brand-logo" width="54" height="18" loading="lazy">
                             </div>
                             <div class="payment-logo-pill" title="Uzum orqali to'lov">
-                                <img src="{% static 'assets/images/payments/uzum.svg' %}" alt="Uzum" class="payment-brand-logo" loading="lazy">
+                                <img src="{% static 'assets/images/payments/uzum.svg' %}" alt="Uzum" class="payment-brand-logo" width="54" height="18" loading="lazy">
                             </div>
                             <div class="payment-logo-pill" title="Humo kartalari">
-                                <img src="{% static 'assets/images/payments/humo.svg' %}" alt="Humo" class="payment-brand-logo" loading="lazy">
+                                <img src="{% static 'assets/images/payments/humo.svg' %}" alt="Humo" class="payment-brand-logo" width="54" height="18" loading="lazy">
                             </div>
                             <div class="payment-logo-pill" title="Uzcard kartalari">
-                                <img src="{% static 'assets/images/payments/uzcard.svg' %}" alt="Uzcard" class="payment-brand-logo" loading="lazy">
+                                <img src="{% static 'assets/images/payments/uzcard.svg' %}" alt="Uzcard" class="payment-brand-logo" width="54" height="18" loading="lazy">
                             </div>
                             <div class="payment-logo-pill" title="Visa xalqaro kartalari">
-                                <img src="{% static 'assets/images/payments/visa.svg' %}" alt="Visa" class="payment-brand-logo" loading="lazy">
+                                <img src="{% static 'assets/images/payments/visa.svg' %}" alt="Visa" class="payment-brand-logo" width="54" height="18" loading="lazy">
                             </div>
                             <div class="payment-logo-pill" title="Mastercard xalqaro kartalari">
-                                <img src="{% static 'assets/images/payments/mastercard.svg' %}" alt="Mastercard" class="payment-brand-logo" loading="lazy">
+                                <img src="{% static 'assets/images/payments/mastercard.svg' %}" alt="Mastercard" class="payment-brand-logo" width="54" height="18" loading="lazy">
                             </div>
                         </div>
                     </div>

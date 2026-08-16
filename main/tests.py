@@ -2441,21 +2441,29 @@ class ProductDetailAndVerifiedReviewsTests(TestCase):
         self.assertEqual(content.count('id="buyBoxPaymentMethods"'), 1)
         self.assertEqual(content.count('class="buybox-payment-grid"'), 1)
 
-        # 5. All 7 Official Brand Logos rendered with SVGs and correct ALTs
-        self.assertIn('assets/images/payments/click.svg', content)
-        self.assertIn('alt="Click"', content)
-        self.assertIn('assets/images/payments/payme.svg', content)
-        self.assertIn('alt="Payme"', content)
-        self.assertIn('assets/images/payments/uzum.svg', content)
-        self.assertIn('alt="Uzum"', content)
-        self.assertIn('assets/images/payments/humo.svg', content)
-        self.assertIn('alt="Humo"', content)
-        self.assertIn('assets/images/payments/uzcard.svg', content)
-        self.assertIn('alt="Uzcard"', content)
-        self.assertIn('assets/images/payments/visa.svg', content)
-        self.assertIn('alt="Visa"', content)
-        self.assertIn('assets/images/payments/mastercard.svg', content)
-        self.assertIn('alt="Mastercard"', content)
+        # 5. All 7 Official Brand Logos rendered with SVGs, width, height, and correct ALTs
+        logos = ['click', 'payme', 'uzum', 'humo', 'uzcard', 'visa', 'mastercard']
+        for logo in logos:
+            self.assertIn(f'assets/images/payments/{logo}.svg', content)
+            self.assertIn(f'alt="{logo.capitalize() if logo != "uzcard" else "Uzcard"}"', content)
+            self.assertIn('class="payment-brand-logo" width="54" height="18"', content)
+
+    def test_payment_svg_files_exist_and_have_valid_dimensions(self):
+        """All 7 payment SVG files must exist and declare explicit width, height, and viewBox."""
+        import os
+        from django.conf import settings
+        static_dir = os.path.join(settings.BASE_DIR, 'static', 'assets', 'images', 'payments')
+        logos = ['click.svg', 'payme.svg', 'uzum.svg', 'humo.svg', 'uzcard.svg', 'visa.svg', 'mastercard.svg']
+        for fname in logos:
+            fpath = os.path.join(static_dir, fname)
+            self.assertTrue(os.path.exists(fpath), f"{fname} must exist in {static_dir}")
+            with open(fpath, 'r', encoding='utf-8') as f:
+                svg_data = f.read()
+            self.assertIn('<svg', svg_data)
+            self.assertIn('viewBox="0 0 120 36"', svg_data)
+            self.assertIn('width="120"', svg_data)
+            self.assertIn('height="36"', svg_data)
+            self.assertGreater(len(svg_data), 100, f"{fname} must not be empty")
 
     def test_image_overlay_no_stock_badge_and_right_stock_preserved(self):
         """Stock and new status badges must be removed from image overlay, but preserved on summary."""
