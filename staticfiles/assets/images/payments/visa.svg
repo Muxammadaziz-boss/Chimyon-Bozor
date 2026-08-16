@@ -1,4 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="120" height="36" viewBox="0 0 120 36" fill="none">
-  <rect width="120" height="36" rx="6" fill="#EEF2FF"/>
-  <text x="60" y="26" text-anchor="middle" font-family="'Arial Black', Impact, -apple-system, sans-serif" font-size="22" font-weight="900" font-style="italic" fill="#1434CB" letter-spacing="1.5">VISA</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 36" width="120" height="36">
+  <defs>
+    <style>
+      .visa-text { fill: #1434cb; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-weight: 900; font-style: italic; font-size: 26px; }
+      .visa-gold { fill: #faa61a; }
+    </style>
+  </defs>
+  <!-- Visa official wordmark styling -->
+  <path class="visa-gold" d="M12 10 L20 10 L16 16 Z"/>
+  <text x="14" y="27" class="visa-text" letter-spacing="1">VISA</text>
 </svg>

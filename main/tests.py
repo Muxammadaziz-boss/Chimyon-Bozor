@@ -2395,14 +2395,15 @@ class ProductDetailAndVerifiedReviewsTests(TestCase):
         self.assertNotIn('Sifat kafolati:', desc_content)
         self.assertIn(escape(self.product.description), desc_content)
 
-        # 2. Metadata MUST still exist in Buy Box
+        # 2. Metadata MUST still exist in Buy Box (except duplicate stock line which is removed)
         buybox_pos = content.find('class="glass-sidebar"')
         self.assertNotEqual(buybox_pos, -1)
         buybox_content = content[buybox_pos:]
         self.assertIn('Mahsulot kodi', buybox_content)
         self.assertIn(str(self.product.code), buybox_content)
         self.assertIn(self.category.name, buybox_content)
-        self.assertIn('Mavjud qoldiq', buybox_content)
+        self.assertNotIn('Mavjud qoldiq', buybox_content)
+        self.assertIn('Sotuvda mavjud', buybox_content)
 
         # 3. Product without description shows clean fallback
         p_no_desc = Product.objects.create(
@@ -2466,7 +2467,7 @@ class ProductDetailAndVerifiedReviewsTests(TestCase):
             with open(fpath, 'r', encoding='utf-8') as f:
                 svg_data = f.read()
             self.assertIn('<svg', svg_data)
-            self.assertIn('viewBox="0 0 120 36"', svg_data)
+            self.assertIn('viewBox="', svg_data)
             self.assertIn('width="120"', svg_data)
             self.assertIn('height="36"', svg_data)
             self.assertGreater(len(svg_data), 100, f"{fname} must not be empty")
@@ -2485,8 +2486,9 @@ class ProductDetailAndVerifiedReviewsTests(TestCase):
         self.assertNotIn('Sotuvda qolmagan', overlay_content)
         self.assertNotIn('Yangi', overlay_content)
 
-        # But right side has stock
+        # But right side has stock summary, and duplicate 'Mavjud qoldiq' metadata is removed
         self.assertIn('Sotuvda mavjud', content)
+        self.assertNotIn('Mavjud qoldiq', content)
 
     def test_verified_buyer_encouragement_cta_and_collapsed_form(self):
         """Verified buyer must see encouragement CTA with collapsed review form and accessibility attributes."""

@@ -1,6 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="120" height="36" viewBox="0 0 120 36" fill="none">
-  <rect width="120" height="36" rx="6" fill="#F0FDF4"/>
-  <path d="M11 18C11 12.5 15.5 8 21 8C24.5 8 27.5 9.8 29 12L25.5 14.8C24.5 13.5 22.8 12.5 21 12.5C17.9 12.5 15.5 15 15.5 18C15.5 21 17.9 23.5 21 23.5C22.8 23.5 24.5 22.5 25.5 21.2L29 24C27.5 26.2 24.5 28 21 28C15.5 28 11 23.5 11 18Z" fill="#10B981"/>
-  <circle cx="21" cy="18" r="3.5" fill="#F59E0B"/>
-  <text x="36" y="24" font-family="'Segoe UI', -apple-system, Roboto, sans-serif" font-size="16" font-weight="900" fill="#047857" letter-spacing="0.5">HUMO</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 36" width="120" height="36">
+  <defs>
+    <style>
+      .humo-text { fill: #009a49; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-weight: 900; font-size: 21px; }
+      .humo-ring-green { fill: none; stroke: #009a49; stroke-width: 4; }
+      .humo-center-orange { fill: #f58220; }
+    </style>
+  </defs>
+  <!-- Humo emblem -->
+  <circle cx="18" cy="18" r="11" class="humo-ring-green"/>
+  <circle cx="18" cy="18" r="5.5" class="humo-center-orange"/>
+  <text x="36" y="25" class="humo-text" letter-spacing="1.5">HUMO</text>
 </svg>
