@@ -191,13 +191,23 @@ def load_more_related_products(request, code):
     limit = 10
     product = get_object_or_404(models.Product, code=code)
     
-    related_products = models.Product.objects.filter(category=product.category).exclude(code=code)[offset:offset+limit]
+    total_qs = models.Product.objects.filter(category=product.category).exclude(code=code)
+    total_count = total_qs.count()
+    related_products = list(total_qs[offset:offset+limit])
+    next_offset = offset + len(related_products)
+    has_more = next_offset < total_count
     
     html = ''
     for p in related_products:
         html += '<div class="col">' + render_to_string('front/partials/product_card.html', {'product': p, 'request': request}) + '</div>'
         
-    return JsonResponse({'html': html, 'count': related_products.count()})
+    return JsonResponse({
+        'html': html,
+        'count': len(related_products),
+        'has_more': has_more,
+        'next_offset': next_offset,
+        'total_count': total_count
+    })
 
 
 @login_required(login_url='login')

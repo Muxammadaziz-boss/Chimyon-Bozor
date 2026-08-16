@@ -769,8 +769,8 @@
                                     <p class="text-muted mb-0 font-12" style="line-height: 1.4;">Mahsulot sizga qanday taassurot qoldirdi? Baholang va boshqa xaridorlarga tanlashda yordam bering.</p>
                                 </div>
                             </div>
-                            <button type="button" class="btn btn-main pill px-3 py-1-5 font-13 fw-700" id="toggleReviewFormBtn" onclick="toggleReviewForm()">
-                                <i class="fas fa-star me-1"></i> Baholashni xohlayman
+                            <button type="button" class="btn btn-main pill px-3 py-1-5 font-13 fw-700" id="toggleReviewFormBtn" onclick="toggleReviewForm()" aria-expanded="false" aria-controls="reviewFormContainer">
+                                <i class="fas fa-star me-1"></i> <span id="toggleReviewFormBtnText">Baholashni xohlayman</span>
                             </button>
                         </div>
                     </div>
@@ -1438,46 +1438,74 @@
         if (loadMoreRelatedBtn) {
             loadMoreRelatedBtn.addEventListener('click', function() {
                 const btn = this;
-                const offset = parseInt(btn.dataset.offset, 10);
+                const offset = parseInt(btn.dataset.offset, 10) || 10;
                 const grid = document.getElementById('relatedProductsGrid');
                 
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yuklanmoqda...';
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Yuklanmoqda...';
                 btn.disabled = true;
                 
                 fetch(`/api/related-products/{{ product.code }}/?offset=${offset}`)
-                    .then(res => res.json())
+                    .then(res => {
+                        if (!res.ok) throw new Error('Network response was not ok');
+                        return res.json();
+                    })
                     .then(data => {
-                        if (data.html) {
+                        if (data.html && data.html.trim().length > 0) {
                             grid.insertAdjacentHTML('beforeend', data.html);
-                            btn.dataset.offset = offset + 10;
-                            if (data.count < 10) {
-                                document.getElementById('loadMoreRelatedWrap').style.display = 'none';
+                            const nextOffset = data.next_offset || (offset + (data.count || 10));
+                            btn.dataset.offset = nextOffset;
+                            
+                            if (data.has_more === false || data.count < 10) {
+                                const wrap = document.getElementById('loadMoreRelatedWrap');
+                                if (wrap) wrap.style.display = 'none';
                             } else {
                                 btn.innerHTML = 'Yana 10 ta ko\'rish <i class="fas fa-sync-alt ms-2"></i>';
                                 btn.disabled = false;
                             }
                         } else {
-                            document.getElementById('loadMoreRelatedWrap').style.display = 'none';
+                            const wrap = document.getElementById('loadMoreRelatedWrap');
+                            if (wrap) wrap.style.display = 'none';
                         }
                     })
                     .catch(err => {
-                        console.error(err);
-                        btn.innerHTML = 'Xatolik yuz berdi';
+                        console.error('Related products load error:', err);
+                        btn.innerHTML = 'Qayta urinib ko\'rish <i class="fas fa-redo ms-2"></i>';
                         btn.disabled = false;
+                        if (window.showToast) {
+                            window.showToast("Mahsulotlarni yuklashda xatolik yuz berdi. Qayta urinib ko'ring.", "error");
+                        }
                     });
             });
+        }
+
         // 8. Toggle Review Form for Verified Buyer
         window.toggleReviewForm = function() {
             const container = document.getElementById('reviewFormContainer');
+            const toggleBtn = document.getElementById('toggleReviewFormBtn');
+            const toggleBtnText = document.getElementById('toggleReviewFormBtnText');
             if (!container) return;
-            if (container.style.display === 'none' || container.style.display === '') {
+            
+            const isHidden = (container.style.display === 'none' || container.style.display === '');
+            if (isHidden) {
                 container.style.display = 'block';
+                if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'true');
+                if (toggleBtnText) toggleBtnText.textContent = 'Formani yopish';
                 const textarea = container.querySelector('textarea');
                 if (textarea) textarea.focus();
             } else {
                 container.style.display = 'none';
+                if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
+                if (toggleBtnText) toggleBtnText.textContent = 'Baholashni xohlayman';
             }
         };
+
+        const toggleReviewBtnEl = document.getElementById('toggleReviewFormBtn');
+        if (toggleReviewBtnEl) {
+            toggleReviewBtnEl.addEventListener('click', function(e) {
+                e.preventDefault();
+                window.toggleReviewForm();
+            });
+        }
     });
 </script>
 {% endblock %}

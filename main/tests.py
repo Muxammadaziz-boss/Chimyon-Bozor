@@ -2066,6 +2066,12 @@ class GlobalLoadingAndSkeletonUXTests(TestCase):
         data = response.json()
         self.assertIn('html', data)
         self.assertIn('count', data)
+        self.assertIn('has_more', data)
+        self.assertIn('next_offset', data)
+        self.assertIn('total_count', data)
+        self.assertEqual(data['count'], 1)
+        self.assertFalse(data['has_more'])
+        self.assertEqual(data['next_offset'], 1)
 
 
 class ProductDetailAndVerifiedReviewsTests(TestCase):
@@ -2483,7 +2489,7 @@ class ProductDetailAndVerifiedReviewsTests(TestCase):
         self.assertIn('Sotuvda mavjud', content)
 
     def test_verified_buyer_encouragement_cta_and_collapsed_form(self):
-        """Verified buyer must see encouragement CTA with collapsed review form."""
+        """Verified buyer must see encouragement CTA with collapsed review form and accessibility attributes."""
         cart = Cart.objects.create(user=self.buyer, status=3)
         CartProduct.objects.create(cart=cart, product=self.product, count=1)
         self.client.force_login(self.buyer)
@@ -2492,9 +2498,52 @@ class ProductDetailAndVerifiedReviewsTests(TestCase):
         content = response.content.decode('utf-8')
         self.assertIn('Siz bu mahsulotni xarid qilgansiz', content)
         self.assertIn('Baholashni xohlayman', content)
+        self.assertIn('id="toggleReviewFormBtn"', content)
+        self.assertIn('aria-expanded="false"', content)
+        self.assertIn('aria-controls="reviewFormContainer"', content)
         self.assertIn('id="reviewFormContainer"', content)
         self.assertIn('style="display: none;"', content)
-        self.assertIn('toggleReviewForm', content)
+        self.assertIn('window.toggleReviewForm = function()', content)
+
+    def test_load_more_related_products_pagination_flow_and_end_of_list(self):
+        """Load more related products endpoint correctly paginates with offset and indicates has_more."""
+        # Create 15 products in the same category
+        created_products = []
+        for i in range(15):
+            p = Product.objects.create(
+                name=f"Related Item {i}",
+                category=self.category,
+                price=10000 + i * 1000,
+                count=5,
+                code=f"RELPROD{i:03d}",
+                image=f"test_rel_{i}.png"
+            )
+            created_products.append(p)
+
+        # 1. Fetch first batch (offset=0, limit=10)
+        res1 = self.client.get(f'/api/related-products/{self.product.code}/?offset=0')
+        self.assertEqual(res1.status_code, 200)
+        data1 = res1.json()
+        self.assertEqual(data1['count'], 10)
+        self.assertTrue(data1['has_more'])
+        self.assertEqual(data1['next_offset'], 10)
+        self.assertGreaterEqual(data1['total_count'], 15)
+
+        # 2. Fetch second batch (offset=10, limit=10)
+        res2 = self.client.get(f'/api/related-products/{self.product.code}/?offset=10')
+        self.assertEqual(res2.status_code, 200)
+        data2 = res2.json()
+        self.assertEqual(data2['count'], 5)
+        self.assertFalse(data2['has_more'])
+        self.assertEqual(data2['next_offset'], 15)
+
+        # 3. Fetch past end of list (offset=20)
+        res3 = self.client.get(f'/api/related-products/{self.product.code}/?offset=20')
+        self.assertEqual(res3.status_code, 200)
+        data3 = res3.json()
+        self.assertEqual(data3['count'], 0)
+        self.assertFalse(data3['has_more'])
+        self.assertEqual(data3['html'], '')
 
     def test_non_buyer_and_anonymous_review_state(self):
         """Non-buyer and anonymous users should see appropriate guidance without review form."""
