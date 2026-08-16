@@ -90,9 +90,10 @@ class UzumPaymentProvider(BasePaymentProvider):
         except Exception:
             return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
 
-        if signature and not self.verify_signature(raw_body, signature):
-            logger.warning("Uzum webhook: Invalid signature")
-            return JsonResponse({'status': 'error', 'message': 'Invalid signature'}, status=403)
+        if self.is_configured():
+            if not signature or not self.verify_signature(raw_body, signature):
+                logger.warning("Uzum webhook: Invalid or missing signature")
+                return JsonResponse({'status': 'error', 'message': 'Invalid signature'}, status=403)
 
         event = data.get('event') or data.get('status')
         order_code = data.get('orderId')
@@ -104,6 +105,15 @@ class UzumPaymentProvider(BasePaymentProvider):
         payment = models.Payment.objects.filter(code=order_code).select_related('order').first()
         if not payment:
             return JsonResponse({'status': 'error', 'message': 'Payment not found'}, status=404)
+
+        if amount_raw is not None:
+            try:
+                callback_amt = Decimal(str(amount_raw))
+                if abs(payment.amount - callback_amt) > Decimal('0.01'):
+                    logger.warning("Uzum webhook: Amount mismatch expected=%s received=%s", payment.amount, callback_amt)
+                    return JsonResponse({'status': 'error', 'message': 'Incorrect amount'}, status=400)
+            except Exception:
+                pass
 
         if event in ('SUCCESS', 'PAID', 'CONFIRMED'):
             with transaction.atomic():
