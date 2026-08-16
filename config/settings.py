@@ -75,7 +75,7 @@ if USE_S3_STORAGE:
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
+    'main.middleware.ScopedSessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -233,6 +233,7 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
 SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 SESSION_COOKIE_AGE = config('SESSION_COOKIE_AGE', default=86400 * 7, cast=int)
+DASHBOARD_SESSION_COOKIE_NAME = 'dashboard_sessionid'
 
 # Production HTTPS & HSTS Security Hardening
 if not DEBUG:
