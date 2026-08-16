@@ -2396,7 +2396,9 @@ class ProductDetailAndVerifiedReviewsTests(TestCase):
         self.assertIn(escape(self.product.description), desc_content)
 
         # 2. Metadata MUST still exist in Buy Box (except duplicate stock line which is removed)
-        buybox_pos = content.find('class="glass-sidebar"')
+        buybox_pos = content.find('id="buyBoxContainer"')
+        if buybox_pos == -1:
+            buybox_pos = content.find('buybox-container')
         self.assertNotEqual(buybox_pos, -1)
         buybox_content = content[buybox_pos:]
         self.assertIn('Mahsulot kodi', buybox_content)
@@ -2434,7 +2436,9 @@ class ProductDetailAndVerifiedReviewsTests(TestCase):
         self.assertIn('id="buyBoxPaymentMethods"', content)
 
         # 3. Position check: Payment methods comes BEFORE Product Code in the Buy Box
-        buybox_pos = content.find('class="glass-sidebar"')
+        buybox_pos = content.find('id="buyBoxContainer"')
+        if buybox_pos == -1:
+            buybox_pos = content.find('buybox-container')
         self.assertNotEqual(buybox_pos, -1, "Buy Box sidebar must exist")
         buybox_content = content[buybox_pos:]
 
@@ -2662,6 +2666,50 @@ class ProductDetailAndVerifiedReviewsTests(TestCase):
         self.assertIn('244 000', content)
         self.assertIn('273 000', content)
         self.assertIn('546 000', content)
+
+    def test_product_detail_three_cards_layout_and_no_duplicate_stock(self):
+        """Product Detail page must render 3 distinct Buy Box cards with single stock location."""
+        response = self.client.get(f'/product-detail/{self.product.code}/')
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode('utf-8')
+
+        # 1. Check all 3 card containers exist
+        self.assertIn('buybox-purchase-card', content)
+        self.assertIn('buyBoxPurchaseCard', content)
+        self.assertIn('buybox-payment-card', content)
+        self.assertIn('buyBoxPaymentMethods', content)
+        self.assertIn('buybox-meta-card', content)
+        self.assertIn('buyBoxMetaShareCard', content)
+
+        # 2. Check Card 1 has purchase controls & stock
+        card1_start = content.find('id="buyBoxPurchaseCard"')
+        card2_start = content.find('id="buyBoxPaymentMethods"')
+        card3_start = content.find('id="buyBoxMetaShareCard"')
+        self.assertTrue(card1_start < card2_start < card3_start)
+
+        card1_html = content[card1_start:card2_start]
+        self.assertIn('Sotuvda mavjud', card1_html)
+        self.assertIn('detailAddToCartBtn', card1_html)
+        self.assertIn('detailBuyNowBtn', card1_html)
+        self.assertIn('detailWishlistBtn', card1_html)
+
+        # 3. Check Card 2 has 7 payment logos
+        card2_html = content[card2_start:card3_start]
+        self.assertIn('Qulay va xavfsiz to\'lov', card2_html)
+        for provider in ['click.svg', 'payme.svg', 'uzum.svg', 'humo.svg', 'uzcard.svg', 'visa.svg', 'mastercard.svg']:
+            self.assertIn(provider, card2_html)
+
+        # 4. Check Card 3 has product code with wrap class and share buttons (NO stock)
+        card3_html = content[card3_start:content.find('</section>', card3_start)]
+        self.assertIn('Mahsulot kodi', card3_html)
+        self.assertIn('meta-code-val', card3_html)
+        self.assertIn('Do\'stlar bilan ulashish', card3_html)
+        self.assertIn('share-telegram', card3_html)
+        self.assertIn('share-facebook', card3_html)
+        self.assertIn('share-twitter', card3_html)
+        self.assertIn('copyProductLinkBtn', card3_html)
+        self.assertNotIn('Sotuvda mavjud', card3_html)
+        self.assertNotIn('Mavjud qoldiq', card3_html)
 
 
 
