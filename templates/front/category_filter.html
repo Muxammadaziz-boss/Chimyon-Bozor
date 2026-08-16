@@ -901,10 +901,10 @@
                 {% if page_obj.has_other_pages %}
                 <div class="pagination-wrapper mt-5 text-center">
                     <nav aria-label="Sahifalar bo'ylab harakatlanish">
-                        <ul class="pagination justify-content-center flex-wrap gap-1">
+                        <ul class="pagination justify-content-center flex-wrap gap-2">
                             {% if page_obj.has_previous %}
                             <li class="page-item">
-                                <a class="page-link rounded-pill px-3 font-weight-700" href="{% query_transform page=page_obj.previous_page_number %}" aria-label="Oldingi sahifa">
+                                <a class="page-link rounded-pill px-3 font-weight-700" style="height:42px; display:inline-flex; align-items:center; justify-content:center; white-space:nowrap;" href="{% query_transform page=page_obj.previous_page_number %}" aria-label="Oldingi sahifa">
                                     <i class="fas fa-chevron-left me-1" aria-hidden="true"></i> Oldingi
                                 </a>
                             </li>
@@ -912,17 +912,17 @@
 
                             {% for num in page_obj.paginator.page_range %}
                                 {% if page_obj.number == num %}
-                                <li class="page-item active" aria-current="page"><span class="page-link rounded-circle font-weight-800" style="background:#7C3AED; border-color:#7C3AED; width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center;">{{ num }}</span></li>
+                                <li class="page-item active" aria-current="page"><span class="page-link rounded-circle font-weight-800" style="background:#7C3AED; border-color:#7C3AED; color:#ffffff; min-width:42px; width:42px; height:42px; padding:0; display:inline-flex; align-items:center; justify-content:center; white-space:nowrap; line-height:1;">{{ num }}</span></li>
                                 {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
                                 <li class="page-item">
-                                    <a class="page-link rounded-circle font-weight-700" style="width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center;" href="{% query_transform page=num %}" aria-label="{{ num }}-sahifa">{{ num }}</a>
+                                    <a class="page-link rounded-circle font-weight-700" style="min-width:42px; width:42px; height:42px; padding:0; display:inline-flex; align-items:center; justify-content:center; white-space:nowrap; line-height:1;" href="{% query_transform page=num %}" aria-label="{{ num }}-sahifa">{{ num }}</a>
                                 </li>
                                 {% endif %}
                             {% endfor %}
 
                             {% if page_obj.has_next %}
                             <li class="page-item">
-                                <a class="page-link rounded-pill px-3 font-weight-700" href="{% query_transform page=page_obj.next_page_number %}" aria-label="Keyingi sahifa">
+                                <a class="page-link rounded-pill px-3 font-weight-700" style="height:42px; display:inline-flex; align-items:center; justify-content:center; white-space:nowrap;" href="{% query_transform page=page_obj.next_page_number %}" aria-label="Keyingi sahifa">
                                     Keyingi <i class="fas fa-chevron-right ms-1" aria-hidden="true"></i>
                                 </a>
                             </li>

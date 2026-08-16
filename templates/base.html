@@ -511,6 +511,63 @@
         .main-content-shell {
             box-shadow: 0 8px 30px rgba(76, 29, 149, 0.05);
         }
+        /* ==========================================================
+           PAGINATION FIX (Prevent number wrapping & ensure perfect circles/pills)
+           ========================================================== */
+        .pagination {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 6px !important;
+            flex-wrap: wrap !important;
+            list-style: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        .pagination .page-item {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            margin: 0 !important;
+        }
+        .pagination .page-item .page-link {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            min-width: 42px !important;
+            height: 42px !important;
+            padding: 0 10px !important;
+            white-space: nowrap !important;
+            word-break: keep-all !important;
+            overflow: visible !important;
+            font-size: 15px !important;
+            font-weight: 600 !important;
+            line-height: 1 !important;
+            text-align: center !important;
+            text-decoration: none !important;
+            transition: all 0.2s ease;
+        }
+        .pagination .page-item .page-link.rounded-circle,
+        .pagination .page-item .page-link[class*="rounded-circle"] {
+            width: 42px !important;
+            min-width: 42px !important;
+            height: 42px !important;
+            padding: 0 !important;
+            border-radius: 50% !important;
+        }
+        .pagination .page-item .page-link.rounded-pill,
+        .pagination .page-item .page-link[class*="rounded-pill"] {
+            width: auto !important;
+            min-width: auto !important;
+            padding: 0 18px !important;
+            border-radius: 999px !important;
+        }
+        .pagination .page-item.active .page-link {
+            background-color: #7C3AED !important;
+            border-color: #7C3AED !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3) !important;
+        }
         .header-search-results-popup::-webkit-scrollbar {
             width: 6px;
         }

@@ -161,3 +161,14 @@ class UIVisibilityAndInteractionTests(TestCase):
         search_content = search_res.content.decode('utf-8')
         self.assertIn("Test Phone Pro", search_content)
 
+    # 13. Pagination Numbers No Wrapping Test
+    def test_pagination_numbers_no_wrapping(self):
+        res = self.client.get(reverse('index'))
+        self.assertEqual(res.status_code, 200)
+        content = res.content.decode('utf-8')
+
+        self.assertIn("white-space: nowrap !important;", content)
+        self.assertIn("word-break: keep-all !important;", content)
+        self.assertIn("min-width: 42px !important;", content)
+        self.assertIn("height: 42px !important;", content)
+
