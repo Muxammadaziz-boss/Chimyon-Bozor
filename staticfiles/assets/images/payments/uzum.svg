@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 36" fill="none">
+  <rect width="120" height="36" rx="6" fill="#7000FF" fill-opacity="0.08"/>
+  <circle cx="14" cy="14" r="4" fill="#7000FF"/>
+  <circle cx="24" cy="14" r="4" fill="#7000FF"/>
+  <circle cx="19" cy="22" r="4" fill="#7000FF"/>
+  <text x="36" y="23" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="800" fill="#7000FF" letter-spacing="-0.3">uzum</text>
+</svg>

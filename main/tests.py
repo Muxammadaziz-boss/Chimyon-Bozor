@@ -2367,20 +2367,50 @@ class ProductDetailAndVerifiedReviewsTests(TestCase):
         self.assertNotEqual(desc_idx, -1, "description-section must exist")
         self.assertLess(reviews_idx, desc_idx, "reviews-section must come before description-section")
 
-    def test_service_cards_and_payment_methods_rendered(self):
-        """Product detail must render the 3 service cards and payment methods pills."""
+    def test_service_cards_removed_and_official_payment_logos_in_buybox(self):
+        """3 service cards must be removed, and official payment logos must be in Buy Box before product code."""
         response = self.client.get(f'/product-detail/{self.product.code}/')
         content = response.content.decode('utf-8')
-        self.assertIn('Yetkazib berish', content)
-        self.assertIn("To'lov turlari", content)
-        self.assertIn('Sifat kafolati', content)
-        self.assertIn('Click', content)
-        self.assertIn('Payme', content)
-        self.assertIn('Uzum', content)
-        self.assertIn('Humo', content)
-        self.assertIn('Uzcard', content)
-        self.assertIn('Visa', content)
-        self.assertIn('Mastercard', content)
+        
+        # 1. 3 Service cards absent
+        self.assertNotIn('service-info-card', content)
+        self.assertNotIn('Yetkazib berish', content)
+        self.assertNotIn('↩ Sifat kafolati', content)
+
+        # 2. Payment methods section exists in Buy Box
+        self.assertIn('buybox-payment-section', content)
+        self.assertIn('id="buyBoxPaymentMethods"', content)
+
+        # 3. Position check: Payment methods comes BEFORE Product Code in the Buy Box
+        buybox_pos = content.find('class="glass-sidebar"')
+        self.assertNotEqual(buybox_pos, -1, "Buy Box sidebar must exist")
+        buybox_content = content[buybox_pos:]
+
+        payment_pos = buybox_content.find('id="buyBoxPaymentMethods"')
+        meta_code_pos = buybox_content.find('<span>Mahsulot kodi</span>')
+        self.assertNotEqual(payment_pos, -1, "Payment section must exist in Buy Box")
+        self.assertNotEqual(meta_code_pos, -1, "Product code meta item must exist in Buy Box")
+        self.assertLess(payment_pos, meta_code_pos, "Payment methods must be placed before Product code in Buy Box")
+
+        # 4. Only ONE payment section on the entire page
+        self.assertEqual(content.count('id="buyBoxPaymentMethods"'), 1)
+        self.assertEqual(content.count('class="buybox-payment-grid"'), 1)
+
+        # 5. All 7 Official Brand Logos rendered with SVGs and correct ALTs
+        self.assertIn('assets/images/payments/click.svg', content)
+        self.assertIn('alt="Click"', content)
+        self.assertIn('assets/images/payments/payme.svg', content)
+        self.assertIn('alt="Payme"', content)
+        self.assertIn('assets/images/payments/uzum.svg', content)
+        self.assertIn('alt="Uzum"', content)
+        self.assertIn('assets/images/payments/humo.svg', content)
+        self.assertIn('alt="Humo"', content)
+        self.assertIn('assets/images/payments/uzcard.svg', content)
+        self.assertIn('alt="Uzcard"', content)
+        self.assertIn('assets/images/payments/visa.svg', content)
+        self.assertIn('alt="Visa"', content)
+        self.assertIn('assets/images/payments/mastercard.svg', content)
+        self.assertIn('alt="Mastercard"', content)
 
     def test_image_overlay_no_stock_badge_and_right_stock_preserved(self):
         """Stock and new status badges must be removed from image overlay, but preserved on summary."""

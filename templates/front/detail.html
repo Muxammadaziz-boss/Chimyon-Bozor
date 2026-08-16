@@ -431,61 +431,40 @@
         gap: 10px;
     }
 
-    /* ── Service Block Cards ── */
-    .service-info-card {
-        background: #ffffff;
-        border: 1px solid #E5E7EB;
-        border-radius: 14px;
-        padding: 16px;
-        transition: all 0.2s ease;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
+    /* ── Buy Box Payment Methods ── */
+    .buybox-payment-section {
+        border-color: #E2E8F0 !important;
     }
-    .service-info-card:hover {
-        border-color: #CBD5E1;
-        box-shadow: 0 6px 18px -4px rgba(0, 0, 0, 0.05);
-        transform: translateY(-2px);
-    }
-    .service-info-icon-wrap {
-        width: 38px;
-        height: 38px;
-        border-radius: 10px;
+    .buybox-payment-grid {
         display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
         align-items: center;
-        justify-content: center;
-        font-size: 16px;
-        margin-bottom: 10px;
-        flex-shrink: 0;
     }
-    .service-info-icon-delivery { background: rgba(124, 58, 237, 0.1); color: #7C3AED; }
-    .service-info-icon-payment { background: rgba(16, 185, 129, 0.1); color: #10B981; }
-    .service-info-icon-returns { background: rgba(236, 72, 153, 0.1); color: #EC4899; }
-    .service-info-title {
-        font-size: 14.5px;
-        font-weight: 700;
-        color: #0f172a;
-        margin-bottom: 4px;
-    }
-    .service-info-desc {
-        font-size: 12.5px;
-        color: #64748b;
-        line-height: 1.5;
-        margin: 0;
-    }
-
-    /* ── Payment Methods Pill Row ── */
-    .payment-pill-badge {
+    .payment-logo-pill {
+        height: 32px;
+        padding: 4px 8px;
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        padding: 5px 10px;
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        font-size: 12px;
-        font-weight: 600;
-        color: #334155;
+        justify-content: center;
+        transition: all 0.2s ease;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    }
+    .payment-logo-pill:hover {
+        border-color: #CBD5E1;
+        background: #F8FAFC;
+        transform: translateY(-1px);
+    }
+    .payment-brand-logo {
+        max-height: 18px;
+        max-width: 64px;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+        display: block;
     }
     
     /* ── Meta Items ── */
@@ -909,53 +888,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- ── 3. SERVICE INFORMATION (3 COMPACT BLOCKS) ── -->
-                <div class="row g-3 mb-4">
-                    <div class="col-md-4 col-12">
-                        <div class="service-info-card">
-                            <div class="service-info-icon-wrap service-info-icon-delivery">
-                                <i class="fas fa-truck-fast"></i>
-                            </div>
-                            <h4 class="service-info-title">🚚 Yetkazib berish</h4>
-                            <p class="service-info-desc">Tezkor va xavfsiz yetkazib berish xizmati.</p>
-                        </div>
-                    </div>
-                    <div class="col-md-4 col-12">
-                        <div class="service-info-card">
-                            <div class="service-info-icon-wrap service-info-icon-payment">
-                                <i class="fas fa-credit-card"></i>
-                            </div>
-                            <h4 class="service-info-title">💳 To'lov turlari</h4>
-                            <p class="service-info-desc">Click, Payme va naqd to'lov imkoniyati.</p>
-                        </div>
-                    </div>
-                    <div class="col-md-4 col-12">
-                        <div class="service-info-card">
-                            <div class="service-info-icon-wrap service-info-icon-returns">
-                                <i class="fas fa-shield-alt"></i>
-                            </div>
-                            <h4 class="service-info-title">↩ Sifat kafolati</h4>
-                            <p class="service-info-desc">100% sifat kafolati va qulay qaytarish.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ── 4. ACCEPTED PAYMENT METHODS ROW ── -->
-                <div class="detail-section-card py-3 mb-0">
-                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                        <span class="font-12 fw-700 text-muted"><i class="fas fa-credit-card me-1 text-main"></i> To'lov usullari:</span>
-                        <div class="d-flex align-items-center flex-wrap gap-2">
-                            <span class="payment-pill-badge"><i class="fas fa-wallet text-primary"></i> Click</span>
-                            <span class="payment-pill-badge"><i class="fas fa-mobile-alt text-success"></i> Payme</span>
-                            <span class="payment-pill-badge"><i class="fas fa-gem" style="color: #7C3AED;"></i> Uzum</span>
-                            <span class="payment-pill-badge"><i class="fas fa-credit-card text-info"></i> Humo</span>
-                            <span class="payment-pill-badge"><i class="fas fa-credit-card text-primary"></i> Uzcard</span>
-                            <span class="payment-pill-badge"><i class="fab fa-cc-visa text-primary"></i> Visa</span>
-                            <span class="payment-pill-badge"><i class="fab fa-cc-mastercard text-danger"></i> Mastercard</span>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <!-- Right Column: Product Sidebar Buy Box -->
@@ -1073,6 +1005,38 @@
                                 <i class="fas fa-ban"></i> <span>Sotuvda qolmagan</span>
                             </button>
                         {% endif %}
+                    </div>
+
+                    <!-- Payment Methods in Buy Box (Official Brand Logos) -->
+                    <div class="buybox-payment-section pt-3 pb-3 mb-3 border-top border-bottom" id="buyBoxPaymentMethods">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="font-12 fw-700 text-muted">
+                                <i class="fas fa-shield-alt text-main me-1"></i> Qulay va xavfsiz to'lov:
+                            </span>
+                        </div>
+                        <div class="buybox-payment-grid">
+                            <div class="payment-logo-pill" title="Click orqali to'lov">
+                                <img src="{% static 'assets/images/payments/click.svg' %}" alt="Click" class="payment-brand-logo" loading="lazy">
+                            </div>
+                            <div class="payment-logo-pill" title="Payme orqali to'lov">
+                                <img src="{% static 'assets/images/payments/payme.svg' %}" alt="Payme" class="payment-brand-logo" loading="lazy">
+                            </div>
+                            <div class="payment-logo-pill" title="Uzum orqali to'lov">
+                                <img src="{% static 'assets/images/payments/uzum.svg' %}" alt="Uzum" class="payment-brand-logo" loading="lazy">
+                            </div>
+                            <div class="payment-logo-pill" title="Humo kartalari">
+                                <img src="{% static 'assets/images/payments/humo.svg' %}" alt="Humo" class="payment-brand-logo" loading="lazy">
+                            </div>
+                            <div class="payment-logo-pill" title="Uzcard kartalari">
+                                <img src="{% static 'assets/images/payments/uzcard.svg' %}" alt="Uzcard" class="payment-brand-logo" loading="lazy">
+                            </div>
+                            <div class="payment-logo-pill" title="Visa xalqaro kartalari">
+                                <img src="{% static 'assets/images/payments/visa.svg' %}" alt="Visa" class="payment-brand-logo" loading="lazy">
+                            </div>
+                            <div class="payment-logo-pill" title="Mastercard xalqaro kartalari">
+                                <img src="{% static 'assets/images/payments/mastercard.svg' %}" alt="Mastercard" class="payment-brand-logo" loading="lazy">
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Meta Information -->
