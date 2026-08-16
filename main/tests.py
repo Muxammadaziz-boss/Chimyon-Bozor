@@ -2307,18 +2307,45 @@ class ProductDetailAndVerifiedReviewsTests(TestCase):
         self.assertLess(p_reviewed_idx, p_unreviewed_idx)
 
     def test_product_detail_action_button_compact_styles(self):
-        """Product detail action buttons must have compact 2-row layout: Row 1 side-by-side, Row 2 full-width."""
+        """Product detail action buttons must have compact 2-row layout with primary CTA, in-cart stepper, and wishlist icon."""
         response = self.client.get(f'/product-detail/{self.product.code}/')
         content = response.content.decode('utf-8')
         self.assertIn('.btn-action-primary', content)
-        self.assertIn('.btn-action-wishlist', content)
+        self.assertIn('.btn-action-wishlist-icon', content)
         self.assertIn('.btn-action-secondary', content)
-        self.assertIn('height: 36px;', content)
         self.assertIn('height: 38px;', content)
         self.assertIn('.btn-buy-now', content)
-        self.assertIn('.btn-wishlist-outline', content)
         self.assertIn('action-buttons-group', content)
-        self.assertIn('col-6', content)
+        self.assertIn('incart-qty-capsule', content)
+        self.assertIn('btn-go-to-cart', content)
+
+    def test_quantity_label_removed_and_wishlist_icon_rendered(self):
+        """Standalone quantity label 'Xarid miqdori:' must be removed and wishlist must be a compact icon button."""
+        response = self.client.get(f'/product-detail/{self.product.code}/')
+        content = response.content.decode('utf-8')
+        self.assertNotIn('Xarid miqdori:', content)
+        self.assertIn('btn-action-wishlist-icon', content)
+        self.assertIn('aria-label="Saralanganlarga qo\'shish"', content)
+
+    def test_product_detail_initial_and_incart_states_on_render(self):
+        """Initial state shows notInCartGroup; when product is in user cart, shows inCartGroup with quantity."""
+        # 1. Not in cart
+        response_initial = self.client.get(f'/product-detail/{self.product.code}/')
+        content_initial = response_initial.content.decode('utf-8')
+        self.assertIn('id="notInCartGroup"', content_initial)
+        self.assertIn('id="inCartGroup"', content_initial)
+        self.assertIn('class="d-flex align-items-center gap-2 flex-grow-1 d-none" id="inCartGroup"', content_initial)
+
+        # 2. In cart
+        self.client.force_login(self.buyer)
+        cart = Cart.objects.create(user=self.buyer, status=1)
+        CartProduct.objects.create(cart=cart, product=self.product, count=3)
+        response_incart = self.client.get(f'/product-detail/{self.product.code}/')
+        content_incart = response_incart.content.decode('utf-8')
+        self.assertIn('class="d-flex align-items-center gap-2 flex-grow-1 d-none" id="notInCartGroup"', content_incart)
+        self.assertIn('id="inCartQtyVal"', content_incart)
+        self.assertIn('>3</span>', content_incart)
+        self.assertIn('Savatga o\'tish', content_incart)
 
     def test_top_navigation_progress_bar_stepped_and_safety_reset(self):
         """base.html top progress bar must have stepped progression, safety timeout, and BFCache reset."""
@@ -2400,6 +2427,43 @@ class ProductDetailAndVerifiedReviewsTests(TestCase):
         content = response.content.decode('utf-8')
         self.assertIn("Fikr qoldirish faqat ushbu mahsulotni xarid qilgan", content)
         self.assertNotIn('id="reviewFormContainer"', content)
+
+    def test_ajax_update_cart_quantity_flow(self):
+        """AJAX update_cart_quantity increments, decrements, and respects max stock limit."""
+        self.client.force_login(self.buyer)
+        cart = Cart.objects.create(user=self.buyer, status=1)
+        CartProduct.objects.create(cart=cart, product=self.product, count=1)
+
+        # 1. Increment quantity to 3
+        url = reverse('update_cart_quantity', kwargs={'product_code': self.product.code})
+        res = self.client.post(url, data=json.dumps({'quantity': 3}), content_type='application/json')
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data['status'], 'updated')
+
+        cp = CartProduct.objects.get(cart=cart, product=self.product)
+        self.assertEqual(cp.count, 3)
+
+        # 2. Exceeding max stock caps at product.count
+        res2 = self.client.post(url, data=json.dumps({'quantity': 9999}), content_type='application/json')
+        self.assertEqual(res2.status_code, 200)
+        cp.refresh_from_db()
+        self.assertEqual(cp.count, self.product.count)
+
+    def test_wishlist_icon_toggle_ajax_flow(self):
+        """AJAX wishlist toggle adds and removes product with correct count and status."""
+        self.client.force_login(self.buyer)
+        add_url = reverse('add_wishlist', kwargs={'product_code': self.product.code}) + '?ajax=1'
+        res_add = self.client.post(add_url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(res_add.status_code, 200)
+        self.assertTrue(res_add.json()['status'] == 'success')
+        self.assertEqual(res_add.json()['wishlist_count'], 1)
+
+        del_url = reverse('delete_wishlist', kwargs={'product_code': self.product.code}) + '?ajax=1'
+        res_del = self.client.post(del_url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(res_del.status_code, 200)
+        self.assertEqual(res_del.json()['status'], 'success')
+        self.assertEqual(res_del.json()['wishlist_count'], 0)
 
 
 

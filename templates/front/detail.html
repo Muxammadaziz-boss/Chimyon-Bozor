@@ -222,10 +222,10 @@
         top: 90px;
     }
 
-    /* ── Action Buttons ── */
+    /* ── Action Buttons & Cart Control ── */
     .btn-action-primary {
-        height: 36px;
-        border-radius: 9px;
+        height: 38px;
+        border-radius: 10px;
         font-weight: 600;
         font-size: 13px;
         line-height: 1.2;
@@ -236,53 +236,47 @@
         transition: all 0.2s ease;
         border: none;
         cursor: pointer;
-        padding: 0 12px;
+        padding: 0 16px;
         white-space: nowrap;
     }
     .btn-action-primary i {
         font-size: 13px;
     }
-    .btn-action-wishlist {
-        height: 36px;
-        border-radius: 9px;
-        font-weight: 500;
-        font-size: 12.5px;
-        line-height: 1.2;
+    .btn-action-wishlist-icon {
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+        border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 6px;
         transition: all 0.2s ease;
         cursor: pointer;
-        padding: 0 10px;
-        white-space: nowrap;
-    }
-    .btn-action-wishlist i {
-        font-size: 12px;
-    }
-    .btn-wishlist-outline {
-        border: 1.5px solid #ef4444 !important;
-        color: #ef4444 !important;
+        padding: 0;
+        border: 1.5px solid #ef4444;
         background: #fff;
+        color: #ef4444;
     }
-    .btn-wishlist-outline:hover {
+    .btn-action-wishlist-icon i {
+        font-size: 14px;
+    }
+    .btn-action-wishlist-icon.btn-wishlist-outline:hover {
         background: #fef2f2;
-        color: #dc2626 !important;
+        color: #dc2626;
         transform: translateY(-1px);
     }
-    .btn-wishlist-solid {
-        background: #ef4444 !important;
-        color: #ffffff !important;
-        box-shadow: 0 2px 5px rgba(239, 68, 68, 0.18);
-        border: 1.5px solid #ef4444 !important;
+    .btn-action-wishlist-icon.btn-wishlist-solid {
+        background: #ef4444;
+        color: #ffffff;
+        box-shadow: 0 2px 6px rgba(239, 68, 68, 0.2);
     }
-    .btn-wishlist-solid:hover {
-        background: #dc2626 !important;
+    .btn-action-wishlist-icon.btn-wishlist-solid:hover {
+        background: #dc2626;
         transform: translateY(-1px);
     }
     .btn-action-secondary {
         height: 38px;
-        border-radius: 9px;
+        border-radius: 10px;
         font-weight: 600;
         font-size: 13px;
         line-height: 1.2;
@@ -310,6 +304,73 @@
         box-shadow: 0 3px 8px rgba(16, 185, 129, 0.25);
     }
 
+    /* In-Cart Quantity Stepper Capsule */
+    .incart-qty-capsule {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #ffffff;
+        border: 1.5px solid #E2E8F0;
+        border-radius: 10px;
+        height: 38px;
+        padding: 0 4px;
+        min-width: 105px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+    .incart-qty-btn {
+        width: 28px;
+        height: 28px;
+        border: none;
+        background: #F1F5F9;
+        color: #334155;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 11px;
+        transition: all 0.15s ease;
+    }
+    .incart-qty-btn:hover:not(:disabled) {
+        background: #E2E8F0;
+        color: #0F172A;
+    }
+    .incart-qty-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+    .incart-qty-val {
+        font-size: 13px;
+        font-weight: 700;
+        color: #0F172A;
+        min-width: 26px;
+        text-align: center;
+        user-select: none;
+    }
+    .btn-go-to-cart {
+        height: 38px;
+        background: #f1f5f9;
+        color: #7C3AED !important;
+        border: 1.5px solid #DDD6FE;
+        border-radius: 10px;
+        font-size: 12.5px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 0 12px;
+        white-space: nowrap;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    .btn-go-to-cart:hover {
+        background: #EDE9FE;
+        border-color: #C4B5FD;
+        color: #6D28D9 !important;
+        transform: translateY(-1px);
+    }
+
     .action-buttons-group {
         display: flex;
         flex-direction: column;
@@ -318,20 +379,35 @@
 
     @media (max-width: 576px) {
         .btn-action-primary {
-            height: 36px;
+            height: 38px;
+            font-size: 12.5px;
+            padding: 0 12px;
+        }
+        .btn-action-wishlist-icon {
+            width: 38px;
+            height: 38px;
+            min-width: 38px;
+        }
+        .incart-qty-capsule {
+            min-width: 98px;
+            height: 38px;
+        }
+        .incart-qty-btn {
+            width: 26px;
+            height: 26px;
+        }
+        .incart-qty-val {
+            font-size: 12.5px;
+            min-width: 22px;
+        }
+        .btn-go-to-cart {
+            height: 38px;
             font-size: 12px;
             padding: 0 8px;
-            gap: 4px;
-        }
-        .btn-action-wishlist {
-            height: 36px;
-            font-size: 11.5px;
-            padding: 0 6px;
-            gap: 4px;
         }
         .btn-action-secondary {
             height: 38px;
-            font-size: 13px;
+            font-size: 12.5px;
             padding: 0 12px;
         }
     }
@@ -929,8 +1005,8 @@
                     </div>
 
                     <!-- Stock & Availability Info -->
-                    <div class="mb-4">
-                        <div class="d-flex align-items-center justify-content-between font-14 mb-2">
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center justify-content-between font-14">
                             <span class="text-muted">Holati:</span>
                             {% if product.count > 5 %}
                             <span class="text-success fw-700"><i class="fas fa-check-circle me-1"></i> Sotuvda mavjud ({{ product.count }} ta)</span>
@@ -940,53 +1016,47 @@
                             <span class="text-danger fw-700"><i class="fas fa-times-circle me-1"></i> Omborda tugagan</span>
                             {% endif %}
                         </div>
-
-                        <!-- Quantity Selector -->
-                        {% if product.count > 0 %}
-                        <div class="mb-3">
-                            <label for="detailQtyInput" class="form-label font-14 fw-600 text-dark mb-1">Xarid miqdori:</label>
-                            <div class="qty-control-wrapper">
-                                <button type="button" id="detailQtyMinusBtn" aria-label="Miqdorni kamaytirish" {% if cart_qty <= 1 %}disabled{% endif %}>
-                                    <i class="fas fa-minus font-12"></i>
-                                </button>
-                                <input type="number" id="detailQtyInput" name="quantity" value="{{ cart_qty|default:1 }}" min="1" max="{{ product.count }}" aria-label="Mahsulot miqdori">
-                                <button type="button" id="detailQtyPlusBtn" aria-label="Miqdorni oshirish" {% if cart_qty >= product.count %}disabled{% endif %}>
-                                    <i class="fas fa-plus font-12"></i>
-                                </button>
-                            </div>
-                        </div>
-                        {% endif %}
                     </div>
 
                     <!-- Action Buttons -->
                     <div class="action-buttons-group mb-3">
                         {% if product.count > 0 %}
-                            <!-- Row 1: Savatga qo'shish + Saralanganlarga qo'shish (Side-by-Side 50% / 50%) -->
-                            <div class="row g-2 align-items-center m-0">
-                                <div class="col-6 p-0 pe-1">
-                                    <!-- Add to Cart Form -->
-                                    <form method="post" action="{% url 'add_to_cart' product.code %}" id="detailAddToCartForm" class="custom-ajax-cart m-0 h-100">
+                            <!-- Row 1 Container -->
+                            <div class="d-flex align-items-center gap-2" id="actionRow1">
+                                <!-- State A: Not In Cart -->
+                                <div class="d-flex align-items-center gap-2 flex-grow-1 {% if product.id in cart_ids %}d-none{% endif %}" id="notInCartGroup">
+                                    <form method="post" action="{% url 'add_to_cart' product.code %}" id="detailAddToCartForm" class="custom-ajax-cart m-0 flex-grow-1">
                                         {% csrf_token %}
-                                        <input type="hidden" name="quantity" id="hiddenCartQtyInput" value="{{ cart_qty|default:1 }}">
-                                        <button type="submit" id="detailAddToCartBtn" class="btn btn-main w-100 btn-action-primary shadow-sm" {% if product.id in cart_ids %}style="background: #10B981; box-shadow: 0 4px 14px rgba(16,185,129,0.3);"{% endif %}>
-                                            {% if product.id in cart_ids %}
-                                            <i class="fas fa-check-circle"></i> <span>Savatda</span>
-                                            {% else %}
-                                            <i class="fas fa-shopping-bag"></i> <span>Savatga</span>
-                                            {% endif %}
+                                        <input type="hidden" name="quantity" value="1">
+                                        <button type="submit" id="detailAddToCartBtn" class="btn btn-main w-100 btn-action-primary shadow-sm">
+                                            <i class="fas fa-shopping-bag"></i> <span>Savatga qo'shish</span>
                                         </button>
                                     </form>
                                 </div>
-                                <div class="col-6 p-0 ps-1">
-                                    <!-- Wishlist Toggle Form -->
-                                    <form method="post" action="{% if is_in_wishlist %}{% url 'delete_wishlist' product.code %}{% else %}{% url 'add_wishlist' product.code %}{% endif %}" id="detailWishlistForm" class="m-0 h-100">
-                                        {% csrf_token %}
-                                        <button type="submit" id="detailWishlistBtn" class="btn {% if is_in_wishlist %}btn-wishlist-solid{% else %}btn-wishlist-outline{% endif %} w-100 btn-action-wishlist">
-                                            <i class="{% if is_in_wishlist %}fas{% else %}far{% endif %} fa-heart"></i>
-                                            <span id="wishlistBtnText">{% if is_in_wishlist %}Saralangan{% else %}Saralanganlar{% endif %}</span>
+
+                                <!-- State B: In Cart (Quantity Stepper + Go to Cart) -->
+                                <div class="d-flex align-items-center gap-2 flex-grow-1 {% if product.id not in cart_ids %}d-none{% endif %}" id="inCartGroup">
+                                    <div class="incart-qty-capsule" role="group" aria-label="Mahsulot sonini boshqarish">
+                                        <button type="button" class="incart-qty-btn" id="inCartMinusBtn" aria-label="Mahsulot sonini kamaytirish" {% if cart_qty <= 1 %}disabled{% endif %}>
+                                            <i class="fas fa-minus"></i>
                                         </button>
-                                    </form>
+                                        <span class="incart-qty-val" id="inCartQtyVal" aria-label="Mahsulot soni" aria-live="polite">{{ cart_qty|default:1 }}</span>
+                                        <button type="button" class="incart-qty-btn" id="inCartPlusBtn" aria-label="Mahsulot sonini oshirish" {% if cart_qty >= product.count %}disabled{% endif %}>
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
+                                    <a href="{% url 'cart' %}" class="btn-go-to-cart flex-grow-1" id="detailGoToCartBtn" aria-label="Savatga o'tish">
+                                        <i class="fas fa-shopping-cart"></i> <span>Savatga o'tish</span>
+                                    </a>
                                 </div>
+
+                                <!-- Wishlist Icon Button (Present in both states) -->
+                                <form method="post" action="{% if is_in_wishlist %}{% url 'delete_wishlist' product.code %}{% else %}{% url 'add_wishlist' product.code %}{% endif %}" id="detailWishlistForm" class="m-0">
+                                    {% csrf_token %}
+                                    <button type="submit" id="detailWishlistBtn" class="btn-action-wishlist-icon {% if is_in_wishlist %}btn-wishlist-solid{% else %}btn-wishlist-outline{% endif %}" aria-label="{% if is_in_wishlist %}Sevimlilardan olib tashlash{% else %}Saralanganlarga qo'shish{% endif %}" title="{% if is_in_wishlist %}Sevimlilardan olib tashlash{% else %}Sevimlilarga qo'shish{% endif %}">
+                                        <i class="{% if is_in_wishlist %}fas{% else %}far{% endif %} fa-heart"></i>
+                                    </button>
+                                </form>
                             </div>
 
                             <!-- Row 2: Hozir xarid qilish (100% Full Width) -->
@@ -1112,64 +1182,97 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const maxStock = {{ product.count|default:0 }};
-        const qtyInput = document.getElementById('detailQtyInput');
-        const qtyMinusBtn = document.getElementById('detailQtyMinusBtn');
-        const qtyPlusBtn = document.getElementById('detailQtyPlusBtn');
-        const hiddenCartQty = document.getElementById('hiddenCartQtyInput');
+        const notInCartGroup = document.getElementById('notInCartGroup');
+        const inCartGroup = document.getElementById('inCartGroup');
+        const inCartMinusBtn = document.getElementById('inCartMinusBtn');
+        const inCartPlusBtn = document.getElementById('inCartPlusBtn');
+        const inCartQtyVal = document.getElementById('inCartQtyVal');
         const hiddenBuyNowQty = document.getElementById('hiddenBuyNowQtyInput');
-
-        // 1. Quantity Controls with strict stock limits
-        function updateQtyLimits(val) {
-            let current = parseInt(val, 10);
-            if (isNaN(current) || current < 1) current = 1;
-            if (maxStock > 0 && current > maxStock) {
-                current = maxStock;
-                if (window.showToast) {
-                    window.showToast("Omborda faqat " + maxStock + " ta mahsulot mavjud", "warning");
-                }
-            }
-            if (qtyInput) qtyInput.value = current;
-            if (hiddenCartQty) hiddenCartQty.value = current;
-            if (hiddenBuyNowQty) hiddenBuyNowQty.value = current;
-
-            if (qtyMinusBtn) qtyMinusBtn.disabled = (current <= 1);
-            if (qtyPlusBtn) qtyPlusBtn.disabled = (current >= maxStock);
-            return current;
-        }
-
-        if (qtyMinusBtn && qtyInput) {
-            qtyMinusBtn.addEventListener('click', function() {
-                let current = parseInt(qtyInput.value, 10) || 1;
-                if (current > 1) {
-                    updateQtyLimits(current - 1);
-                }
-            });
-        }
-
-        if (qtyPlusBtn && qtyInput) {
-            qtyPlusBtn.addEventListener('click', function() {
-                let current = parseInt(qtyInput.value, 10) || 1;
-                if (current < maxStock) {
-                    updateQtyLimits(current + 1);
-                } else if (window.showToast) {
-                    window.showToast("Omborda faqat " + maxStock + " ta mahsulot mavjud", "warning");
-                }
-            });
-        }
-
-        if (qtyInput) {
-            qtyInput.addEventListener('input', function() {
-                this.value = this.value.replace(/\D/g, ''); // Digits only
-            });
-            qtyInput.addEventListener('change', function() {
-                updateQtyLimits(this.value);
-            });
-        }
-
-        // 2. Add to Cart with AJAX & Button State
         const addToCartForm = document.getElementById('detailAddToCartForm');
         const addToCartBtn = document.getElementById('detailAddToCartBtn');
 
+        // 1. In-Cart Quantity Stepper AJAX Handler
+        function updateInCartQuantity(newQty) {
+            if (!inCartQtyVal) return;
+            const prevQty = parseInt(inCartQtyVal.textContent, 10) || 1;
+            if (newQty < 1 || (maxStock > 0 && newQty > maxStock)) return;
+
+            // Optimistic UI update
+            inCartQtyVal.textContent = newQty;
+            if (hiddenBuyNowQty) hiddenBuyNowQty.value = newQty;
+            if (inCartMinusBtn) inCartMinusBtn.disabled = (newQty <= 1);
+            if (inCartPlusBtn) inCartPlusBtn.disabled = (maxStock > 0 && newQty >= maxStock);
+
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+
+            fetch('/update-cart-quantity/{{ product.code }}/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ quantity: newQty })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'login_required') {
+                    window.location.href = data.redirect || '/login/';
+                    return;
+                }
+                if (data.status === 'updated' || data.status === 'success') {
+                    // Update global cart badge
+                    if (data.cart_count !== undefined) {
+                        document.querySelectorAll('.cart-count-badge').forEach(badge => {
+                            badge.innerText = data.cart_count || '0';
+                            if (parseInt(data.cart_count, 10) > 0) {
+                                badge.classList.remove('d-none');
+                            } else {
+                                badge.classList.add('d-none');
+                            }
+                        });
+                    }
+                } else {
+                    // Rollback
+                    inCartQtyVal.textContent = prevQty;
+                    if (hiddenBuyNowQty) hiddenBuyNowQty.value = prevQty;
+                    if (inCartMinusBtn) inCartMinusBtn.disabled = (prevQty <= 1);
+                    if (inCartPlusBtn) inCartPlusBtn.disabled = (maxStock > 0 && prevQty >= maxStock);
+                    if (window.showToast) window.showToast(data.message || 'Xatolik yuz berdi', 'error');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                // Rollback
+                inCartQtyVal.textContent = prevQty;
+                if (hiddenBuyNowQty) hiddenBuyNowQty.value = prevQty;
+                if (inCartMinusBtn) inCartMinusBtn.disabled = (prevQty <= 1);
+                if (inCartPlusBtn) inCartPlusBtn.disabled = (maxStock > 0 && prevQty >= maxStock);
+                if (window.showToast) window.showToast('Tarmoq xatosi. Qayta urinib ko\'ring.', 'error');
+            });
+        }
+
+        if (inCartPlusBtn) {
+            inCartPlusBtn.addEventListener('click', function() {
+                const cur = parseInt(inCartQtyVal.textContent, 10) || 1;
+                if (maxStock > 0 && cur >= maxStock) {
+                    if (window.showToast) window.showToast("Omborda faqat " + maxStock + " ta mahsulot mavjud", "warning");
+                    return;
+                }
+                updateInCartQuantity(cur + 1);
+            });
+        }
+
+        if (inCartMinusBtn) {
+            inCartMinusBtn.addEventListener('click', function() {
+                const cur = parseInt(inCartQtyVal.textContent, 10) || 1;
+                if (cur > 1) {
+                    updateInCartQuantity(cur - 1);
+                }
+            });
+        }
+
+        // 2. Add to Cart with AJAX & State Transition to In-Cart
         if (addToCartForm && addToCartBtn) {
             addToCartForm.addEventListener('submit', function(e) {
                 e.preventDefault();
@@ -1190,15 +1293,23 @@
                 .then(res => res.json())
                 .then(data => {
                     addToCartBtn.disabled = false;
+                    addToCartBtn.innerHTML = originalHtml;
                     if (data.status === 'login_required') {
                         window.location.href = data.redirect || '/login/';
                         return;
                     }
 
                     if (data.status === 'success') {
-                        addToCartBtn.innerHTML = '<i class="fas fa-check-circle"></i> Savatga qo\'shilgan (Yangilash)';
-                        addToCartBtn.style.background = '#10B981';
-                        addToCartBtn.style.boxShadow = '0 4px 14px rgba(16,185,129,0.3)';
+                        // Switch to In-Cart state
+                        if (notInCartGroup && inCartGroup) {
+                            notInCartGroup.classList.add('d-none');
+                            inCartGroup.classList.remove('d-none');
+                        }
+                        if (inCartQtyVal) inCartQtyVal.textContent = '1';
+                        if (hiddenBuyNowQty) hiddenBuyNowQty.value = '1';
+                        if (inCartMinusBtn) inCartMinusBtn.disabled = true;
+                        if (inCartPlusBtn) inCartPlusBtn.disabled = (maxStock <= 1);
+
                         if (window.showToast) window.showToast(data.message, 'success');
 
                         // Update global cart badge
@@ -1211,7 +1322,6 @@
                             }
                         });
                     } else {
-                        addToCartBtn.innerHTML = originalHtml;
                         if (window.showToast) window.showToast(data.message || 'Xatolik yuz berdi', 'error');
                     }
                 })
@@ -1267,10 +1377,9 @@
             });
         }
 
-        // 4. Wishlist AJAX Toggle
+        // 4. Wishlist AJAX Toggle (Square icon button)
         const wishlistForm = document.getElementById('detailWishlistForm');
         const wishlistBtn = document.getElementById('detailWishlistBtn');
-        const wishlistBtnText = document.getElementById('wishlistBtnText');
 
         if (wishlistForm && wishlistBtn) {
             wishlistForm.addEventListener('submit', function(e) {
@@ -1296,12 +1405,16 @@
                     if (data.status === 'success') {
                         if (isAdding) {
                             wishlistForm.action = wishlistForm.action.replace('add-wishlist', 'delete-wishlist');
-                            wishlistBtn.className = 'btn btn-wishlist-solid w-100 btn-action-wishlist';
-                            wishlistBtn.innerHTML = '<i class="fas fa-heart"></i> <span id="wishlistBtnText">Saralangan</span>';
+                            wishlistBtn.className = 'btn-action-wishlist-icon btn-wishlist-solid';
+                            wishlistBtn.setAttribute('aria-label', 'Sevimlilardan olib tashlash');
+                            wishlistBtn.setAttribute('title', 'Sevimlilardan olib tashlash');
+                            wishlistBtn.innerHTML = '<i class="fas fa-heart"></i>';
                         } else {
                             wishlistForm.action = wishlistForm.action.replace('delete-wishlist', 'add-wishlist');
-                            wishlistBtn.className = 'btn btn-wishlist-outline w-100 btn-action-wishlist';
-                            wishlistBtn.innerHTML = '<i class="far fa-heart"></i> <span id="wishlistBtnText">Saralanganlar</span>';
+                            wishlistBtn.className = 'btn-action-wishlist-icon btn-wishlist-outline';
+                            wishlistBtn.setAttribute('aria-label', 'Saralanganlarga qo\'shish');
+                            wishlistBtn.setAttribute('title', 'Sevimlilarga qo\'shish');
+                            wishlistBtn.innerHTML = '<i class="far fa-heart"></i>';
                         }
                         if (window.showToast) window.showToast(data.message, 'success');
 
