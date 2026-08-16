@@ -839,7 +839,7 @@
                 </div>
 
                 <!-- ── 2. PRODUCT DESCRIPTION (SECOND SECTION) ── -->
-                <div class="detail-section-card" id="description-section">
+                <div class="detail-section-card mb-0" id="description-section">
                     <div class="d-flex align-items-center gap-2 mb-3 pb-3 border-bottom">
                         <div style="width: 34px; height: 34px; border-radius: 8px; background: rgba(124,58,237,0.1); color: #7C3AED; display: flex; align-items: center; justify-content: center; font-size: 15px;">
                             <i class="fas fa-align-left"></i>
@@ -848,45 +848,15 @@
                     </div>
 
                     {% if product.description %}
-                    <div class="text-body font-14 mb-3" style="line-height: 1.7; color: #334155;">
+                    <div class="text-body font-14 m-0" style="line-height: 1.75; color: #334155;">
                         {{ product.description|linebreaks }}
                     </div>
                     {% else %}
-                    <div class="text-center py-3 bg-light rounded-4 text-muted mb-3 font-13">
+                    <div class="text-center py-4 bg-light rounded-3 text-muted font-13 m-0">
                         <i class="fas fa-align-left font-18 mb-2 d-block opacity-50"></i>
                         Ushbu mahsulot uchun batafsil tavsif hali kiritilmagan.
                     </div>
                     {% endif %}
-
-                    <!-- Key Specifications / Attributes Grid -->
-                    <div class="row g-2 font-13">
-                        <div class="col-sm-6">
-                            <div class="p-2-5 bg-light rounded-3 d-flex justify-content-between align-items-center" style="padding: 10px 14px;">
-                                <span class="text-muted">Mahsulot kodi:</span>
-                                <span class="fw-700 text-dark font-monospace">#{{ product.code }}</span>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="p-2-5 bg-light rounded-3 d-flex justify-content-between align-items-center" style="padding: 10px 14px;">
-                                <span class="text-muted">Kategoriya:</span>
-                                <span class="fw-700 text-main">{{ product.category.name }}</span>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="p-2-5 bg-light rounded-3 d-flex justify-content-between align-items-center" style="padding: 10px 14px;">
-                                <span class="text-muted">Mavjudlik:</span>
-                                <span class="fw-700 {% if product.count > 0 %}text-success{% else %}text-danger{% endif %}">
-                                    {% if product.count > 0 %}{{ product.count }} dona mavjud{% else %}Tugagan{% endif %}
-                                </span>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="p-2-5 bg-light rounded-3 d-flex justify-content-between align-items-center" style="padding: 10px 14px;">
-                                <span class="text-muted">Sifat kafolati:</span>
-                                <span class="fw-700 text-dark">100% Asl mahsulot</span>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
 

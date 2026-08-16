@@ -3,6 +3,7 @@ from decimal import Decimal
 from unittest.mock import patch
 from django.test import TestCase
 from django.urls import reverse
+from django.utils.html import escape
 from .models import Cart, CartProduct, Category, Product, User, SiteSettings, Payment, Review, Address
 from .views import get_active_cart
 from . import models
@@ -2366,6 +2367,50 @@ class ProductDetailAndVerifiedReviewsTests(TestCase):
         self.assertNotEqual(reviews_idx, -1, "reviews-section must exist")
         self.assertNotEqual(desc_idx, -1, "description-section must exist")
         self.assertLess(reviews_idx, desc_idx, "reviews-section must come before description-section")
+
+    def test_description_section_simplified_and_redundant_metadata_removed(self):
+        """Redundant metadata cards must be removed from description section while remaining in Buy Box."""
+        # 1. Product with description
+        response = self.client.get(f'/product-detail/{self.product.code}/')
+        content = response.content.decode('utf-8')
+        
+        # Extract description section
+        desc_start = content.find('id="description-section"')
+        self.assertNotEqual(desc_start, -1)
+        desc_end = content.find('</div>\n            </div>\n\n            <!-- Right Column:', desc_start)
+        if desc_end == -1:
+            desc_end = content.find('glass-sidebar', desc_start)
+        desc_content = content[desc_start:desc_end]
+
+        # Metadata cards MUST NOT exist in description section
+        self.assertNotIn('Mahsulot kodi:', desc_content)
+        self.assertNotIn('Kategoriya:', desc_content)
+        self.assertNotIn('Mavjudlik:', desc_content)
+        self.assertNotIn('Sifat kafolati:', desc_content)
+        self.assertIn(escape(self.product.description), desc_content)
+
+        # 2. Metadata MUST still exist in Buy Box
+        buybox_pos = content.find('class="glass-sidebar"')
+        self.assertNotEqual(buybox_pos, -1)
+        buybox_content = content[buybox_pos:]
+        self.assertIn('Mahsulot kodi', buybox_content)
+        self.assertIn(str(self.product.code), buybox_content)
+        self.assertIn(self.category.name, buybox_content)
+        self.assertIn('Mavjud qoldiq', buybox_content)
+
+        # 3. Product without description shows clean fallback
+        p_no_desc = Product.objects.create(
+            name="No Desc Product",
+            category=self.category,
+            price=50000,
+            count=10,
+            code="NODESC001",
+            description="",
+            image="test_nodesc.png"
+        )
+        res_no_desc = self.client.get(f'/product-detail/{p_no_desc.code}/')
+        content_no_desc = res_no_desc.content.decode('utf-8')
+        self.assertIn('Ushbu mahsulot uchun batafsil tavsif hali kiritilmagan.', content_no_desc)
 
     def test_service_cards_removed_and_official_payment_logos_in_buybox(self):
         """3 service cards must be removed, and official payment logos must be in Buy Box before product code."""
