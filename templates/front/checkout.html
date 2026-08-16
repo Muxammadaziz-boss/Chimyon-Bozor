@@ -939,6 +939,17 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // BFCache / Page Show Recovery
+    window.addEventListener('pageshow', function() {
+        isSubmitting = false;
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+            submitBtn.style.cursor = 'pointer';
+            updateSubmitButtonText();
+        }
+    });
+
     updateSubmitButtonText();
 });
 </script>

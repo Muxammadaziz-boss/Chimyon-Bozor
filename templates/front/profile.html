@@ -2281,6 +2281,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // BFCache / History Navigation Recovery
+    window.addEventListener('pageshow', function() {
+        isSubmittingProfile = false;
+        if (profileSubmitBtn) {
+            profileSubmitBtn.disabled = false;
+            profileSubmitBtn.innerHTML = '<i class="fas fa-save me-2"></i> O\'zgarishlarni saqlash';
+        }
+    });
 });
 </script>
 {% endblock %}

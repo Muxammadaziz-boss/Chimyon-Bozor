@@ -133,4 +133,30 @@
         </div>
     </div>
 </section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const retryForm = document.querySelector('form[action*="retry_payment"]');
+    if (retryForm) {
+        retryForm.addEventListener('submit', function() {
+            const btn = this.querySelector('button[type="submit"]');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Qayta to\'lov tayyorlanmoqda...';
+            }
+        });
+    }
+
+    // BFCache / History Navigation Recovery
+    window.addEventListener('pageshow', function() {
+        if (retryForm) {
+            const btn = retryForm.querySelector('button[type="submit"]');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-redo"></i> Qayta To\'lash';
+            }
+        }
+    });
+});
+</script>
 {% endblock %}

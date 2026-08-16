@@ -514,6 +514,21 @@
         confirmText: (options && options.confirmText) || 'Tushundim'
       });
     };
+
+    // Dashboard Loader Safety Timeout & BFCache Auto-Dismiss
+    (function() {
+      function dismissLoader() {
+        var loader = document.querySelector('.loader');
+        if (loader) {
+          loader.style.transition = 'opacity 0.25s ease';
+          loader.style.opacity = '0';
+          setTimeout(function() { loader.style.display = 'none'; }, 250);
+        }
+      }
+      window.addEventListener('load', dismissLoader);
+      window.addEventListener('pageshow', dismissLoader);
+      setTimeout(dismissLoader, 2000); // 2-second safety guarantee against frozen overlays
+    })();
   </script>
 
   {% block extra_js %}{% endblock %}

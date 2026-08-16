@@ -1859,6 +1859,210 @@ class GlobalSEOPolishAuditTests(TestCase):
         self.assertEqual(self.product_active.get_absolute_url(), f'/product-detail/{self.product_active.code}/')
 
 
+class GlobalLoadingAndSkeletonUXTests(TestCase):
+    """
+    Comprehensive verification test suite for Global Loading & Skeleton UX:
+    1. Top navigation progress bar & skeleton shimmer CSS
+    2. Live search race protection, abort controller, and skeleton
+    3. Catalog filter form & sorting loading feedback
+    4. Product detail add-to-cart, buy-now, and related products loading
+    5. Cart quantity & delete AJAX loading and rollback
+    6. Checkout double-submit protection & BFCache recovery
+    7. Profile save button loading state & recovery
+    8. Login & Register form submit loading states
+    9. OTP verify & resend loading states
+    10. Payment retry loading state
+    11. Dashboard loader safety timeout & auto-dismiss
+    12. Reduced motion overrides & layout stability
+    """
+
+    def setUp(self):
+        self.site_settings = SiteSettings.objects.create(
+            pk=1,
+            site_name="Chimyon-bozor",
+            tagline="Sifatli mahsulotlar"
+        )
+        self.category = Category.objects.create(
+            name="Texnika",
+            logo="test_tech.png",
+            is_active=True
+        )
+        self.product = Product.objects.create(
+            category=self.category,
+            name="Smartfon Ultra",
+            description="Ajoyib smartfon",
+            price=Decimal("3500000"),
+            count=10,
+            image="test_smartfon.png"
+        )
+        self.user = User.objects.create_user(
+            username="uxuser",
+            password="uxpassword123",
+            phone="+998909998877"
+        )
+
+    def test_base_template_top_navigation_progress_bar(self):
+        """base.html must contain the topNavigationProgressBar element and script."""
+        response = self.client.get('/')
+        content = response.content.decode('utf-8')
+        self.assertIn('id="topNavigationProgressBar"', content)
+        self.assertIn('class="chimyon-top-progress"', content)
+        self.assertIn('startNavProgress', content)
+        self.assertIn('finishNavProgress', content)
+
+    def test_base_template_skeleton_classes_and_reduced_motion(self):
+        """base.html must define skeleton-shimmer, skeleton-box, and reduced-motion rules."""
+        response = self.client.get('/')
+        content = response.content.decode('utf-8')
+        self.assertIn('.skeleton-shimmer', content)
+        self.assertIn('.skeleton-box', content)
+        self.assertIn('@keyframes chimyonShimmer', content)
+        self.assertIn('@media (prefers-reduced-motion: reduce)', content)
+        self.assertIn('animation: none !important', content)
+
+    def test_live_search_skeleton_and_race_protection(self):
+        """Header live search script must include AbortController, sequence ID, and skeleton placeholder."""
+        response = self.client.get('/')
+        content = response.content.decode('utf-8')
+        self.assertIn('searchAbortController', content)
+        self.assertIn('searchSeq', content)
+        self.assertIn('search-skeleton-item', content)
+        self.assertIn('aria-busy', content)
+
+    def test_catalog_filter_form_loading_and_aria_busy(self):
+        """Catalog filter page script must include apply filter loading spinner and aria-busy handling."""
+        response = self.client.get(f'/category-filter/{self.category.id}/')
+        content = response.content.decode('utf-8')
+        self.assertIn('btn-apply-filters', content)
+        self.assertIn('Qidirilmoqda...', content)
+        self.assertIn('aria-busy', content)
+
+    def test_catalog_sorting_loading_state(self):
+        """Catalog sorting dropdown script must handle loading opacity and busy state."""
+        response = self.client.get(f'/category-filter/{self.category.id}/')
+        content = response.content.decode('utf-8')
+        self.assertIn('catalog-sort-select', content)
+        self.assertIn('pageshow', content)
+
+    def test_product_detail_add_to_cart_loading_state(self):
+        """Product detail page must contain AJAX add-to-cart with loading spinner and disabled state."""
+        response = self.client.get(f'/product-detail/{self.product.code}/')
+        content = response.content.decode('utf-8')
+        self.assertIn('detailAddToCartBtn', content)
+        self.assertIn('Qo\\\'shilmoqda...', content)
+        self.assertIn('disabled = true', content)
+
+    def test_product_detail_buy_now_loading_state(self):
+        """Product detail page must contain Buy Now button with loading spinner."""
+        response = self.client.get(f'/product-detail/{self.product.code}/')
+        content = response.content.decode('utf-8')
+        self.assertIn('detailBuyNowBtn', content)
+        self.assertIn('O\\\'tilmoqda...', content)
+
+    def test_cart_quantity_ajax_loading_and_rollback(self):
+        """Cart page must contain AJAX quantity update with error rollback logic."""
+        self.client.force_login(self.user)
+        response = self.client.get('/cart/')
+        content = response.content.decode('utf-8')
+        self.assertIn('previousQty', content)
+        self.assertIn('update-cart-quantity', content)
+
+    def test_cart_delete_ajax_loading(self):
+        """Cart page must contain AJAX item delete with spinner and rollback."""
+        self.client.force_login(self.user)
+        response = self.client.get('/cart/')
+        content = response.content.decode('utf-8')
+        self.assertIn('ajax-remove-form', content)
+        self.assertIn('fa-spinner', content)
+
+    def test_checkout_submit_loading_and_double_submit_protection(self):
+        """Checkout page must disable submit button, show spinner, and recover on pageshow."""
+        self.client.force_login(self.user)
+        cart = Cart.objects.create(user=self.user, status=1)
+        CartProduct.objects.create(cart=cart, product=self.product, count=1)
+        response = self.client.get('/checkout/')
+        content = response.content.decode('utf-8')
+        self.assertIn('isSubmitting', content)
+        self.assertIn('To\\\'lov sahifasi tayyorlanmoqda...', content)
+        self.assertIn('pageshow', content)
+
+    def test_profile_save_loading_and_bfcache_recovery(self):
+        """Profile page must show spinner on save and reset on pageshow."""
+        self.client.force_login(self.user)
+        response = self.client.get('/profile/')
+        content = response.content.decode('utf-8')
+        self.assertIn('isSubmittingProfile', content)
+        self.assertIn('Saqlanmoqda...', content)
+        self.assertIn('pageshow', content)
+
+    def test_login_and_register_submit_loading_states(self):
+        """Login and Register forms must show loading spinners on submit and reset on pageshow."""
+        response = self.client.get('/login/')
+        content = response.content.decode('utf-8')
+        self.assertIn('Kirilmoqda...', content)
+        self.assertIn('Ro\\\'yxatdan o\\\'tilmoqda...', content)
+        self.assertIn('pageshow', content)
+
+    def test_verify_otp_submit_and_resend_loading_states(self):
+        """Verify OTP page must show spinner on submit and resend, and reset on pageshow."""
+        session = self.client.session
+        session['otp_user_id'] = self.user.pk
+        session['otp_phone'] = self.user.phone
+        session.save()
+        response = self.client.get('/verify-otp/')
+        content = response.content.decode('utf-8')
+        self.assertIn('Tekshirilmoqda...', content)
+        self.assertIn('Yuborilmoqda...', content)
+        self.assertIn('pageshow', content)
+
+    def test_payment_retry_submit_loading_state(self):
+        """Payment failed page must show spinner on retry payment submit."""
+        self.client.force_login(self.user)
+        cart = Cart.objects.create(user=self.user, status=2)
+        response = self.client.get(f'/payment/failed/{cart.code}/')
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode('utf-8')
+        self.assertIn('Qayta to\\\'lov tayyorlanmoqda...', content)
+        self.assertIn('pageshow', content)
+
+    def test_dashboard_loader_safety_timeout(self):
+        """Dashboard base template must include automatic loader safety timeout and pageshow dismiss."""
+        self.user.is_staff = True
+        self.user.save()
+        self.client.force_login(self.user)
+        response = self.client.get('/dashboard/')
+        content = response.content.decode('utf-8')
+        self.assertIn('dismissLoader', content)
+        self.assertIn('setTimeout(dismissLoader', content)
+
+    def test_ajax_load_more_category_products_api(self):
+        """Home page category load-more API endpoint must return JSON with next_offset and html."""
+        response = self.client.get(f'/api/category-products/{self.category.id}/?offset=0&limit=5')
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn('html', data)
+        self.assertIn('has_more', data)
+        self.assertIn('next_offset', data)
+
+    def test_ajax_load_more_related_products_api(self):
+        """Product detail related products API endpoint must return JSON with html and count."""
+        # Create second product in same category
+        p2 = Product.objects.create(
+            category=self.category,
+            name="Smartfon Pro 2",
+            description="Ikkinchi smartfon",
+            price=Decimal("4000000"),
+            count=5,
+            image="test_smartfon2.png"
+        )
+        response = self.client.get(f'/api/related-products/{self.product.code}/?offset=0')
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn('html', data)
+        self.assertIn('count', data)
+
+
+
 
 
 

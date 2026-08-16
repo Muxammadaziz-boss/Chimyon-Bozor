@@ -1108,6 +1108,46 @@ document.addEventListener('DOMContentLoaded', function() {
             listViewBtn.click();
         }
     }
+
+    // Filter Form & Sorting Loading Feedback
+    const mainFilterForm = document.getElementById('mainFilterForm');
+    const applyFilterBtn = document.querySelector('.btn-apply-filters');
+    const sortSelect = document.querySelector('.catalog-sort-select');
+
+    if (mainFilterForm && applyFilterBtn) {
+        mainFilterForm.addEventListener('submit', function() {
+            applyFilterBtn.disabled = true;
+            applyFilterBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Qidirilmoqda...';
+            if (productsContainer) {
+                productsContainer.setAttribute('aria-busy', 'true');
+                productsContainer.style.opacity = '0.55';
+                productsContainer.style.pointerEvents = 'none';
+            }
+        });
+    }
+
+    if (sortSelect) {
+        sortSelect.addEventListener('change', function() {
+            if (productsContainer) {
+                productsContainer.setAttribute('aria-busy', 'true');
+                productsContainer.style.opacity = '0.55';
+                productsContainer.style.pointerEvents = 'none';
+            }
+        });
+    }
+
+    // BFCache / History Navigation Recovery
+    window.addEventListener('pageshow', function() {
+        if (applyFilterBtn) {
+            applyFilterBtn.disabled = false;
+            applyFilterBtn.innerHTML = '<i class="fas fa-check me-1"></i> Natijalarni ko\'rish';
+        }
+        if (productsContainer) {
+            productsContainer.setAttribute('aria-busy', 'false');
+            productsContainer.style.opacity = '1';
+            productsContainer.style.pointerEvents = 'auto';
+        }
+    });
 });
 </script>
 {% endblock %}

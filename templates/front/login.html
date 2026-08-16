@@ -902,6 +902,48 @@
                 }, 250);
             });
         }
+
+        // Login & Register Form Submit Loading State
+        const loginForm = document.querySelector('.flip-face--front form');
+        const regForm = document.querySelector('.flip-face--back form');
+
+        if (loginForm) {
+            loginForm.addEventListener('submit', function() {
+                const btn = this.querySelector('button[type="submit"]');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Kirilmoqda...';
+                }
+            });
+        }
+
+        if (regForm) {
+            regForm.addEventListener('submit', function() {
+                const btn = this.querySelector('button[type="submit"]');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Ro\'yxatdan o\'tilmoqda...';
+                }
+            });
+        }
+
+        // BFCache / History Navigation Recovery
+        window.addEventListener('pageshow', function() {
+            if (loginForm) {
+                const btn = loginForm.querySelector('button[type="submit"]');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i> Kirish';
+                }
+            }
+            if (regForm) {
+                const btn = regForm.querySelector('button[type="submit"]');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-user-plus me-2"></i> Ro\'yxatdan o\'tish';
+                }
+            }
+        });
     </script>
 </body>
 

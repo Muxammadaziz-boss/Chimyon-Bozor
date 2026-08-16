@@ -115,6 +115,66 @@
                 transition-duration: 0.001ms !important;
                 scroll-behavior: auto !important;
             }
+            .skeleton-shimmer::after {
+                animation: none !important;
+            }
+        }
+
+        /* ==========================================================
+           CHIMYON-BOZOR GLOBAL SKELETON & LOADING UX SYSTEM
+           ========================================================== */
+        .chimyon-top-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 3px;
+            background: linear-gradient(90deg, #7C3AED 0%, #EC4899 50%, #8B5CF6 100%);
+            z-index: 999999;
+            box-shadow: 0 0 10px rgba(124, 58, 237, 0.6);
+            pointer-events: none;
+            transition: width 0.25s ease-out, opacity 0.3s ease;
+            opacity: 0;
+        }
+        .chimyon-top-progress.active {
+            opacity: 1;
+        }
+
+        /* Skeleton Base & Shimmer */
+        .skeleton-box,
+        .skeleton-shimmer {
+            background: #E2E8F0;
+            position: relative;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+        .skeleton-shimmer::after {
+            content: '';
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            transform: translateX(-100%);
+            background-image: linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.4) 20%,
+                rgba(255, 255, 255, 0.7) 60%,
+                rgba(255, 255, 255, 0) 100%
+            );
+            animation: chimyonShimmer 1.5s infinite;
+        }
+        @keyframes chimyonShimmer {
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        /* Live Search Skeleton */
+        .search-skeleton-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-bottom: 1px solid #F1F5F9;
         }
 
         /* ==========================================================
@@ -1060,6 +1120,7 @@
 </head>
 
 <body>
+    <div id="topNavigationProgressBar" class="chimyon-top-progress" role="progressbar" aria-hidden="true"></div>
 
     <div class="overlay"></div>
 
@@ -1907,35 +1968,130 @@
             }
         });
 
-        // Header Live Search Listener
+        // ==========================================================
+        // TOP NAVIGATION PROGRESS BAR (Smooth Page Loading Feedback)
+        // ==========================================================
+        const navProgressBar = document.getElementById('topNavigationProgressBar');
+        let navProgressTimer = null;
+
+        function startNavProgress() {
+            if (!navProgressBar) return;
+            clearTimeout(navProgressTimer);
+            navProgressBar.style.transition = 'width 0.3s ease-out, opacity 0.2s ease';
+            navProgressBar.style.width = '25%';
+            navProgressBar.classList.add('active');
+            navProgressTimer = setTimeout(() => {
+                navProgressBar.style.width = '70%';
+            }, 250);
+        }
+
+        function finishNavProgress() {
+            if (!navProgressBar) return;
+            clearTimeout(navProgressTimer);
+            navProgressBar.style.width = '100%';
+            setTimeout(() => {
+                navProgressBar.classList.remove('active');
+                setTimeout(() => {
+                    navProgressBar.style.width = '0%';
+                }, 200);
+            }, 150);
+        }
+
+        // Finish progress on page load / bfcache restore
+        window.addEventListener('pageshow', finishNavProgress);
+        window.addEventListener('load', finishNavProgress);
+
+        // Start progress on real internal link navigation
+        document.addEventListener('click', function(e) {
+            const link = e.target.closest('a');
+            if (!link || !link.href) return;
+            if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+            if (link.target && link.target !== '_self') return;
+            if (link.href.startsWith('javascript:') || link.href.includes('#') || link.classList.contains('no-progress') || link.getAttribute('data-bs-toggle')) return;
+            
+            try {
+                const targetUrl = new URL(link.href, window.location.origin);
+                if (targetUrl.origin === window.location.origin && targetUrl.pathname !== window.location.pathname) {
+                    startNavProgress();
+                }
+            } catch (err) {}
+        });
+
+        // Start progress on standard form submits
+        document.addEventListener('submit', function(e) {
+            const form = e.target;
+            if (form && !e.defaultPrevented && !form.classList.contains('no-progress') && !form.action.includes('?ajax=1')) {
+                startNavProgress();
+            }
+        });
+
+        // ==========================================================
+        // HEADER LIVE SEARCH (Anti-Flicker Skeleton & Race Protection)
+        // ==========================================================
         const headerSearchInput = document.getElementById('header-live-search-input');
         const headerSearchResults = document.getElementById('header-live-search-results');
-        let headerSearchTimer;
+        let headerSearchTimer = null;
+        let searchSeq = 0;
+        let searchAbortController = null;
 
         if (headerSearchInput && headerSearchResults) {
             function performSearch() {
                 clearTimeout(headerSearchTimer);
                 const query = headerSearchInput.value.trim();
                 if (query.length < 1) {
+                    if (searchAbortController) searchAbortController.abort();
                     headerSearchResults.style.display = 'none';
+                    headerSearchResults.setAttribute('aria-busy', 'false');
                     return;
                 }
+
                 headerSearchTimer = setTimeout(() => {
-                    fetch('/api/live-search/?q=' + encodeURIComponent(query))
+                    const currentSeq = ++searchSeq;
+                    if (searchAbortController) searchAbortController.abort();
+                    searchAbortController = new AbortController();
+
+                    // If popup is closed or empty, render subtle skeleton placeholder
+                    if (headerSearchResults.style.display === 'none' || !headerSearchResults.children.length) {
+                        headerSearchResults.innerHTML = `
+                            <div class="p-2" aria-live="polite">
+                                <div class="search-skeleton-item">
+                                    <div class="skeleton-shimmer" style="width: 42px; height: 42px; border-radius: 8px; flex-shrink: 0;"></div>
+                                    <div style="flex: 1;">
+                                        <div class="skeleton-shimmer mb-1" style="height: 14px; width: 65%;"></div>
+                                        <div class="skeleton-shimmer" style="height: 11px; width: 35%;"></div>
+                                    </div>
+                                </div>
+                                <div class="search-skeleton-item">
+                                    <div class="skeleton-shimmer" style="width: 42px; height: 42px; border-radius: 8px; flex-shrink: 0;"></div>
+                                    <div style="flex: 1;">
+                                        <div class="skeleton-shimmer mb-1" style="height: 14px; width: 80%;"></div>
+                                        <div class="skeleton-shimmer" style="height: 11px; width: 45%;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        headerSearchResults.style.display = 'block';
+                    }
+                    headerSearchResults.setAttribute('aria-busy', 'true');
+
+                    fetch('/api/live-search/?q=' + encodeURIComponent(query), { signal: searchAbortController.signal })
                         .then(res => res.json())
                         .then(data => {
+                            if (currentSeq !== searchSeq) return; // Stale response discarded
+                            headerSearchResults.setAttribute('aria-busy', 'false');
+
                             if (data.results && data.results.length > 0) {
                                 let html = '<div class="search-results-header"><i class="fas fa-search" style="margin-right:6px;"></i>' + data.results.length + ' ta natija topildi</div>';
                                 data.results.forEach(item => {
                                     const discountBadge = item.discount_percent ? `<span class="search-result-discount">-${item.discount_percent}%</span>` : '';
                                     html += `
                                         <a href="${item.url}" class="search-result-item">
-                                            <img src="${item.image}" alt="${item.name}">
+                                            <img src="${item.image}" alt="${item.name}" loading="lazy">
                                             <div class="search-result-info">
                                                 <div class="search-result-name">${item.name}</div>
                                                 <div class="search-result-category"><i class="fas fa-tag" style="margin-right:4px;font-size:11px;"></i>${item.category}</div>
                                             </div>
-                                            <div>
+                                            <div class="text-end">
                                                 <div class="search-result-price">${item.price}</div>
                                                 ${discountBadge}
                                             </div>
@@ -1950,9 +2106,11 @@
                             }
                         })
                         .catch(err => {
+                            if (err.name === 'AbortError') return;
+                            headerSearchResults.setAttribute('aria-busy', 'false');
                             console.error('Live search error:', err);
                         });
-                }, 150);
+                }, 180);
             }
 
             headerSearchInput.addEventListener('input', performSearch);
