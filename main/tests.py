@@ -2599,6 +2599,70 @@ class ProductDetailAndVerifiedReviewsTests(TestCase):
         self.assertEqual(res_del.json()['status'], 'success')
         self.assertEqual(res_del.json()['wishlist_count'], 0)
 
+    def test_cart_row_column_structure_and_no_duplicate_price(self):
+        """Cart page must have clear 6-column structure with unit price only in price column."""
+        self.client.force_login(self.buyer)
+        cart = Cart.objects.create(user=self.buyer, status=1)
+        # Item 1: count 1, price 244 000
+        p1 = Product.objects.create(
+            name="Jurnal Stoli #30",
+            category=self.category,
+            price=244000,
+            count=10,
+            code="JURNAL30",
+            image="test_jurnal.png"
+        )
+        CartProduct.objects.create(cart=cart, product=p1, count=1)
+
+        # Item 2: count 2, price 273 000 (subtotal 546 000)
+        p2 = Product.objects.create(
+            name="Ofis Stuli #12",
+            category=self.category,
+            price=273000,
+            count=10,
+            code="OFIS12",
+            image="test_ofis.png"
+        )
+        CartProduct.objects.create(cart=cart, product=p2, count=2)
+
+        response = self.client.get('/cart/')
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode('utf-8')
+
+        # 1. Desktop table headers exist
+        self.assertIn('cart-table-head', content)
+        self.assertIn('Rasm', content)
+        self.assertIn('Mahsulot', content)
+        self.assertIn('Narx', content)
+        self.assertIn('Soni', content)
+        self.assertIn('Jami', content)
+
+        # 2. 6 distinct column classes exist
+        self.assertIn('cart-col--thumb', content)
+        self.assertIn('cart-col--product', content)
+        self.assertIn('cart-col--price', content)
+        self.assertIn('cart-col--qty', content)
+        self.assertIn('cart-col--total', content)
+        self.assertIn('cart-col--action', content)
+
+        # 3. Product column has title and category but NO unit price
+        for p in [p1, p2]:
+            prod_idx = content.find(p.name)
+            self.assertNotEqual(prod_idx, -1)
+            # Find the closing tag of cart-col--product for this row
+            col_start = content.rfind('cart-col--product', 0, prod_idx)
+            col_end = content.find('<!-- Col 3: Narx', prod_idx)
+            col_content = content[col_start:col_end]
+            self.assertIn(p.name, col_content)
+            self.assertIn(self.category.name, col_content)
+            # Unit price should NOT be inside col_content
+            self.assertNotIn(f"{p.price:,}".replace(',', ' '), col_content)
+
+        # 4. Price column and Total column contain correct prices
+        self.assertIn('244 000', content)
+        self.assertIn('273 000', content)
+        self.assertIn('546 000', content)
+
 
 
 

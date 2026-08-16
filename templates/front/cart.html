@@ -51,12 +51,27 @@
         font-size: 14px;
     }
 
-    .cart-row {
+    .cart-table-head {
         display: grid;
-        grid-template-columns: minmax(0, 1.8fr) 130px 170px 140px 110px;
+        grid-template-columns: 88px minmax(180px, 1.8fr) 130px 140px 140px 52px;
         gap: 16px;
         align-items: center;
-        padding: 24px;
+        padding: 14px 24px;
+        background: #f8fafc;
+        border-bottom: 1px solid #eef0f3;
+        font-size: 12px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .cart-row {
+        display: grid;
+        grid-template-columns: 88px minmax(180px, 1.8fr) 130px 140px 140px 52px;
+        gap: 16px;
+        align-items: center;
+        padding: 20px 24px;
         transition: all 0.2s ease;
     }
 
@@ -76,22 +91,53 @@
 
     .cart-col__label {
         display: none;
-        margin-bottom: 6px;
-        font-size: 12px;
+        margin-bottom: 4px;
+        font-size: 11px;
         font-weight: 700;
-        color: #6b7280;
+        color: #94a3b8;
         text-transform: uppercase;
         letter-spacing: 0.04em;
     }
 
+    .cart-col--thumb {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .cart-col--product {
+        min-width: 0;
+    }
+
+    .cart-col--price {
+        white-space: nowrap;
+    }
+
+    .cart-col--qty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .cart-col--total {
+        white-space: nowrap;
+    }
+
+    .cart-col--action {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
     .cart-item__thumb img {
-        width: 90px;
-        height: 90px;
+        width: 80px;
+        height: 80px;
         object-fit: contain;
         background: #f8fafc;
-        border-radius: 14px;
+        border-radius: 12px;
         border: 1px solid #eef0f3;
-        padding: 6px;
+        padding: 4px;
     }
 
     .cart-item__title a {
@@ -191,13 +237,13 @@
         color: #dc2626 !important;
         border: 1px solid #fecaca;
         font-size: 14px;
-        height: 42px;
-        width: 42px;
+        height: 38px;
+        width: 38px;
         padding: 0;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 12px;
+        border-radius: 10px;
         transition: all 0.2s;
     }
 
@@ -248,27 +294,22 @@
         align-items: center;
         gap: 16px;
         color: #4b5563;
+        font-size: 14px;
         margin-bottom: 12px;
-        font-size: 14.5px;
-    }
-
-    .cart-summary__line strong {
-        color: #111827;
-        font-weight: 700;
     }
 
     .cart-summary__total {
-        padding-top: 14px;
         margin-top: 14px;
-        border-top: 1px dashed #cbd5e1;
-        font-size: 16px;
+        padding-top: 14px;
+        border-top: 1px dashed #e2e8f0;
+        color: #111827;
     }
 
     .cart-summary__submit {
         width: 100%;
-        margin-top: 18px;
-        min-height: 52px;
-        font-size: 16px;
+        margin-top: 16px;
+        padding: 14px;
+        font-size: 15px;
         font-weight: 700;
         background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%);
         box-shadow: 0 6px 20px rgba(124, 58, 237, 0.3);
@@ -285,9 +326,11 @@
     }
 
     @media (max-width: 1199.98px) {
+        .cart-table-head,
         .cart-row {
-            grid-template-columns: minmax(0, 1.5fr) 110px 160px 120px 60px;
-            padding: 20px;
+            grid-template-columns: 80px minmax(150px, 1.5fr) 115px 135px 125px 48px;
+            gap: 12px;
+            padding: 16px 18px;
         }
     }
 
@@ -298,9 +341,45 @@
         .cart-summary {
             position: static;
         }
+        .cart-table-head {
+            display: none !important;
+        }
         .cart-row {
-            grid-template-columns: 1fr;
-            gap: 14px;
+            display: grid;
+            grid-template-columns: 76px 1fr;
+            grid-template-areas:
+                "thumb info"
+                "price qty"
+                "total action";
+            gap: 12px 14px;
+            padding: 18px 16px;
+        }
+        .cart-col--thumb {
+            grid-area: thumb;
+            align-self: start;
+        }
+        .cart-col--product {
+            grid-area: info;
+        }
+        .cart-col--price {
+            grid-area: price;
+            text-align: left !important;
+            padding-top: 8px;
+            border-top: 1px dashed #f1f5f9;
+        }
+        .cart-col--qty {
+            grid-area: qty;
+            align-items: flex-end;
+            padding-top: 8px;
+            border-top: 1px dashed #f1f5f9;
+        }
+        .cart-col--total {
+            grid-area: total;
+            text-align: left !important;
+        }
+        .cart-col--action {
+            grid-area: action;
+            justify-content: flex-end;
         }
         .cart-col__label {
             display: block;
@@ -326,79 +405,94 @@
                             </div>
                         </div>
 
+                        <!-- Column Headers (Desktop) -->
+                        <div class="cart-table-head d-none d-lg-grid">
+                            <div class="text-center">Rasm</div>
+                            <div>Mahsulot</div>
+                            <div class="text-end">Narx</div>
+                            <div class="text-center">Soni</div>
+                            <div class="text-end">Jami</div>
+                            <div class="text-center"><span class="visually-hidden">O'chirish</span></div>
+                        </div>
+
                         <div id="cartItemsContainer">
                         {% for item in cart_products %}
                         <div class="cart-row {% if item.product.count <= 0 %}cart-row--out-of-stock{% endif %}" data-product-code="{{ item.product.code }}" data-price="{{ item.product.active_price }}" data-max-stock="{{ item.product.count }}">
-                            <!-- Col 1: Product info -->
-                            <div>
+                            <!-- Col 1: Rasm / Image -->
+                            <div class="cart-col cart-col--thumb">
+                                <a href="{% url 'product_detail' item.product.code %}" class="cart-item__thumb d-block">
+                                    {% if item.product.image %}
+                                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" loading="lazy" onerror="this.onerror=null; this.src='{% static 'assets/images/thumbs/product-img1.png' %}';">
+                                    {% else %}
+                                    <img src="{% static 'assets/images/thumbs/product-img1.png' %}" alt="{{ item.product.name }}" loading="lazy">
+                                    {% endif %}
+                                </a>
+                            </div>
+
+                            <!-- Col 2: Mahsulot / Product (No unit price here!) -->
+                            <div class="cart-col cart-col--product">
                                 <div class="cart-col__label">Mahsulot</div>
-                                <div class="cart-item d-flex align-items-center gap-3">
-                                    <div class="cart-item__thumb">
-                                        <a href="{% url 'product_detail' item.product.code %}" class="link">
-                                            {% if item.product.image %}
-                                            <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" onerror="this.onerror=null; this.src='{% static 'assets/images/thumbs/product-img1.png' %}';">
-                                            {% else %}
-                                            <img src="{% static 'assets/images/thumbs/product-img1.png' %}" alt="{{ item.product.name }}">
-                                            {% endif %}
-                                        </a>
-                                    </div>
-                                    <div class="cart-item__content">
-                                        <h6 class="cart-item__title font-heading fw-700 font-16 mb-1">
-                                            <a href="{% url 'product_detail' item.product.code %}">{{ item.product.name }}</a>
-                                        </h6>
-                                        <div class="font-13 text-muted mb-1">Kategoriya: {{ item.product.category.name }}</div>
-                                        <div>
-                                            {% if item.product.count > 5 %}
-                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill font-12">
-                                                <i class="fas fa-check-circle me-1"></i> Omborda {{ item.product.count }} ta mavjud
-                                            </span>
-                                            {% elif item.product.count > 0 %}
-                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1 rounded-pill font-12">
-                                                <i class="fas fa-exclamation-triangle me-1"></i> Kam qoldi ({{ item.product.count }} ta)
-                                            </span>
-                                            {% else %}
-                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 rounded-pill font-12 fw-700">
-                                                <i class="fas fa-times-circle me-1"></i> Omborda tugagan
-                                            </span>
-                                            {% endif %}
-                                        </div>
-                                    </div>
+                                <h6 class="cart-item__title font-heading fw-700 font-15 mb-1">
+                                    <a href="{% url 'product_detail' item.product.code %}" class="text-heading text-decoration-none">{{ item.product.name }}</a>
+                                </h6>
+                                <div class="font-12 text-muted mb-1-5">
+                                    Kategoriya: <a href="{% url 'index_by_category' item.product.category.id %}" class="text-muted text-decoration-none">{{ item.product.category.name }}</a>
+                                </div>
+                                <div>
+                                    {% if item.product.count > 5 %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0-5 rounded-pill font-11 fw-600">
+                                        <i class="fas fa-check-circle me-1"></i> Omborda {{ item.product.count }} ta mavjud
+                                    </span>
+                                    {% elif item.product.count > 0 %}
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-0-5 rounded-pill font-11 fw-600">
+                                        <i class="fas fa-exclamation-triangle me-1"></i> Kam qoldi ({{ item.product.count }} ta)
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-0-5 rounded-pill font-11 fw-700">
+                                        <i class="fas fa-times-circle me-1"></i> Omborda tugagan
+                                    </span>
+                                    {% endif %}
                                 </div>
                                 {% if item.product.count <= 0 %}
-                                <div class="mt-2 text-danger font-13 fw-600">
+                                <div class="mt-2 text-danger font-12 fw-600">
                                     <i class="fas fa-info-circle me-1"></i> Ushbu tovar sotuvda qolmagan. Buyurtma berish uchun uni savatdan o'chiring.
                                 </div>
                                 {% endif %}
                             </div>
 
-                            <!-- Col 2: Unit Price -->
-                            <div>
-                                <div class="cart-col__label">Dona narxi</div>
-                                <span class="cart-item__unitPrice text-body font-16 fw-600 mb-0">{{ item.product.active_price|uz_price }}</span>
+                            <!-- Col 3: Narx / Unit Price -->
+                            <div class="cart-col cart-col--price text-lg-end">
+                                <div class="cart-col__label">Narx</div>
+                                {% if item.product.old_price and item.product.old_price > item.product.active_price %}
+                                <div class="text-muted text-decoration-line-through font-12 mb-0-5">{{ item.product.old_price|uz_price }}</div>
+                                <div class="cart-item__unitPrice text-main font-15 fw-700 mb-0">{{ item.product.active_price|uz_price }}</div>
+                                {% else %}
+                                <div class="cart-item__unitPrice text-heading font-15 fw-700 mb-0">{{ item.product.active_price|uz_price }}</div>
+                                {% endif %}
                             </div>
 
-                            <!-- Col 3: Quantity Stepper -->
-                            <div>
+                            <!-- Col 4: Soni / Quantity Stepper -->
+                            <div class="cart-col cart-col--qty text-lg-center">
                                 <div class="cart-col__label">Soni</div>
-                                <div class="cart-quantity" aria-label="Mahsulot soni">
+                                <div class="cart-quantity mx-lg-auto" aria-label="Mahsulot soni">
                                     <button type="button" class="qty-minus" aria-label="Kamaytirish" {% if item.product.count <= 0 or item.count <= 1 %}disabled{% endif %}>−</button>
                                     <input type="number" class="cart-quantity__input qty-input" value="{{ item.count }}" data-last-valid-qty="{{ item.count }}" min="1" max="{{ item.product.count }}" aria-label="Soni" {% if item.product.count <= 0 %}disabled{% endif %}>
                                     <button type="button" class="qty-plus" aria-label="Ko'paytirish" {% if item.product.count <= 0 or item.count >= item.product.count %}disabled{% endif %}>+</button>
                                 </div>
                             </div>
 
-                            <!-- Col 4: Item Total -->
-                            <div>
-                                <div class="cart-col__label">Jami summa</div>
-                                <span class="cart-item__totalPrice item-total text-heading font-16 fw-700 mb-0" data-raw-total="{{ item.total_price }}">{{ item.total_price|uz_price }}</span>
+                            <!-- Col 5: Jami / Subtotal -->
+                            <div class="cart-col cart-col--total text-lg-end">
+                                <div class="cart-col__label">Jami</div>
+                                <span class="cart-item__totalPrice item-total text-heading font-16 fw-800 mb-0" data-raw-total="{{ item.total_price }}">{{ item.total_price|uz_price }}</span>
                             </div>
 
-                            <!-- Col 5: Delete Action -->
-                            <div>
+                            <!-- Col 6: O'chirish / Delete Action -->
+                            <div class="cart-col cart-col--action text-lg-center">
                                 <div class="cart-col__label">O'chirish</div>
-                                <form method="post" action="{% url 'remove_from_cart' item.product.code %}" class="m-0 ajax-remove-form">
+                                <form method="post" action="{% url 'remove_from_cart' item.product.code %}" class="m-0 ajax-remove-form d-inline-block">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn cart-remove-btn" aria-label="Savatdan o'chirish" title="Savatdan o'chirish">
+                                    <button type="submit" class="btn cart-remove-btn mx-auto" aria-label="Savatdan o'chirish" title="Savatdan o'chirish">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
                                 </form>
