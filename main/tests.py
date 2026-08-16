@@ -2307,16 +2307,18 @@ class ProductDetailAndVerifiedReviewsTests(TestCase):
         self.assertLess(p_reviewed_idx, p_unreviewed_idx)
 
     def test_product_detail_action_button_compact_styles(self):
-        """Product detail action buttons must have compact, modern styling without bloated heights."""
+        """Product detail action buttons must have compact 2-row layout: Row 1 side-by-side, Row 2 full-width."""
         response = self.client.get(f'/product-detail/{self.product.code}/')
         content = response.content.decode('utf-8')
-        self.assertIn('.btn-action-lg', content)
+        self.assertIn('.btn-action-primary', content)
+        self.assertIn('.btn-action-wishlist', content)
+        self.assertIn('.btn-action-secondary', content)
         self.assertIn('height: 36px;', content)
-        self.assertIn('height: 34px;', content)
-        self.assertIn('height: 32px;', content)
+        self.assertIn('height: 38px;', content)
         self.assertIn('.btn-buy-now', content)
         self.assertIn('.btn-wishlist-outline', content)
         self.assertIn('action-buttons-group', content)
+        self.assertIn('col-6', content)
 
     def test_top_navigation_progress_bar_stepped_and_safety_reset(self):
         """base.html top progress bar must have stepped progression, safety timeout, and BFCache reset."""

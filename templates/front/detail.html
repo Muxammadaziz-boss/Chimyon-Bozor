@@ -223,7 +223,7 @@
     }
 
     /* ── Action Buttons ── */
-    .btn-action-lg {
+    .btn-action-primary {
         height: 36px;
         border-radius: 9px;
         font-weight: 600;
@@ -236,45 +236,34 @@
         transition: all 0.2s ease;
         border: none;
         cursor: pointer;
-        padding: 0 16px;
+        padding: 0 12px;
+        white-space: nowrap;
     }
-    .btn-action-lg i {
+    .btn-action-primary i {
         font-size: 13px;
     }
-    .btn-buy-now {
-        height: 34px;
-        background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-        color: #ffffff !important;
-        box-shadow: 0 2px 5px rgba(16, 185, 129, 0.18);
+    .btn-action-wishlist {
+        height: 36px;
         border-radius: 9px;
+        font-weight: 500;
         font-size: 12.5px;
         line-height: 1.2;
-        font-weight: 600;
-        padding: 0 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         gap: 6px;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        padding: 0 10px;
+        white-space: nowrap;
     }
-    .btn-buy-now i {
-        font-size: 12.5px;
-    }
-    .btn-buy-now:hover:not(:disabled) {
-        background: linear-gradient(135deg, #059669 0%, #047857 100%);
-        transform: translateY(-1px);
-        box-shadow: 0 3px 8px rgba(16, 185, 129, 0.25);
+    .btn-action-wishlist i {
+        font-size: 12px;
     }
     .btn-wishlist-outline {
-        height: 32px;
         border: 1.5px solid #ef4444 !important;
         color: #ef4444 !important;
         background: #fff;
-        border-radius: 9px;
-        font-size: 12px;
-        line-height: 1.2;
-        font-weight: 500;
-        padding: 0 14px;
-        gap: 6px;
-    }
-    .btn-wishlist-outline i {
-        font-size: 12px;
     }
     .btn-wishlist-outline:hover {
         background: #fef2f2;
@@ -282,44 +271,68 @@
         transform: translateY(-1px);
     }
     .btn-wishlist-solid {
-        height: 32px;
         background: #ef4444 !important;
         color: #ffffff !important;
         box-shadow: 0 2px 5px rgba(239, 68, 68, 0.18);
-        border-radius: 9px;
-        font-size: 12px;
-        line-height: 1.2;
-        font-weight: 500;
-        padding: 0 14px;
-        gap: 6px;
-    }
-    .btn-wishlist-solid i {
-        font-size: 12px;
+        border: 1.5px solid #ef4444 !important;
     }
     .btn-wishlist-solid:hover {
         background: #dc2626 !important;
         transform: translateY(-1px);
     }
+    .btn-action-secondary {
+        height: 38px;
+        border-radius: 9px;
+        font-weight: 600;
+        font-size: 13px;
+        line-height: 1.2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+        padding: 0 14px;
+        white-space: nowrap;
+    }
+    .btn-action-secondary i {
+        font-size: 13px;
+    }
+    .btn-buy-now {
+        background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+        color: #ffffff !important;
+        box-shadow: 0 2px 5px rgba(16, 185, 129, 0.18);
+    }
+    .btn-buy-now:hover:not(:disabled) {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(16, 185, 129, 0.25);
+    }
 
     .action-buttons-group {
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 8px;
     }
 
     @media (max-width: 576px) {
-        .btn-action-lg {
+        .btn-action-primary {
+            height: 36px;
+            font-size: 12px;
+            padding: 0 8px;
+            gap: 4px;
+        }
+        .btn-action-wishlist {
+            height: 36px;
+            font-size: 11.5px;
+            padding: 0 6px;
+            gap: 4px;
+        }
+        .btn-action-secondary {
             height: 38px;
             font-size: 13px;
-        }
-        .btn-buy-now {
-            height: 36px;
-            font-size: 12.5px;
-        }
-        .btn-wishlist-outline,
-        .btn-wishlist-solid {
-            height: 34px;
-            font-size: 12px;
+            padding: 0 12px;
         }
     }
 
@@ -948,42 +961,48 @@
                     <!-- Action Buttons -->
                     <div class="action-buttons-group mb-3">
                         {% if product.count > 0 %}
-                            <!-- Add to Cart Form -->
-                            <form method="post" action="{% url 'add_to_cart' product.code %}" id="detailAddToCartForm" class="custom-ajax-cart m-0">
-                                {% csrf_token %}
-                                <input type="hidden" name="quantity" id="hiddenCartQtyInput" value="{{ cart_qty|default:1 }}">
-                                <button type="submit" id="detailAddToCartBtn" class="btn btn-main w-100 btn-action-lg shadow-sm" {% if product.id in cart_ids %}style="background: #10B981; box-shadow: 0 4px 14px rgba(16,185,129,0.3);"{% endif %}>
-                                    {% if product.id in cart_ids %}
-                                    <i class="fas fa-check-circle"></i> Savatga qo'shilgan (Yangilash)
-                                    {% else %}
-                                    <i class="fas fa-shopping-bag"></i> Savatga qo'shish
-                                    {% endif %}
-                                </button>
-                            </form>
+                            <!-- Row 1: Savatga qo'shish + Saralanganlarga qo'shish (Side-by-Side 50% / 50%) -->
+                            <div class="row g-2 align-items-center m-0">
+                                <div class="col-6 p-0 pe-1">
+                                    <!-- Add to Cart Form -->
+                                    <form method="post" action="{% url 'add_to_cart' product.code %}" id="detailAddToCartForm" class="custom-ajax-cart m-0 h-100">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="quantity" id="hiddenCartQtyInput" value="{{ cart_qty|default:1 }}">
+                                        <button type="submit" id="detailAddToCartBtn" class="btn btn-main w-100 btn-action-primary shadow-sm" {% if product.id in cart_ids %}style="background: #10B981; box-shadow: 0 4px 14px rgba(16,185,129,0.3);"{% endif %}>
+                                            {% if product.id in cart_ids %}
+                                            <i class="fas fa-check-circle"></i> <span>Savatda</span>
+                                            {% else %}
+                                            <i class="fas fa-shopping-bag"></i> <span>Savatga</span>
+                                            {% endif %}
+                                        </button>
+                                    </form>
+                                </div>
+                                <div class="col-6 p-0 ps-1">
+                                    <!-- Wishlist Toggle Form -->
+                                    <form method="post" action="{% if is_in_wishlist %}{% url 'delete_wishlist' product.code %}{% else %}{% url 'add_wishlist' product.code %}{% endif %}" id="detailWishlistForm" class="m-0 h-100">
+                                        {% csrf_token %}
+                                        <button type="submit" id="detailWishlistBtn" class="btn {% if is_in_wishlist %}btn-wishlist-solid{% else %}btn-wishlist-outline{% endif %} w-100 btn-action-wishlist">
+                                            <i class="{% if is_in_wishlist %}fas{% else %}far{% endif %} fa-heart"></i>
+                                            <span id="wishlistBtnText">{% if is_in_wishlist %}Saralangan{% else %}Saralanganlar{% endif %}</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
 
-                            <!-- Buy Now Form -->
+                            <!-- Row 2: Hozir xarid qilish (100% Full Width) -->
                             <form method="post" action="{% url 'add_to_cart' product.code %}" id="detailBuyNowForm" class="m-0">
                                 {% csrf_token %}
                                 <input type="hidden" name="quantity" id="hiddenBuyNowQtyInput" value="{{ cart_qty|default:1 }}">
                                 <input type="hidden" name="buy_now" value="1">
-                                <button type="button" id="detailBuyNowBtn" class="btn btn-buy-now w-100 btn-action-lg">
-                                    <i class="fas fa-bolt"></i> Hozir xarid qilish
+                                <button type="button" id="detailBuyNowBtn" class="btn btn-buy-now w-100 btn-action-secondary">
+                                    <i class="fas fa-bolt"></i> <span>Hozir xarid qilish</span>
                                 </button>
                             </form>
                         {% else %}
-                            <button type="button" class="btn btn-secondary w-100 btn-action-lg" disabled style="opacity: 0.7; cursor: not-allowed;">
-                                <i class="fas fa-ban"></i> Sotuvda qolmagan
+                            <button type="button" class="btn btn-secondary w-100 btn-action-primary" disabled style="opacity: 0.7; cursor: not-allowed;">
+                                <i class="fas fa-ban"></i> <span>Sotuvda qolmagan</span>
                             </button>
                         {% endif %}
-
-                        <!-- Wishlist Toggle Form -->
-                        <form method="post" action="{% if is_in_wishlist %}{% url 'delete_wishlist' product.code %}{% else %}{% url 'add_wishlist' product.code %}{% endif %}" id="detailWishlistForm" class="m-0">
-                            {% csrf_token %}
-                            <button type="submit" id="detailWishlistBtn" class="btn {% if is_in_wishlist %}btn-wishlist-solid{% else %}btn-wishlist-outline{% endif %} w-100 btn-action-lg">
-                                <i class="{% if is_in_wishlist %}fas{% else %}far{% endif %} fa-heart"></i>
-                                <span id="wishlistBtnText">{% if is_in_wishlist %}Saralanganlardan olish{% else %}Saralanganlarga qo'shish{% endif %}</span>
-                            </button>
-                        </form>
                     </div>
 
                     <!-- Meta Information -->
@@ -1277,12 +1296,12 @@
                     if (data.status === 'success') {
                         if (isAdding) {
                             wishlistForm.action = wishlistForm.action.replace('add-wishlist', 'delete-wishlist');
-                            wishlistBtn.className = 'btn btn-wishlist-solid w-100 btn-action-lg';
-                            wishlistBtn.innerHTML = '<i class="fas fa-heart"></i> <span id="wishlistBtnText">Saralanganlardan olish</span>';
+                            wishlistBtn.className = 'btn btn-wishlist-solid w-100 btn-action-wishlist';
+                            wishlistBtn.innerHTML = '<i class="fas fa-heart"></i> <span id="wishlistBtnText">Saralangan</span>';
                         } else {
                             wishlistForm.action = wishlistForm.action.replace('delete-wishlist', 'add-wishlist');
-                            wishlistBtn.className = 'btn btn-wishlist-outline w-100 btn-action-lg';
-                            wishlistBtn.innerHTML = '<i class="far fa-heart"></i> <span id="wishlistBtnText">Saralanganlarga qo\'shish</span>';
+                            wishlistBtn.className = 'btn btn-wishlist-outline w-100 btn-action-wishlist';
+                            wishlistBtn.innerHTML = '<i class="far fa-heart"></i> <span id="wishlistBtnText">Saralanganlar</span>';
                         }
                         if (window.showToast) window.showToast(data.message, 'success');
 
