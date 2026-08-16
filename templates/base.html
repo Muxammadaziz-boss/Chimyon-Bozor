@@ -1185,14 +1185,17 @@
                     {% if user.is_authenticated %}
 
                     <a href="{% url 'profile' %}" class="btn btn-main pill">
-
                         <span class="icon-left icon">
-
                             <img src="{% static 'assets/images/icons/user.svg' %}" alt="">
-
                         </span>Profil
-
                     </a>
+
+                    <form method="post" action="{% url 'logout' %}" class="d-inline mb-0">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger pill px-3 py-2" title="Tizimdan chiqish">
+                            <i class="fas fa-sign-out-alt me-1"></i> Chiqish
+                        </button>
+                    </form>
 
                     {% else %}
 
@@ -2185,6 +2188,48 @@
                 }
             });
         }
+
+        // ==========================================================
+        // CSRF Token Synchronization (BFCache / Token Rotation Safe)
+        // ==========================================================
+        function getCsrfTokenFromCookie() {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, 10) === 'csrftoken=') {
+                        cookieValue = decodeURIComponent(cookie.substring(10));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function refreshFormCsrfTokens() {
+            const activeToken = getCsrfTokenFromCookie();
+            if (activeToken) {
+                document.querySelectorAll('input[name="csrfmiddlewaretoken"]').forEach(input => {
+                    input.value = activeToken;
+                });
+            }
+        }
+
+        window.addEventListener('pageshow', refreshFormCsrfTokens);
+        document.addEventListener('DOMContentLoaded', refreshFormCsrfTokens);
+        document.addEventListener('submit', function(e) {
+            const form = e.target;
+            if (form && form.method && form.method.toLowerCase() === 'post') {
+                const activeToken = getCsrfTokenFromCookie();
+                if (activeToken) {
+                    let csrfInput = form.querySelector('input[name="csrfmiddlewaretoken"]');
+                    if (csrfInput) {
+                        csrfInput.value = activeToken;
+                    }
+                }
+            }
+        }, true);
     });
     </script>
 
