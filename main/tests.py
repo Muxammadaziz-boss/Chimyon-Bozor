@@ -2311,7 +2311,9 @@ class ProductDetailAndVerifiedReviewsTests(TestCase):
         response = self.client.get(f'/product-detail/{self.product.code}/')
         content = response.content.decode('utf-8')
         self.assertIn('.btn-action-lg', content)
-        self.assertIn('height: 46px;', content)
+        self.assertIn('height: 42px;', content)
+        self.assertIn('height: 40px;', content)
+        self.assertIn('height: 38px;', content)
         self.assertIn('.btn-buy-now', content)
         self.assertIn('.btn-wishlist-outline', content)
 
@@ -2339,9 +2341,9 @@ class ProductDetailAndVerifiedReviewsTests(TestCase):
         """Product detail must render the 3 service cards and payment methods pills."""
         response = self.client.get(f'/product-detail/{self.product.code}/')
         content = response.content.decode('utf-8')
-        self.assertIn('Ertaga yetkazib beramiz', content)
-        self.assertIn("Xavfsiz to'lov", content)
-        self.assertIn('Qaytarish oson va tez', content)
+        self.assertIn('Yetkazib berish', content)
+        self.assertIn("To'lov turlari", content)
+        self.assertIn('Sifat kafolati', content)
         self.assertIn('Click', content)
         self.assertIn('Payme', content)
         self.assertIn('Uzum', content)
@@ -2349,6 +2351,51 @@ class ProductDetailAndVerifiedReviewsTests(TestCase):
         self.assertIn('Uzcard', content)
         self.assertIn('Visa', content)
         self.assertIn('Mastercard', content)
+
+    def test_image_overlay_no_stock_badge_and_right_stock_preserved(self):
+        """Stock badge must be removed from image overlay, but preserved on right-side summary."""
+        response = self.client.get(f'/product-detail/{self.product.code}/')
+        content = response.content.decode('utf-8')
+        # Extract product-img-overlay-badges block
+        overlay_start = content.find('class="product-img-overlay-badges"')
+        self.assertNotEqual(overlay_start, -1)
+        overlay_end = content.find('</div>', overlay_start)
+        overlay_content = content[overlay_start:overlay_end]
+        self.assertNotIn('Sotuvda mavjud', overlay_content)
+        self.assertNotIn('Kam qoldi', overlay_content)
+        self.assertNotIn('Sotuvda qolmagan', overlay_content)
+
+        # But right side has stock
+        self.assertIn('Sotuvda mavjud', content)
+
+    def test_verified_buyer_encouragement_cta_and_collapsed_form(self):
+        """Verified buyer must see encouragement CTA with collapsed review form."""
+        cart = Cart.objects.create(user=self.buyer, status=3)
+        CartProduct.objects.create(cart=cart, product=self.product, count=1)
+        self.client.force_login(self.buyer)
+
+        response = self.client.get(f'/product-detail/{self.product.code}/')
+        content = response.content.decode('utf-8')
+        self.assertIn('Siz bu mahsulotni xarid qilgansiz', content)
+        self.assertIn('Baholashni xohlayman', content)
+        self.assertIn('id="reviewFormContainer"', content)
+        self.assertIn('style="display: none;"', content)
+        self.assertIn('toggleReviewForm', content)
+
+    def test_non_buyer_and_anonymous_review_state(self):
+        """Non-buyer and anonymous users should see appropriate guidance without review form."""
+        # 1. Anonymous user
+        response = self.client.get(f'/product-detail/{self.product.code}/')
+        content = response.content.decode('utf-8')
+        self.assertIn("Tizimga kirib, xaridingizdan so'ng", content)
+        self.assertNotIn('id="reviewFormContainer"', content)
+
+        # 2. Authenticated non-buyer
+        self.client.force_login(self.non_buyer)
+        response = self.client.get(f'/product-detail/{self.product.code}/')
+        content = response.content.decode('utf-8')
+        self.assertIn("Fikr qoldirish faqat ushbu mahsulotni xarid qilgan", content)
+        self.assertNotIn('id="reviewFormContainer"', content)
 
 
 
