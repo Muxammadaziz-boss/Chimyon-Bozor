@@ -660,8 +660,8 @@ class CartEdgeCaseConsistencyTests(TestCase):
         self.item1 = CartProduct.objects.create(cart=self.cart, product=self.product1, count=10)
         self.item2 = CartProduct.objects.create(cart=self.cart, product=self.product2, count=3)
 
-    # 1. Stock Decreased Edge Case: Cart had 10, stock dropped to 3 -> Cart page auto-caps and warns
-    def test_stock_decreased_auto_cap(self):
+    # 1. Stock Decreased Edge Case: Cart had 10, stock dropped to 3 -> Cart page warns without mutating quantity
+    def test_stock_decreased_warns_without_mutation(self):
         self.product1.count = 3
         self.product1.save()
 
@@ -670,7 +670,7 @@ class CartEdgeCaseConsistencyTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
         self.item1.refresh_from_db()
-        self.assertEqual(self.item1.count, 3)
+        self.assertEqual(self.item1.count, 10)
 
     # 2. Out of Stock Edge Case: Stock = 0 -> In cart marked out-of-stock, Checkout blocked
     def test_out_of_stock_item_blocks_checkout(self):
@@ -698,7 +698,7 @@ class CartEdgeCaseConsistencyTests(TestCase):
         self.assertEqual(data['count'], 5)
         self.assertEqual(data['stock_warning'], 'Faqat 5 dona mavjud.')
 
-    # 4. Price Change: Authoritative DB price is used for calculation
+    # 4. Price Change: Snapshot price stays immutable even if product price changes later
     def test_price_change_authoritative(self):
         # Change product price on server
         self.product2.price = Decimal('350000.00')
@@ -708,18 +708,20 @@ class CartEdgeCaseConsistencyTests(TestCase):
         response = self.client.get(reverse('cart'))
         self.assertEqual(response.status_code, 200)
         
-        # total for item2 = 3 * 350000 = 1,050,000
+        # total for item2 stays on the original snapshot price: 3 * 200000 = 600000
         self.item2.refresh_from_db()
-        self.assertEqual(self.item2.total_price, Decimal('1050000.00'))
+        self.assertEqual(self.item2.unit_price_snapshot, Decimal('200000.00'))
+        self.assertEqual(self.item2.total_price, Decimal('600000.00'))
 
-    # 5. Discount Change: If discount removed, total price uses original price
+    # 5. Discount Change: If discount removed, the stored snapshot still wins
     def test_discount_change_reflected(self):
         self.product1.discount_status = False
         self.product1.save()
 
         self.item1.refresh_from_db()
-        # count 10 * 500000 = 5,000,000 (was 400000)
-        self.assertEqual(self.item1.total_price, Decimal('5000000.00'))
+        # count 10 * 400000 = 4,000,000 (snapshot from original discounted price)
+        self.assertEqual(self.item1.unit_price_snapshot, Decimal('400000.00'))
+        self.assertEqual(self.item1.total_price, Decimal('4000000.00'))
 
     # 6. Negative or Invalid Quantity Rejection
     def test_invalid_quantity_rejection(self):
@@ -761,11 +763,11 @@ class CartEdgeCaseConsistencyTests(TestCase):
                 'payment_method': 'cash'
             }
         )
-        # Should redirect back to cart and adjust quantity
+        # Should redirect back to cart and leave the cart untouched
         self.assertEqual(response.status_code, 302)
         self.assertIn('/cart/', response.url)
         self.item1.refresh_from_db()
-        self.assertEqual(self.item1.count, 1)
+        self.assertEqual(self.item1.count, 10)
 
 
 class OrderStatusAndFinancialStatusUXTests(TestCase):

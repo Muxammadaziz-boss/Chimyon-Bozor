@@ -533,7 +533,7 @@
                                         </td>
                                         <td>
                                             <div class="font-weight-bold text-dark">{{ item.product.name }}</div>
-                                            <small class="text-muted">{{ item.product.category.name }} &bull; {{ item.count }} dona &times; {{ item.product.active_price|uz_price }}</small>
+                                            <small class="text-muted">{{ item.product.category.name }} &bull; {{ item.count }} dona &times; {{ item.unit_price|uz_price }}</small>
                                         </td>
                                         <td class="text-right font-weight-bold text-dark">
                                             {{ item.total_price|uz_price }}

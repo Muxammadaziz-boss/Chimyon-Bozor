@@ -42,14 +42,14 @@ class UserAdmin(admin.ModelAdmin):
 
 @admin.register(models.Cart)
 class CartAdmin(admin.ModelAdmin):
-    list_display = ('code', 'user', 'status', 'financial_status', 'prepayment_percent', 'prepayment_amount', 'date')
-    list_filter = ('status', 'financial_status', 'prepayment_percent')
+    list_display = ('code', 'user', 'status', 'financial_status', 'inventory_status', 'prepayment_percent', 'prepayment_amount', 'date')
+    list_filter = ('status', 'financial_status', 'inventory_status', 'prepayment_percent')
     inlines = [CartProductInline]
 
 
 @admin.register(models.CartProduct)
 class CartProductAdmin(admin.ModelAdmin):
-    list_display = ('code', 'product', 'cart', 'count')
+    list_display = ('code', 'product', 'cart', 'count', 'unit_price_snapshot')
 
 
 @admin.register(models.WishList)
@@ -82,4 +82,3 @@ class PaymentAdmin(admin.ModelAdmin):
     list_filter = ('status', 'provider', 'purpose', 'currency', 'created_at')
     search_fields = ('code', 'transaction_id', 'order__code', 'order__user__username')
     readonly_fields = ('code', 'created_at', 'updated_at', 'paid_at', 'refunded_at')
-

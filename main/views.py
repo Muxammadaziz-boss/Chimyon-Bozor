@@ -993,7 +993,12 @@ def add_to_cart(request, product_code):
         cart_product.count = min(cart_product.count + quantity, product.count)
         cart_product.save()
     else:
-        models.CartProduct.objects.create(cart=cart, product=product, count=quantity)
+        models.CartProduct.objects.create(
+            cart=cart,
+            product=product,
+            count=quantity,
+            unit_price_snapshot=product.active_price,
+        )
 
     if is_ajax:
         return JsonResponse({
@@ -1198,24 +1203,14 @@ def cart(request):
         product__isnull=False,
     ).select_related('product', 'product__category', 'cart'))
 
-    adjusted_messages = []
     has_out_of_stock = False
 
     for item in cart_products:
-        if item.product.count <= 0:
+        if item.product.count <= 0 or item.count > item.product.count:
             has_out_of_stock = True
-        elif item.count > item.product.count:
-            item.count = item.product.count
-            item.save(update_fields=['count'])
-            adjusted_messages.append(f'"{item.product.name}" mahsulotidan omborda faqat {item.product.count} dona qolganligi sababli savat miqdori moslashtirildi.')
 
-    for msg in adjusted_messages:
-        messages.warning(request, msg)
-
-    # In-stock active products for valid order calculations
-    active_cart_products = [item for item in cart_products if item.product and item.product.count > 0]
-    cart_total = sum(item.total_price for item in active_cart_products)
-    cart_count = sum(item.count for item in active_cart_products)
+    cart_total = sum(item.total_price for item in cart_products)
+    cart_count = sum(item.count for item in cart_products)
 
     context = {
         "cart_products": cart_products,
@@ -1243,19 +1238,13 @@ def checkout(request):
     cart_products = list(cart.cart_products.filter(product__isnull=False).select_related('product', 'product__category'))
 
     # Stale stock & Out-of-stock validation
-    stock_adjusted = False
     for item in cart_products:
         if item.product.count <= 0:
             messages.error(request, f'"{item.product.name}" mahsuloti omborda tugagan. Buyurtma berish uchun uni savatdan olib tashlang.')
             return redirect('cart')
         elif item.count > item.product.count:
-            item.count = item.product.count
-            item.save(update_fields=['count'])
-            stock_adjusted = True
-
-    if stock_adjusted:
-        messages.warning(request, "Omborda qoldiq o'zgarganligi sababli savatingiz miqdori moslashtirildi.")
-        return redirect('cart')
+            messages.error(request, f'"{item.product.name}" mahsuloti uchun savatdagi miqdor ombordagi qoldiqdan ({item.product.count} dona) oshib ketgan. Iltimos, savatni yangilang.')
+            return redirect('cart')
 
     cart_count = sum(item.count for item in cart_products)
     financials = PaymentManager.calculate_order_financials(cart)
@@ -1324,9 +1313,7 @@ def checkout(request):
                 messages.error(request, f'"{item.product.name}" mahsuloti omborda tugagan.')
                 return redirect('cart')
             if item.count > item.product.count:
-                item.count = item.product.count
-                item.save(update_fields=['count'])
-                messages.warning(request, f'"{item.product.name}" mahsulotidan omborda yetarli qoldiq qolmagan (Mavjud: {item.product.count} dona).')
+                messages.error(request, f'"{item.product.name}" mahsuloti uchun savatdagi miqdor ({item.count} dona) ombordagi qoldiqdan ({item.product.count} dona) oshib ketgan. Iltimos, savatni yangilang.')
                 return redirect('cart')
 
         # Check prepayment requirements
@@ -1479,6 +1466,9 @@ def pay_balance(request, code):
     # Qoldiq mavjudligini Decimal asosida tekshirish
     if order.remaining_amount <= Decimal('0.00'):
         messages.info(request, "Ushbu buyurtma allaqachon to'liq to'langan.")
+        return redirect('order_detail', code=order.code)
+    if order.paid_amount <= Decimal('0.00'):
+        messages.error(request, "Qoldiq to'lovni boshlash uchun avval oldindan to'lov tasdiqlangan bo'lishi kerak.")
         return redirect('order_detail', code=order.code)
 
     provider = (request.POST.get('provider') or models.Payment.Provider.CLICK).strip().lower()

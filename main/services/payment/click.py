@@ -242,10 +242,24 @@ class ClickPaymentProvider(BasePaymentProvider):
 
         # If click sent a payment failure or cancellation
         if error_code < 0:
-            payment.status = models.Payment.Status.FAILED
-            payment.error_message = data.get('error_note', f'Click error {error_code}')
-            payment.provider_response = data
-            payment.save(update_fields=['status', 'error_message', 'provider_response', 'updated_at'])
+            with transaction.atomic():
+                locked_payment = models.Payment.objects.select_for_update().get(pk=payment.pk)
+                locked_payment.status = models.Payment.Status.FAILED
+                locked_payment.error_message = data.get('error_note', f'Click error {error_code}')
+                locked_payment.provider_response = data
+                locked_payment.save(update_fields=['status', 'error_message', 'provider_response', 'updated_at'])
+
+                order = locked_payment.order
+                from .manager import PaymentManager
+                PaymentManager.sync_order_financial_status(order)
+                order.refresh_from_db(fields=['financial_status', 'inventory_status', 'status'])
+                if order.paid_amount <= Decimal('0.00'):
+                    if order.inventory_status == models.Cart.InventoryStatus.RESERVED:
+                        order.release_inventory()
+                    if order.status != 1:
+                        order.status = 5
+                        order.save(update_fields=['status'])
+
             return JsonResponse({
                 'error': self.ERROR_TRANSACTION_CANCELLED,
                 'error_note': 'Transaction cancelled'
@@ -270,16 +284,14 @@ class ClickPaymentProvider(BasePaymentProvider):
             locked_payment.provider_response = data
             locked_payment.save()
 
-            # Confirm order status & deduct stock ONCE
             order = locked_payment.order
+            from .manager import PaymentManager
+            PaymentManager.reserve_order_inventory(order)
             if order.status == 1:
-                for item in order.cart_products.filter(product__isnull=False):
-                    models.Product.objects.filter(pk=item.product.pk).update(count=F('count') - item.count)
                 order.status = 2  # Accepted / New
                 order.save(update_fields=['status'])
 
             # Sync financial status
-            from .manager import PaymentManager
             PaymentManager.sync_order_financial_status(order)
 
             models.OrderStatusHistory.objects.create(
@@ -327,4 +339,10 @@ class ClickPaymentProvider(BasePaymentProvider):
             payment.status = models.Payment.Status.REFUNDED
         payment.refunded_at = timezone.now()
         payment.save(update_fields=['status', 'refund_amount', 'refunded_at', 'updated_at'])
+        if payment.order and payment.order.paid_amount <= Decimal('0.00'):
+            from .manager import PaymentManager
+            PaymentManager.release_order_inventory(payment.order)
+            if payment.order.status != 1:
+                payment.order.status = 5
+                payment.order.save(update_fields=['status'])
         return {'success': True, 'message': "To'lov qaytarildi (Refund muvaffaqiyatli)."}

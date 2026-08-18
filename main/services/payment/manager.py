@@ -2,7 +2,7 @@ import logging
 from decimal import Decimal
 from typing import Dict, Any, Optional, Tuple
 
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.db.models import F
 from django.http import HttpRequest, JsonResponse
 from django.utils import timezone
@@ -122,6 +122,31 @@ class PaymentManager:
         }
 
     @classmethod
+    def reserve_order_inventory(cls, order: models.Cart) -> bool:
+        """
+        Buyurtma uchun stockni faqat bir marta rezerv qiladi.
+        """
+        return order.reserve_inventory()
+
+    @classmethod
+    def release_order_inventory(cls, order: models.Cart) -> bool:
+        """
+        Buyurtma bo'shatilganda stockni qaytaradi.
+        """
+        return order.release_inventory()
+
+    @classmethod
+    def _sync_financial_status_and_maybe_release_inventory(cls, order: models.Cart) -> None:
+        cls.sync_order_financial_status(order)
+        order.refresh_from_db(fields=['financial_status', 'inventory_status', 'status'])
+        if order.paid_amount <= Decimal('0.00'):
+            if order.inventory_status == models.Cart.InventoryStatus.RESERVED:
+                order.release_inventory()
+            if order.status != 1:
+                order.status = 5
+                order.save(update_fields=['status'])
+
+    @classmethod
     def create_payment(
         cls,
         order: models.Cart,
@@ -150,53 +175,55 @@ class PaymentManager:
         if grand_total <= 0:
             raise ValueError("Buyurtma summasi 0 dan katta bo'lishi kerak")
 
-        # Determine Purpose & Amount
-        if purpose == models.Payment.Purpose.BALANCE:
-            # Customer paying remaining balance
-            payment_purpose = models.Payment.Purpose.BALANCE
-            amount = order.remaining_amount
-            if amount <= 0:
-                raise ValueError("To'lash uchun qoldiq summa mavjud emas (Buyurtma to'liq to'langan).")
-        else:
-            # Initial Order Checkout Payment (Prepayment / Full)
-            if prepayment_percent == 0:
-                # 0% prepayment allowed
-                payment_purpose = models.Payment.Purpose.FULL
-                amount = grand_total
-                order.prepayment_percent = 0
-                order.prepayment_amount = Decimal('0.00')
-            elif prepayment_percent >= 100:
-                # 100% full online prepayment
-                if provider_key == models.Payment.Provider.CASH:
-                    raise ValueError("100% to'lov talab qilinganda naqd to'lov mumkin emas. Iltimos, onlayn to'lov usulini tanlang.")
-                payment_purpose = models.Payment.Purpose.FULL
-                amount = grand_total
-                order.prepayment_percent = 100
-                order.prepayment_amount = grand_total
-            else:
-                # Partial Prepayment (e.g. 30% or 50%)
-                if provider_key == models.Payment.Provider.CASH:
-                    raise ValueError(f"Oldindan {prepayment_percent}% to'lov talab qilinadi. Iltimos, onlayn to'lov usulini (Click, Payme, Uzum) tanlang.")
-                payment_purpose = models.Payment.Purpose.PREPAYMENT
-                amount = financials['prepayment_amount']
-                order.prepayment_percent = prepayment_percent
-                order.prepayment_amount = amount
-
-        if amount <= 0:
-            raise ValueError("To'lov summasi 0 dan katta bo'lishi kerak")
-
         with transaction.atomic():
-            order.save(update_fields=['prepayment_percent', 'prepayment_amount'])
+            locked_order = models.Cart.objects.select_for_update().get(pk=order.pk)
+            financials = cls.calculate_order_financials(locked_order, chosen_percent=chosen_percent)
+            grand_total = financials['grand_total']
+            prepayment_percent = financials['prepayment_percent']
+
+            # Determine Purpose & Amount
+            if purpose == models.Payment.Purpose.BALANCE:
+                payment_purpose = models.Payment.Purpose.BALANCE
+                amount = locked_order.remaining_amount
+                if amount <= 0:
+                    raise ValueError("To'lash uchun qoldiq summa mavjud emas (Buyurtma to'liq to'langan).")
+                if locked_order.paid_amount <= Decimal('0.00'):
+                    raise ValueError("Qoldiq to'lovni boshlash uchun avval prepayment tasdiqlangan bo'lishi kerak.")
+            else:
+                if prepayment_percent == 0:
+                    payment_purpose = models.Payment.Purpose.FULL
+                    amount = grand_total
+                    locked_order.prepayment_percent = 0
+                    locked_order.prepayment_amount = Decimal('0.00')
+                elif prepayment_percent >= 100:
+                    if provider_key == models.Payment.Provider.CASH:
+                        raise ValueError("100% to'lov talab qilinganda naqd to'lov mumkin emas. Iltimos, onlayn to'lov usulini tanlang.")
+                    payment_purpose = models.Payment.Purpose.FULL
+                    amount = grand_total
+                    locked_order.prepayment_percent = 100
+                    locked_order.prepayment_amount = grand_total
+                else:
+                    if provider_key == models.Payment.Provider.CASH:
+                        raise ValueError(f"Oldindan {prepayment_percent}% to'lov talab qilinadi. Iltimos, onlayn to'lov usulini (Click, Payme, Uzum) tanlang.")
+                    payment_purpose = models.Payment.Purpose.PREPAYMENT
+                    amount = financials['prepayment_amount']
+                    locked_order.prepayment_percent = prepayment_percent
+                    locked_order.prepayment_amount = amount
+
+            if amount <= 0:
+                raise ValueError("To'lov summasi 0 dan katta bo'lishi kerak")
+
+            cls.reserve_order_inventory(locked_order)
 
             # Idempotency: cancel any outdated pending payments for this order
             models.Payment.objects.filter(
-                order=order,
+                order=locked_order,
                 status__in=[models.Payment.Status.INITIATED, models.Payment.Status.PENDING]
             ).exclude(provider=provider_key, amount=amount, purpose=payment_purpose).update(status=models.Payment.Status.CANCELLED)
 
             # Check if an identical initiated/pending payment already exists to prevent duplicate creation
             existing_payment = models.Payment.objects.filter(
-                order=order,
+                order=locked_order,
                 provider=provider_key,
                 amount=amount,
                 purpose=payment_purpose,
@@ -210,42 +237,48 @@ class PaymentManager:
                 if provider_key != models.Payment.Provider.CASH:
                     initial_status = models.Payment.Status.INITIATED
 
-                payment = models.Payment.objects.create(
-                    order=order,
-                    provider=provider_key,
-                    purpose=payment_purpose,
-                    amount=amount,
-                    currency='UZS',
-                    status=initial_status,
-                    payment_method=payment_method
-                )
+                try:
+                    payment = models.Payment.objects.create(
+                        order=locked_order,
+                        provider=provider_key,
+                        purpose=payment_purpose,
+                        amount=amount,
+                        currency='UZS',
+                        status=initial_status,
+                        payment_method=payment_method
+                    )
+                except IntegrityError:
+                    payment = models.Payment.objects.filter(
+                        order=locked_order,
+                        provider=provider_key,
+                        amount=amount,
+                        purpose=payment_purpose,
+                        status__in=[models.Payment.Status.INITIATED, models.Payment.Status.PENDING]
+                    ).order_by('-created_at').first()
+                    if not payment:
+                        raise
 
-            # If 0% prepayment cash on delivery, mark order accepted immediately and deduct stock once
+            if locked_order.status == 1:
+                locked_order.status = 2
+            locked_order.save(update_fields=['prepayment_percent', 'prepayment_amount', 'status', 'inventory_status', 'inventory_updated_at'])
+
             if provider_key == models.Payment.Provider.CASH and payment_purpose == models.Payment.Purpose.FULL:
-                if order.status == 1:
-                    # Deduct stock atomically
-                    for item in order.cart_products.filter(product__isnull=False):
-                        models.Product.objects.filter(pk=item.product.pk).update(count=F('count') - item.count)
-                    order.status = 2  # Accepted
-                    order.financial_status = models.Cart.FinancialStatus.UNPAID
-                    order.save(update_fields=['status', 'financial_status'])
-
                 models.OrderStatusHistory.objects.create(
-                    order=order,
+                    order=locked_order,
                     old_status=1,
                     new_status=2,
                     comment="Buyurtma yetkazilganda naqd to'lov usuli bilan rasmiylashtirildi (0% oldindan to'lov)"
                 )
 
                 models.AuditLog.objects.create(
-                    user=order.user,
+                    user=locked_order.user,
                     action="ORDER_CHECKOUT_CASH",
-                    details=f"Buyurtma #{str(order.code)[:8]} qabul qilindi. Summa: {payment.amount} UZS (Yetkazilganda to'lash)"
+                    details=f"Buyurtma #{str(locked_order.code)[:8]} qabul qilindi. Summa: {payment.amount} UZS (Yetkazilganda to'lash)"
                 )
 
             checkout_url = provider.generate_checkout_url(payment, request)
             logger.info("Payment created #%s for Order #%s via %s (Purpose: %s, Amount: %s), checkout_url=%s",
-                        str(payment.code)[:8], str(order.code)[:8], provider_key, payment_purpose, amount, checkout_url)
+                        str(payment.code)[:8], str(locked_order.code)[:8], provider_key, payment_purpose, amount, checkout_url)
 
         return payment, checkout_url
 
@@ -297,6 +330,11 @@ class PaymentManager:
 
             # Sync financial status
             cls.sync_order_financial_status(locked_order)
+            if locked_order.paid_amount <= Decimal('0.00'):
+                cls.release_order_inventory(locked_order)
+                if locked_order.status != 1:
+                    locked_order.status = 5
+                    locked_order.save(update_fields=['status'])
 
             prov_label = provider_key.upper()
             models.OrderStatusHistory.objects.create(
@@ -359,6 +397,13 @@ class PaymentManager:
         if result.get('success'):
             if payment.order:
                 cls.sync_order_financial_status(payment.order)
+                payment.order.refresh_from_db(fields=['financial_status', 'inventory_status', 'status'])
+                if payment.order.paid_amount <= Decimal('0.00'):
+                    if payment.order.inventory_status == models.Cart.InventoryStatus.RESERVED:
+                        payment.order.release_inventory()
+                    if payment.order.status != 1:
+                        payment.order.status = 5
+                        payment.order.save(update_fields=['status'])
             models.AuditLog.objects.create(
                 user=payment.order.user if payment.order else None,
                 action="PAYMENT_REFUNDED",

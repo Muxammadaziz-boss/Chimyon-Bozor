@@ -38,4 +38,10 @@ class CashOnDeliveryProvider(BasePaymentProvider):
         payment.refund_amount = Decimal(str(amount)) if amount else payment.amount
         payment.refunded_at = timezone.now()
         payment.save(update_fields=['status', 'refund_amount', 'refunded_at', 'updated_at'])
+        if payment.order and payment.order.paid_amount <= Decimal('0.00'):
+            from .manager import PaymentManager
+            PaymentManager.release_order_inventory(payment.order)
+            if payment.order.status != 1:
+                payment.order.status = 5
+                payment.order.save(update_fields=['status'])
         return {'success': True, 'message': "Naqd to'lov bekor qilindi / qaytarildi."}

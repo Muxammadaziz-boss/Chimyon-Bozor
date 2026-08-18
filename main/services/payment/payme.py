@@ -192,14 +192,13 @@ class PaymePaymentProvider(BasePaymentProvider):
             locked.save()
 
             order = locked.order
+            from .manager import PaymentManager
+            PaymentManager.reserve_order_inventory(order)
             if order.status == 1:
-                for item in order.cart_products.filter(product__isnull=False):
-                    models.Product.objects.filter(pk=item.product.pk).update(count=F('count') - item.count)
                 order.status = 2  # Accepted
                 order.save(update_fields=['status'])
 
             # Sync financial status
-            from .manager import PaymentManager
             PaymentManager.sync_order_financial_status(order)
 
             models.OrderStatusHistory.objects.create(
@@ -242,6 +241,16 @@ class PaymePaymentProvider(BasePaymentProvider):
                 locked.status = models.Payment.Status.CANCELLED
                 state = -1
             locked.save()
+            if locked.order:
+                from .manager import PaymentManager
+                PaymentManager.sync_order_financial_status(locked.order)
+                locked.order.refresh_from_db(fields=['financial_status', 'inventory_status', 'status'])
+                if locked.order.paid_amount <= Decimal('0.00'):
+                    if locked.order.inventory_status == models.Cart.InventoryStatus.RESERVED:
+                        locked.order.release_inventory()
+                    if locked.order.status != 1:
+                        locked.order.status = 5
+                        locked.order.save(update_fields=['status'])
 
         return JsonResponse({
             'result': {
@@ -318,4 +327,10 @@ class PaymePaymentProvider(BasePaymentProvider):
             payment.status = models.Payment.Status.REFUNDED
         payment.refunded_at = timezone.now()
         payment.save(update_fields=['status', 'refund_amount', 'refunded_at', 'updated_at'])
+        if payment.order and payment.order.paid_amount <= Decimal('0.00'):
+            from .manager import PaymentManager
+            PaymentManager.release_order_inventory(payment.order)
+            if payment.order.status != 1:
+                payment.order.status = 5
+                payment.order.save(update_fields=['status'])
         return {'success': True, 'message': "Payme to'lovi muvaffaqiyatli qaytarildi."}

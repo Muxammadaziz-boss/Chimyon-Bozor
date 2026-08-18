@@ -1,9 +1,11 @@
 from decimal import Decimal
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Sum
+from django.db.models import F
 from uuid import uuid4
 
 from django.contrib.auth.models import AbstractUser
+from django.utils import timezone
 
 
 class User(AbstractUser):
@@ -185,6 +187,11 @@ CART_STATUS = (
 )
 
 class Cart(Code):
+    class InventoryStatus(models.TextChoices):
+        AVAILABLE = 'available', "Rezervatsiz"
+        RESERVED = 'reserved', "Rezerv qilingan"
+        RELEASED = 'released', "Bo'shatilgan"
+
     class FinancialStatus(models.TextChoices):
         UNPAID = 'unpaid', 'To\'lanmagan'
         PARTIALLY_PAID = 'partially_paid', 'Qisman to\'langan'
@@ -193,6 +200,13 @@ class Cart(Code):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     status = models.IntegerField(choices=CART_STATUS, default=1)
+    inventory_status = models.CharField(
+        max_length=20,
+        choices=InventoryStatus.choices,
+        default=InventoryStatus.AVAILABLE,
+        db_index=True
+    )
+    inventory_updated_at = models.DateTimeField(null=True, blank=True)
     financial_status = models.CharField(
         max_length=20,
         choices=FinancialStatus.choices,
@@ -244,22 +258,107 @@ class Cart(Code):
     def is_partially_paid(self):
         return self.financial_status == self.FinancialStatus.PARTIALLY_PAID
 
+    def _get_inventory_items(self):
+        return list(
+            self.cartproduct_set.select_related('product').filter(product__isnull=False).order_by('id')
+        )
+
+    def reserve_inventory(self, *, force: bool = False):
+        """
+        Savat tarkibidagi stockni atomik rezerv qiladi va faqat bir marta kamaytiradi.
+        """
+        with transaction.atomic():
+            locked_order = Cart.objects.select_for_update().get(pk=self.pk)
+            if locked_order.inventory_status == self.InventoryStatus.RESERVED and not force:
+                return False
+
+            items = locked_order._get_inventory_items()
+            if not items:
+                raise ValueError("Buyurtma tarkibi bo'sh.")
+
+            product_ids = [item.product_id for item in items if item.product_id]
+            locked_products = {
+                product.pk: product
+                for product in Product.objects.select_for_update().filter(pk__in=product_ids)
+            }
+
+            missing_products = [item for item in items if item.product_id and item.product_id not in locked_products]
+            if missing_products:
+                raise ValueError("Ba'zi mahsulotlar bazada topilmadi.")
+
+            for item in items:
+                if not item.product_id:
+                    continue
+                product = locked_products[item.product_id]
+                if product.count < item.count:
+                    raise ValueError(f'"{product.name}" mahsuloti omborda yetarli emas.')
+
+            for item in items:
+                if not item.product_id:
+                    continue
+                product = locked_products[item.product_id]
+                product.count = F('count') - item.count
+                product.save(update_fields=['count'])
+                product.refresh_from_db(fields=['count'])
+
+            locked_order.inventory_status = self.InventoryStatus.RESERVED
+            locked_order.inventory_updated_at = timezone.now()
+            locked_order.save(update_fields=['inventory_status', 'inventory_updated_at'])
+            return True
+
+    def release_inventory(self, *, force: bool = False):
+        """
+        Rezerv qilingan stockni atomik qaytaradi.
+        """
+        with transaction.atomic():
+            locked_order = Cart.objects.select_for_update().get(pk=self.pk)
+            if locked_order.inventory_status != self.InventoryStatus.RESERVED and not force:
+                return False
+
+            items = locked_order._get_inventory_items()
+            product_ids = [item.product_id for item in items if item.product_id]
+            locked_products = {
+                product.pk: product
+                for product in Product.objects.select_for_update().filter(pk__in=product_ids)
+            }
+
+            for item in items:
+                if not item.product_id:
+                    continue
+                product = locked_products.get(item.product_id)
+                if not product:
+                    continue
+                product.count = F('count') + item.count
+                product.save(update_fields=['count'])
+                product.refresh_from_db(fields=['count'])
+
+            locked_order.inventory_status = self.InventoryStatus.RELEASED
+            locked_order.inventory_updated_at = timezone.now()
+            locked_order.save(update_fields=['inventory_status', 'inventory_updated_at'])
+            return True
+
 
 class CartProduct(Code):
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
     count = models.IntegerField()
+    unit_price_snapshot = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        if self.product and self.unit_price_snapshot is None:
+            self.unit_price_snapshot = self.product.active_price
+        super().save(*args, **kwargs)
 
     @property
     def unit_price(self):
+        if self.unit_price_snapshot is not None:
+            return self.unit_price_snapshot
         if not self.product:
             return 0
         return self.product.active_price
 
     @property
     def total_price(self):
-        if not self.product:
-            return 0
         return self.unit_price * self.count
 
 
@@ -441,6 +540,13 @@ class Payment(models.Model):
         ordering = ['-created_at']
         verbose_name = "To'lov"
         verbose_name_plural = "To'lovlar"
+        constraints = [
+            models.UniqueConstraint(
+                fields=['order', 'provider', 'purpose', 'amount'],
+                condition=models.Q(status__in=['pending', 'initiated']),
+                name='uniq_active_payment_per_order_provider_purpose_amount',
+            ),
+        ]
 
     def save(self, *args, **kwargs):
         if not self.code:

@@ -417,7 +417,7 @@
 
                         <div id="cartItemsContainer">
                         {% for item in cart_products %}
-                        <div class="cart-row {% if item.product.count <= 0 %}cart-row--out-of-stock{% endif %}" data-product-code="{{ item.product.code }}" data-price="{{ item.product.active_price }}" data-max-stock="{{ item.product.count }}">
+                        <div class="cart-row {% if item.product.count <= 0 %}cart-row--out-of-stock{% endif %}" data-product-code="{{ item.product.code }}" data-price="{{ item.unit_price }}" data-max-stock="{{ item.product.count }}">
                             <!-- Col 1: Rasm / Image -->
                             <div class="cart-col cart-col--thumb">
                                 <a href="{% url 'product_detail' item.product.code %}" class="cart-item__thumb d-block">
@@ -463,11 +463,11 @@
                             <!-- Col 3: Narx / Unit Price -->
                             <div class="cart-col cart-col--price text-lg-end">
                                 <div class="cart-col__label">Narx</div>
-                                {% if item.product.old_price and item.product.old_price > item.product.active_price %}
+                                {% if item.product.old_price and item.product.old_price > item.unit_price %}
                                 <div class="text-muted text-decoration-line-through font-12 mb-0-5">{{ item.product.old_price|uz_price }}</div>
-                                <div class="cart-item__unitPrice text-main font-15 fw-700 mb-0">{{ item.product.active_price|uz_price }}</div>
+                                <div class="cart-item__unitPrice text-main font-15 fw-700 mb-0">{{ item.unit_price|uz_price }}</div>
                                 {% else %}
-                                <div class="cart-item__unitPrice text-heading font-15 fw-700 mb-0">{{ item.product.active_price|uz_price }}</div>
+                                <div class="cart-item__unitPrice text-heading font-15 fw-700 mb-0">{{ item.unit_price|uz_price }}</div>
                                 {% endif %}
                             </div>
 
