@@ -1,6 +1,6 @@
 from decimal import Decimal
 from django.db import models, transaction
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from django.db.models import F
 from uuid import uuid4
 
@@ -92,7 +92,7 @@ class Product(Code):
     discount_status = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    count = models.IntegerField(default=0)
+    count = models.PositiveIntegerField(default=0)
 
     def get_absolute_url(self):
         from django.urls import reverse
@@ -150,6 +150,11 @@ class Product(Code):
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(condition=Q(count__gte=0), name='product_count_non_negative'),
+        ]
 
 
 class Service(models.Model):
@@ -270,6 +275,14 @@ class Cart(Code):
         with transaction.atomic():
             locked_order = Cart.objects.select_for_update().get(pk=self.pk)
             if locked_order.inventory_status == self.InventoryStatus.RESERVED and not force:
+                return False
+            if (
+                locked_order.inventory_status not in {
+                    self.InventoryStatus.AVAILABLE,
+                    self.InventoryStatus.RELEASED,
+                }
+                and not force
+            ):
                 return False
 
             items = locked_order._get_inventory_items()

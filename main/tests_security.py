@@ -177,12 +177,15 @@ class SecurityHardeningComprehensiveTests(TestCase):
         session['otp_phone'] = self.user1.phone
         session.save()
 
+        # GET cannot trigger an SMS or any other state change.
+        self.assertEqual(self.client.get(reverse('resend_otp')).status_code, 405)
+
         # 1st resend succeeds
-        res1 = self.client.get(reverse('resend_otp'))
+        res1 = self.client.post(reverse('resend_otp'))
         self.assertEqual(res1.status_code, 302)
 
         # 2nd immediate resend within 60s is rate-limited
-        res2 = self.client.get(reverse('resend_otp'))
+        res2 = self.client.post(reverse('resend_otp'))
         self.assertEqual(res2.status_code, 302)
         # User is returned to verify_otp with cooldown message
         messages = list(res2.wsgi_request._messages)

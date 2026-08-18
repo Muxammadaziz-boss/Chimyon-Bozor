@@ -151,7 +151,10 @@
                               </div>
                               <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Bekor qilish</button>
-                                <a href="{% url 'd_delete_product' product.code %}" class="btn btn-danger font-weight-bold">Ha, O'chirish</a>
+                                <form method="post" action="{% url 'd_delete_product' product.code %}" class="d-inline">
+                                  {% csrf_token %}
+                                  <button type="submit" class="btn btn-danger font-weight-bold">Ha, O'chirish</button>
+                                </form>
                               </div>
                             </div>
                           </div>

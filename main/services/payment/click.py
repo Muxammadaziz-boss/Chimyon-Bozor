@@ -114,7 +114,7 @@ class ClickPaymentProvider(BasePaymentProvider):
             params['merchant_user_id'] = merchant_user_id
 
         checkout_url = f"https://my.click.uz/services/pay?{urlencode(params)}"
-        logger.info("Generated Click checkout URL for payment #%s: %s", payment.code, checkout_url)
+        logger.info("Generated Click checkout URL for payment #%s", str(payment.code)[:8])
         return checkout_url
 
     def verify_signature(self, data: Dict[str, Any], is_complete: bool = False) -> bool:

@@ -721,8 +721,8 @@ class PartialPrepaymentAndBalanceTests(TestCase):
 
         # Admin marks order as Delivered (status=4)
         self.client.force_login(staff_user)
-        res = self.client.get(reverse('d_update_status', kwargs={'code': self.cart.code}), {
-            'status': '4',
+        res = self.client.post(reverse('d_update_status', kwargs={'code': self.cart.code}), {
+            'target_status': '4',
             'comment': 'Yetkazildi lekin qoldiq hali olinmadi'
         })
         self.assertEqual(res.status_code, 302)
@@ -797,5 +797,4 @@ class PartialPrepaymentAndBalanceTests(TestCase):
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
         self.assertIn('chimyon_bozor_tolovlar_', response['Content-Disposition'])
-
 

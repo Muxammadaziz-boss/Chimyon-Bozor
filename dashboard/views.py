@@ -31,6 +31,13 @@ def staff_required(view_func):
     return user_passes_test(check_user, login_url='d_login')(view_func)
 
 
+def redirect_back(request, fallback):
+    referer = request.META.get('HTTP_REFERER')
+    if referer and url_has_allowed_host_and_scheme(referer, allowed_hosts={request.get_host()}):
+        return redirect(referer)
+    return redirect(fallback)
+
+
 def get_client_ip(request):
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
     if x_forwarded_for:
@@ -336,6 +343,7 @@ def edit_category(request, id):
 
 
 @staff_required
+@require_POST
 def delete_category(request, id):
     category = get_object_or_404(models.Category, id=id)
     product_count = category.product_set.count()
@@ -381,6 +389,11 @@ def create_product(request):
                 messages.warning(request, "Chegirma narxi asosiy narxdan kichik bo'lishi kerak.")
                 return render(request, 'dashboard/create_praduct.html', {'categories': categories})
 
+            count_val = int(count) if count else 0
+            if count_val < 0:
+                messages.warning(request, "Ombor qoldig'i manfiy bo'lishi mumkin emas.")
+                return render(request, 'dashboard/create_praduct.html', {'categories': categories})
+
             prod = models.Product.objects.create(
                 name=name,
                 category=category,
@@ -389,7 +402,7 @@ def create_product(request):
                 discount_price=disc_price_val,
                 image=image,
                 discount_status=discount_status,
-                count=int(count) if count else 0
+                count=count_val
             )
             log_admin_action(request, "PRODUCT_CREATE", f"Mahsulot yaratildi: {prod.name} (Code: {prod.code}, Narx: {prod.price})")
             messages.success(request, f"'{name}' mahsuloti muvaffaqiyatli yaratildi.")
@@ -491,7 +504,11 @@ def edit_product(request, code):
             product.price = price_val
             product.discount_price = disc_price_val
             product.discount_status = discount_status
-            product.count = int(count) if count else 0
+            count_val = int(count) if count else 0
+            if count_val < 0:
+                messages.warning(request, "Ombor qoldig'i manfiy bo'lishi mumkin emas.")
+                return render(request, 'dashboard/edit_praduct.html', {'product': product, 'categories': categories})
+            product.count = count_val
 
             image = request.FILES.get('image')
             if image:
@@ -510,6 +527,7 @@ def edit_product(request, code):
 
 
 @staff_required
+@require_POST
 def delete_product(request, code):
     product = get_object_or_404(models.Product, code=code)
     prod_name = product.name
@@ -712,10 +730,11 @@ def orders(request):
 
 
 @staff_required
+@require_POST
 def status_update(request, code):
     order = get_object_or_404(models.Cart, code=code)
-    target_status = request.POST.get('target_status') if request.method == 'POST' else request.GET.get('target_status')
-    comment = request.POST.get('comment', '').strip() if request.method == 'POST' else ''
+    target_status = request.POST.get('target_status')
+    comment = request.POST.get('comment', '').strip()
 
     status_labels = {
         2: "Qabul qilindi (Yangi)",
@@ -728,36 +747,38 @@ def status_update(request, code):
         new_st = int(target_status)
         if new_st in (2, 3, 4, 5) and new_st != order.status:
             old_st = order.status
-            with transaction.atomic():
-                # If cancelling order (status 5), replenish stock
-                if new_st == 5 and old_st in (2, 3, 4):
-                    for cp in order.cartproduct_set.filter(product__isnull=False):
-                        models.Product.objects.filter(pk=cp.product.pk).update(count=F('count') + cp.count)
+            try:
+                with transaction.atomic():
+                    # Keep stock changes in Cart's locked, idempotent state machine.
+                    if new_st == 5 and old_st in (2, 3, 4):
+                        order.release_inventory()
 
-                # If re-activating a previously cancelled order, deduct stock
-                elif old_st == 5 and new_st in (2, 3, 4):
-                    for cp in order.cartproduct_set.filter(product__isnull=False):
-                        models.Product.objects.filter(pk=cp.product.pk).update(count=F('count') - cp.count)
+                    # A released order can only become active after stock is atomically re-reserved.
+                    elif old_st == 5 and new_st in (2, 3, 4):
+                        order.reserve_inventory()
 
-                order.status = new_st
-                order.save(update_fields=['status'])
+                    order.status = new_st
+                    order.save(update_fields=['status'])
 
-                models.OrderStatusHistory.objects.create(
-                    order=order,
-                    old_status=old_st,
-                    new_status=new_st,
-                    changed_by=request.user,
-                    comment=comment or f"Status {status_labels.get(new_st, new_st)} ga o'zgartirildi."
-                )
+                    models.OrderStatusHistory.objects.create(
+                        order=order,
+                        old_status=old_st,
+                        new_status=new_st,
+                        changed_by=request.user,
+                        comment=comment or f"Status {status_labels.get(new_st, new_st)} ga o'zgartirildi."
+                    )
 
-                log_admin_action(
-                    request,
-                    "ORDER_STATUS_UPDATE",
-                    f"Buyurtma #{str(order.code)[:8]} statusi: {old_st} -> {new_st}. Izoh: {comment}"
-                )
+                    log_admin_action(
+                        request,
+                        "ORDER_STATUS_UPDATE",
+                        f"Buyurtma #{str(order.code)[:8]} statusi: {old_st} -> {new_st}. Izoh: {comment}"
+                    )
+            except ValueError as exc:
+                messages.error(request, str(exc))
+                return redirect_back(request, 'd_orders')
 
             messages.success(request, f"Buyurtma #{str(order.code)[:8]} statusi '{status_labels.get(new_st)}' ga o'zgartirildi.")
-            return redirect(request.META.get('HTTP_REFERER', 'd_orders'))
+            return redirect_back(request, 'd_orders')
 
     # Fallback to next step
     if order.status in (2, 3):
@@ -778,18 +799,17 @@ def status_update(request, code):
     else:
         messages.warning(request, "Ushbu buyurtma statusini avtomatik oshirib bo'lmaydi.")
 
-    return redirect(request.META.get('HTTP_REFERER', 'd_orders'))
+    return redirect_back(request, 'd_orders')
 
 
 @staff_required
+@require_POST
 def reject_cart(request, code):
     order = get_object_or_404(models.Cart, code=code)
     if order.status in (2, 3, 4):
         old_st = order.status
         with transaction.atomic():
-            # Replenish stock
-            for cp in order.cartproduct_set.filter(product__isnull=False):
-                models.Product.objects.filter(pk=cp.product.pk).update(count=F('count') + cp.count)
+            order.release_inventory()
 
             order.status = 5
             order.save(update_fields=['status'])
@@ -806,7 +826,7 @@ def reject_cart(request, code):
         messages.success(request, f"Buyurtma #{str(order.code)[:8]} bekor qilindi va mahsulotlar omborga qaytarildi.")
     else:
         messages.warning(request, "Ushbu buyurtmani bekor qilib bo'lmaydi.")
-    return redirect(request.META.get('HTTP_REFERER', 'd_orders'))
+    return redirect_back(request, 'd_orders')
 
 
 @staff_required
@@ -980,7 +1000,7 @@ def refund_payment(request, payment_id):
     else:
         messages.error(request, result.get('message', "To'lovni qaytarishda xatolik."))
 
-    return redirect(request.META.get('HTTP_REFERER', 'd_payments'))
+    return redirect_back(request, 'd_payments')
 
 
 # ==========================================
@@ -1060,6 +1080,7 @@ def customer_detail(request, id):
 
 
 @staff_required
+@require_POST
 def toggle_user_status(request, id):
     target_user = get_object_or_404(models.User, id=id)
 
@@ -1077,7 +1098,7 @@ def toggle_user_status(request, id):
     holat = "faollashtirildi" if target_user.is_active else "faolsizlantirildi"
     log_admin_action(request, "USER_STATUS_TOGGLE", f"Foydalanuvchi '{target_user.username}' {holat}")
     messages.success(request, f"Foydalanuvchi '{target_user.username}' muvaffaqiyatli {holat}.")
-    return redirect(request.META.get('HTTP_REFERER', 'd_list_users'))
+    return redirect_back(request, 'd_list_users')
 
 
 # ==========================================

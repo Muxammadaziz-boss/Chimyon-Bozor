@@ -809,15 +809,12 @@ def verify_otp(request):
                 'error': f"Kiritilgan SMS kod noto'g'ri. Qolgan urinishlar: {remaining}"
             })
 
-    latest_otp = models.OTPCode.objects.filter(user=user, is_used=False).order_by('-created_at').first()
-    demo_code = latest_otp.code if latest_otp else None
-
     return render(request, 'front/verify_otp.html', {
         'phone': phone,
-        'demo_code': demo_code
     })
 
 
+@require_POST
 def resend_otp(request):
     user_id = request.session.get('otp_user_id')
     phone = request.session.get('otp_phone', '')
@@ -1345,9 +1342,9 @@ def checkout(request):
             logger.warning("Checkout payment configuration error: %s", e)
             messages.error(request, f"{provider.capitalize()} to'lov tizimi sozlamalari hozirda to'liq o'rnatilmagan. Iltimos, ma'muriyatga murojaat qiling yoki boshqa to'lov usulidan foydalaning.")
             return redirect('checkout')
-        except Exception as e:
-            logger.error("Checkout payment creation error: %s", e, exc_info=True)
-            messages.error(request, f"To'lovni yaratishda xatolik yuz berdi: {str(e)}")
+        except Exception:
+            logger.exception("Checkout payment creation failed")
+            messages.error(request, "To'lovni yaratishda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.")
             return redirect('checkout')
 
     # GET request handler (Pure PRG)
@@ -1450,8 +1447,9 @@ def retry_payment(request, code):
     except PaymentConfigurationError as e:
         messages.error(request, f"{provider.capitalize()} to'lov tizimi sozlanmagan. Iltimos, boshqa to'lov turidan foydalaning.")
         return redirect('order_detail', code=order.code)
-    except Exception as e:
-        messages.error(request, f"To'lovni qayta boshlashda xatolik: {str(e)}")
+    except Exception:
+        logger.exception("Payment retry creation failed for order %s", str(order.code)[:8])
+        messages.error(request, "To'lovni qayta boshlashda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.")
         return redirect('order_detail', code=order.code)
 
 

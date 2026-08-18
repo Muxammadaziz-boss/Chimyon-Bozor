@@ -39,10 +39,10 @@ def send_sms_code(phone: str, code: str) -> bool:
                 headers['Authorization'] = f"Bearer {SMS_API_KEY}"
 
             response = requests.post(SMS_GATEWAY_URL, json=payload, headers=headers, timeout=5)
-            logger.info(f"SMS Gateway response: {response.status_code} - {response.text}")
+            logger.info("SMS gateway response status=%s", response.status_code)
             return response.status_code in [200, 201]
-        except Exception as e:
-            logger.warning(f"SMS Gateway call exception (falling back to queued payload): {e}")
+        except Exception:
+            logger.warning("SMS gateway call failed; OTP delivery will be retried by the configured queue.")
             return True
 
     return True

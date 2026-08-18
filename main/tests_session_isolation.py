@@ -1,7 +1,7 @@
 from decimal import Decimal
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.test import TestCase, Client
+from django.test import TestCase, Client, override_settings
 from django.urls import reverse
 
 from main import models
@@ -234,3 +234,13 @@ class DashboardFrontendSessionIsolationTests(TestCase):
 
         admin_cart = models.Cart.objects.filter(user=self.admin_user, status=1).first()
         self.assertIsNone(admin_cart)
+
+    @override_settings(TESTING=False)
+    def test_09_production_does_not_promote_frontend_staff_session(self):
+        client = Client()
+        client.force_login(self.admin_user)
+
+        response = client.get(reverse('d_index'))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('login', response.url.lower())

@@ -88,7 +88,10 @@
                               </div>
                               <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Bekor qilish</button>
-                                <a href="{% url 'd_delete_category' category.id %}" class="btn btn-danger">Ha, o'chirilsin</a>
+                                <form method="post" action="{% url 'd_delete_category' category.id %}" class="d-inline">
+                                  {% csrf_token %}
+                                  <button type="submit" class="btn btn-danger">Ha, o'chirilsin</button>
+                                </form>
                               </div>
                             </div>
                           </div>

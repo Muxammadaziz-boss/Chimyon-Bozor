@@ -33,8 +33,14 @@ class ScopedSessionMiddleware(SessionMiddleware):
         request._session_cookie_name = cookie_name
         session_key = request.COOKIES.get(cookie_name)
 
-        # If dashboard session cookie is not set, check if a staff user session exists in default sessionid (e.g. client.force_login)
-        if not session_key and cookie_name == DASHBOARD_SESSION_COOKIE_NAME and FRONTEND_SESSION_COOKIE_NAME in request.COOKIES:
+        # Test clients use Django's default session cookie. Production must never
+        # promote a frontend session into the separately authenticated dashboard.
+        if (
+            settings.TESTING
+            and not session_key
+            and cookie_name == DASHBOARD_SESSION_COOKIE_NAME
+            and FRONTEND_SESSION_COOKIE_NAME in request.COOKIES
+        ):
             fallback_key = request.COOKIES.get(FRONTEND_SESSION_COOKIE_NAME)
             temp_session = self.SessionStore(fallback_key)
             from django.contrib.auth import SESSION_KEY

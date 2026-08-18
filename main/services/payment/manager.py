@@ -276,8 +276,14 @@ class PaymentManager:
                 )
 
             checkout_url = provider.generate_checkout_url(payment, request)
-            logger.info("Payment created #%s for Order #%s via %s (Purpose: %s, Amount: %s), checkout_url=%s",
-                        str(payment.code)[:8], str(locked_order.code)[:8], provider_key, payment_purpose, amount, checkout_url)
+            logger.info(
+                "Payment created #%s for Order #%s via %s (Purpose: %s, Amount: %s)",
+                str(payment.code)[:8],
+                str(locked_order.code)[:8],
+                provider_key,
+                payment_purpose,
+                amount,
+            )
 
         return payment, checkout_url
 

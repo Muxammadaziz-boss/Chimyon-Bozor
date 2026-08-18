@@ -117,7 +117,7 @@ class DashboardComprehensiveTestCase(TestCase):
         self.assertFalse(created_cat.is_active)
 
         # Delete
-        del_res = self.client.get(reverse('d_delete_category', args=[created_cat.id]))
+        del_res = self.client.post(reverse('d_delete_category', args=[created_cat.id]))
         self.assertEqual(del_res.status_code, 302)
         self.assertFalse(Category.objects.filter(id=created_cat.id).exists())
 
@@ -154,7 +154,7 @@ class DashboardComprehensiveTestCase(TestCase):
         self.assertEqual(created_prod.price, 30000)
 
         # Delete
-        del_res = self.client.get(reverse('d_delete_product', args=[created_prod.code]))
+        del_res = self.client.post(reverse('d_delete_product', args=[created_prod.code]))
         self.assertEqual(del_res.status_code, 302)
         self.assertFalse(Product.objects.filter(code=created_prod.code).exists())
 
@@ -178,6 +178,9 @@ class DashboardComprehensiveTestCase(TestCase):
         initial_stock = self.product.count
         order = Cart.objects.create(user=self.customer, status=2)
         CartProduct.objects.create(cart=order, product=self.product, count=5)
+        self.assertTrue(order.reserve_inventory())
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.count, initial_stock - 5)
 
         # Order list with period filter
         list_res = self.client.get(reverse('d_orders') + '?period=today')
@@ -199,7 +202,7 @@ class DashboardComprehensiveTestCase(TestCase):
         self.assertEqual(order.status, 3)
         self.assertTrue(OrderStatusHistory.objects.filter(order=order, new_status=3).exists())
 
-        # Cancel order (3 -> 5) and verify stock is replenished
+        # Cancel order (3 -> 5) and verify the reserved stock is returned once.
         cancel_res = self.client.post(reverse('d_update_status', args=[order.code]), {
             'target_status': '5',
             'comment': 'Mijoz talabi bilan bekor qilindi'
@@ -208,7 +211,13 @@ class DashboardComprehensiveTestCase(TestCase):
         order.refresh_from_db()
         self.assertEqual(order.status, 5)
         self.product.refresh_from_db()
-        self.assertEqual(self.product.count, initial_stock + 5)
+        self.assertEqual(self.product.count, initial_stock)
+        self.assertEqual(order.inventory_status, Cart.InventoryStatus.RELEASED)
+
+        second_cancel = self.client.post(reverse('d_update_status', args=[order.code]), {'target_status': '5'})
+        self.assertEqual(second_cancel.status_code, 302)
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.count, initial_stock)
 
     # 6. USER MANAGEMENT & CUSTOMER DOSSIER
     def test_user_management_and_customer_detail(self):
@@ -222,13 +231,13 @@ class DashboardComprehensiveTestCase(TestCase):
         self.assertEqual(detail_res.context['customer'], self.customer)
 
         # Toggle customer status (active -> inactive)
-        toggle_res = self.client.get(reverse('d_toggle_user', args=[self.customer.id]))
+        toggle_res = self.client.post(reverse('d_toggle_user', args=[self.customer.id]))
         self.assertEqual(toggle_res.status_code, 302)
         self.customer.refresh_from_db()
         self.assertFalse(self.customer.is_active)
 
         # Cannot toggle self
-        self_toggle_res = self.client.get(reverse('d_toggle_user', args=[self.admin.id]))
+        self_toggle_res = self.client.post(reverse('d_toggle_user', args=[self.admin.id]))
         self.assertEqual(self_toggle_res.status_code, 302)
         self.admin.refresh_from_db()
         self.assertTrue(self.admin.is_active)

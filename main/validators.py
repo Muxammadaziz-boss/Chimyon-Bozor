@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 
 ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.ico']
 MAX_IMAGE_SIZE_MB = 5  # 5 Megabytes
+MAX_IMAGE_PIXELS = 20_000_000
 
 # Canonical Uzbekistan Phone Regex: +998 followed by exactly 9 digits
 PHONE_RE = re.compile(r'^\+998\d{9}$')
@@ -79,6 +80,8 @@ def validate_image_file(file):
         from PIL import Image
         file.seek(0)
         img = Image.open(file)
+        if img.width * img.height > MAX_IMAGE_PIXELS:
+            raise ValidationError("Rasm o'lchami juda katta.")
         img.verify()
         allowed_formats = {'JPEG', 'PNG', 'WEBP', 'GIF', 'ICO'}
         if img.format and img.format.upper() not in allowed_formats:
@@ -88,4 +91,3 @@ def validate_image_file(file):
         raise
     except Exception:
         raise ValidationError("Yuklangan fayl yaroqli rasm emas yoki buzilgan.")
-
