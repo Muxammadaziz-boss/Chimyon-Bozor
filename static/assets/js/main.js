@@ -21,7 +21,11 @@
   // ============== Mobile Menu Sidebar Js End ========
   
   // ============== Mobile Nav Menu Dropdown Js Start =======================
-  var windowWidth = $(window).width(); 
+  var windowWidth = $(window).width();
+  
+  $(window).on('resize', function() {
+    windowWidth = $(window).width();
+  });
   
   $('.has-submenu').on('click', function () {
     var thisItem = $(this); 
@@ -50,20 +54,22 @@
     
   // ===================== Scroll Back to Top Js Start ======================
   var progressPath = document.querySelector('.progress-wrap path');
-  var pathLength = progressPath.getTotalLength();
-  progressPath.style.transition = progressPath.style.WebkitTransition = 'none';
-  progressPath.style.strokeDasharray = pathLength + ' ' + pathLength;
-  progressPath.style.strokeDashoffset = pathLength;
-  progressPath.getBoundingClientRect();
-  progressPath.style.transition = progressPath.style.WebkitTransition = 'stroke-dashoffset 10ms linear';
-  var updateProgress = function () {
-    var scroll = $(window).scrollTop();
-    var height = $(document).height() - $(window).height();
-    var progress = pathLength - (scroll * pathLength / height);
-    progressPath.style.strokeDashoffset = progress;
+  if (progressPath) {
+    var pathLength = progressPath.getTotalLength();
+    progressPath.style.transition = progressPath.style.WebkitTransition = 'none';
+    progressPath.style.strokeDasharray = pathLength + ' ' + pathLength;
+    progressPath.style.strokeDashoffset = pathLength;
+    progressPath.getBoundingClientRect();
+    progressPath.style.transition = progressPath.style.WebkitTransition = 'stroke-dashoffset 10ms linear';
+    var updateProgress = function () {
+      var scroll = $(window).scrollTop();
+      var height = $(document).height() - $(window).height();
+      var progress = pathLength - (scroll * pathLength / height);
+      progressPath.style.strokeDashoffset = progress;
+    }
+    updateProgress();
+    $(window).scroll(updateProgress);
   }
-  updateProgress();
-  $(window).scroll(updateProgress);
   var offset = 50;
   var duration = 550;
   jQuery(window).on('scroll', function() {
@@ -101,8 +107,8 @@
       selector.find("li").eq(0).addClass("activePage");
     }
   }
-  if ($('ul').length) {
-    dynamicActiveMenuClass($('ul'));
+  if ($('.navbar-nav, .nav-menu, .mobile-menu ul, .dashboard-sidebar nav ul').length) {
+    dynamicActiveMenuClass($('.navbar-nav, .nav-menu, .mobile-menu ul, .dashboard-sidebar nav ul'));
   }
   // ========================== add active class to ul>li top Active current page Js End =====================
 
@@ -130,12 +136,11 @@
     slidesToScroll: 1,
     autoplay: true,
     autoplaySpeed: 2000,
-    speed: 1500,
+    speed: 900,
     dots: false,
     pauseOnHover: true,
     arrows: true,
     draggable: true,
-    speed: 900,
     infinite: true,
     prevArrow: '<button type="button" class="slick-prev"><i class="las la-arrow-left"></i></button>',
     nextArrow: '<button type="button" class="slick-next"><i class="las la-arrow-right"></i></button>',
@@ -169,9 +174,7 @@
   // ========================= popular Category Js End ===================
   
   // ========================= Wishlist Js Start ===================
-  $('.product-card__wishlist').on('click', function() {
-    $(this).toggleClass('active')
-  }); 
+  // Wishlist toggle is handled by the global AJAX form handler in base.html
   // ========================= Wishlist Js End ===================
   
   // ========================= Selling Product Js Start ==============
@@ -180,12 +183,11 @@
     slidesToScroll: 1,
     autoplay: true,
     autoplaySpeed: 2000,
-    speed: 1500,
+    speed: 900,
     dots: true,
     pauseOnHover: true,
     arrows: true,
     draggable: true,
-    speed: 900,
     infinite: true,
     prevArrow: '<button type="button" class="slick-prev"><i class="las la-arrow-left"></i></button>',
     nextArrow: '<button type="button" class="slick-next"><i class="las la-arrow-right"></i></button>',
@@ -218,12 +220,11 @@
     slidesToScroll: 1,
     autoplay: true,
     autoplaySpeed: 2000,
-    speed: 1500,
+    speed: 900,
     dots: true,
     pauseOnHover: true,
     arrows: true,
     draggable: true,
-    speed: 900,
     infinite: true,
     prevArrow: '<button type="button" class="slick-prev"><i class="las la-arrow-left"></i></button>',
     nextArrow: '<button type="button" class="slick-next"><i class="las la-arrow-right"></i></button>',
@@ -244,12 +245,11 @@
     slidesToScroll: 1,
     autoplay: true,
     autoplaySpeed: 2000,
-    speed: 1500,
+    speed: 900,
     dots: true,
     pauseOnHover: true,
     arrows: true,
     draggable: true,
-    speed: 900,
     infinite: true,
     prevArrow: '<button type="button" class="slick-prev"><i class="las la-arrow-left"></i></button>',
     nextArrow: '<button type="button" class="slick-next"><i class="las la-arrow-right"></i></button>',
@@ -282,12 +282,11 @@
     slidesToScroll: 1,
     autoplay: true,
     autoplaySpeed: 2000,
-    speed: 1500,
+    speed: 900,
     dots: false,
     pauseOnHover: true,
     arrows: false,
     draggable: true,
-    speed: 900,
     infinite: true,
     prevArrow: '<button type="button" class="slick-prev"><i class="las la-arrow-left"></i></button>',
     nextArrow: '<button type="button" class="slick-next"><i class="las la-arrow-right"></i></button>',
@@ -326,12 +325,11 @@
     slidesToScroll: 1,
     autoplay: false,
     autoplaySpeed: 2000,
-    speed: 1500,
+    speed: 900,
     dots: false,
     pauseOnHover: true,
     arrows: true,
     draggable: true,
-    speed: 900,
     infinite: true,
     prevArrow: '<button type="button" class="slick-prev"><i class="las la-arrow-left"></i></button>',
     nextArrow: '<button type="button" class="slick-next"><i class="las la-arrow-right"></i></button>',
@@ -404,22 +402,24 @@
   // ========================= Text Rotation Js End ==========================
   
   // ========================= Counter Up Js End ===================
-  const counterUp = window.counterUp.default;
+  const counterUp = window.counterUp && window.counterUp.default;
 
   const callback = (entries) => {
     entries.forEach((entry) => {
       const el = entry.target;
       if (entry.isIntersecting && !el.classList.contains('is-visible')) {
-        counterUp(el, {
-          duration: 3500,
-          delay: 16,
-        });
+        if (counterUp) {
+          counterUp(el, {
+            duration: 3500,
+            delay: 16,
+          });
+        }
         el.classList.add('is-visible');
       }
     });
   };
 
-  const IO = new IntersectionObserver(callback, { threshold: 1 });
+  const IO = new IntersectionObserver(callback, { threshold: 0.5 });
 
   // Banner statistics Counter
   const statisticsCounter = document.querySelectorAll('.statistics__amount');
@@ -662,9 +662,11 @@
   // ========================== ScrollSpy Js End =====================
   
   // ========================= Scroll Spy Js Start ===========================
-  const scrollSpy = new bootstrap.ScrollSpy(document.body, {
-    target: '#sidebar-scroll-spy'
-  })
+  if (document.getElementById('sidebar-scroll-spy')) {
+    const scrollSpy = new bootstrap.ScrollSpy(document.body, {
+      target: '#sidebar-scroll-spy'
+    });
+  }
   // ========================= Scroll Spy Js End ===========================
 
   // ========================== Apex Chart Js Start =====================

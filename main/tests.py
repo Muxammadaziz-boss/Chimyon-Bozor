@@ -2769,7 +2769,109 @@ class ProductDetailAndVerifiedReviewsTests(TestCase):
         self.assertIn('display: none;', content)
 
 
+class RegressionAuditFixesTestCase(TestCase):
+    """Regression tests for production-readiness audit fixes (Aug 2026)."""
 
+    def setUp(self):
+        self.category = Category.objects.create(name="Test", is_active=True)
+        self.user = User.objects.create_user(
+            username='audituser',
+            phone='+998900001122',
+            password='testpass123',
+            address='Toshkent'
+        )
+        for i in range(8):
+            Product.objects.create(
+                category=self.category,
+                name=f"Product {i}",
+                price=Decimal('10000'),
+                count=10,
+                image=f"test{i}.png"
+            )
+        # Discounted product
+        Product.objects.create(
+            category=self.category,
+            name="Discounted",
+            price=Decimal('20000'),
+            discount_price=Decimal('15000'),
+            discount_status=True,
+            count=5,
+            image="disc.png"
+        )
+
+    def test_home_products_max_5_per_section(self):
+        """Each home page product section should show at most 5 items."""
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 200)
+        self.assertLessEqual(len(response.context['cat_section_1_products']), 5)
+        self.assertLessEqual(len(response.context['cat_section_2_products']), 5)
+        self.assertLessEqual(len(response.context['discounted_products']), 5)
+        self.assertLessEqual(len(response.context['new_products']), 5)
+
+    def test_profile_orders_integration(self):
+        """Profile page should contain orders context and orders tab."""
+        self.client.login(username='audituser', password='testpass123')
+        # Create an order (status=2 = placed)
+        cart = Cart.objects.create(user=self.user, status=2)
+        product = Product.objects.first()
+        CartProduct.objects.create(cart=cart, product=product, count=1, unit_price_snapshot=product.price)
+
+        response = self.client.get('/profile/')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('orders', response.context)
+        self.assertEqual(response.context['orders'].count(), 1)
+
+        content = response.content.decode('utf-8')
+        self.assertIn('pills-orders', content)  # Orders tab exists
+        self.assertIn('Buyurtmalar tarixi', content)  # Tab label
+
+    def test_profile_orders_excludes_active_cart(self):
+        """Profile should not show active cart (status=1) as an order."""
+        self.client.login(username='audituser', password='testpass123')
+        cart = Cart.objects.create(user=self.user, status=1)
+        product = Product.objects.first()
+        CartProduct.objects.create(cart=cart, product=product, count=1, unit_price_snapshot=product.price)
+
+        response = self.client.get('/profile/')
+        self.assertEqual(response.context['orders'].count(), 0)
+
+    def test_otp_page_has_submit_button(self):
+        """OTP verification page must have submitBtn for spinner feedback."""
+        self.client.login(username='audituser', password='testpass123')
+        # Trigger OTP flow
+        response = self.client.post('/register/', {
+            'username': 'newuser2',
+            'password': 'testpass123',
+            'confirm_password': 'testpass123',
+            'phone': '+998911112233'
+        }, follow=True)
+        # The verify_otp page should have submitBtn
+        response = self.client.get('/verify-otp/')
+        if response.status_code == 200:
+            content = response.content.decode('utf-8')
+            self.assertIn('id="submitBtn"', content)
+
+    def test_home_barchasi_links(self):
+        """Home page 'Barchasi' links should point to correct URLs."""
+        response = self.client.get('/')
+        content = response.content.decode('utf-8')
+        # Category sections should have links to index_by_category or all_products
+        self.assertIn('/products/all/', content)
+
+    def test_home_empty_sections_hidden(self):
+        """Sections with 0 products should not render empty containers."""
+        # Delete all products
+        Product.objects.all().delete()
+        response = self.client.get('/')
+        content = response.content.decode('utf-8')
+        # Discounted section should not appear when empty
+        self.assertNotIn('Aksiyalar', content)
+
+    def test_no_apexcharts_in_frontend_base(self):
+        """ApexCharts should not be loaded on frontend pages (only dashboard)."""
+        response = self.client.get('/')
+        content = response.content.decode('utf-8')
+        self.assertNotIn('apexchart.js', content)
 
 
 

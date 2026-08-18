@@ -7,7 +7,7 @@ from decimal import Decimal
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import F, Count, Q, Avg, Sum, Case, When, DecimalField, IntegerField, FloatField, Value, Min, Max, OuterRef, Subquery
+from django.db.models import F, Count, Q, Avg, Sum, Case, When, DecimalField, IntegerField, FloatField, Value, Min, Max, OuterRef, Subquery, Prefetch
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, render, redirect
 from django.http import JsonResponse, HttpResponse
@@ -137,13 +137,12 @@ def index(request):
     discounted_products = list(
         _annotate_product_metrics(
             models.Product.objects.filter(discount_status=True, discount_price__isnull=False)
-        ).select_related('category').order_by('-created_at', '-id')[:10]
+        ).select_related('category').order_by('-created_at', '-id')[:5]
     )
-    # Yangi mahsulotlar
     new_products = list(
         _annotate_product_metrics(
             models.Product.objects.all()
-        ).select_related('category').order_by('-created_at', '-id')[:10]
+        ).select_related('category').order_by('-created_at', '-id')[:5]
     )
 
     context = {
@@ -196,8 +195,11 @@ def product_detail(request, code):
         ).select_related('category').order_by('-created_at', '-id')[:10]
     ) if similar_category else []
 
+    reviews = list(product.reviews.select_related('user').order_by('-created_at')[:20])
+
     context = {
         "product": product,
+        "reviews": reviews,
         "related_products": related_products,
         "related_products_count": related_products_count,
         "similar_category": similar_category,
@@ -946,6 +948,11 @@ def profile(request):
     orders = models.Cart.objects.filter(
         user=request.user,
         status__gt=1,
+    ).select_related('user').prefetch_related(
+        'cartproduct_set__product',
+        Prefetch('payments', queryset=models.Payment.objects.filter(
+            status__in=[models.Payment.Status.PAID, models.Payment.Status.REFUNDED]
+        ))
     ).order_by('-date')
 
     addresses = models.Address.objects.filter(is_active=True).order_by('name')
@@ -1022,14 +1029,15 @@ def remove_from_cart(request, product_code):
         models.CartProduct.objects.filter(cart=cart, product=product).delete()
 
     if is_ajax:
-        active_items = list(cart.cart_products.filter(product__isnull=False, product__count__gt=0)) if cart else []
-        has_out_of_stock = cart.cart_products.filter(product__count__lte=0).exists() if cart else False
+        all_items = list(cart.cartproduct_set.select_related('product').filter(product__isnull=False)) if cart else []
+        active_items = [i for i in all_items if i.product.count > 0]
+        has_out_of_stock = any(i.product.count <= 0 for i in all_items)
         return JsonResponse({
             'status': 'success',
             'message': f'"{product.name}" savatdan olib tashlandi',
             'cart_count': sum(item.count for item in active_items),
             'cart_total': float(sum(item.total_price for item in active_items)),
-            'cart_items_count': cart.cart_products.count() if cart else 0,
+            'cart_items_count': len(all_items),
             'has_out_of_stock': has_out_of_stock,
             'in_cart': False
         })
@@ -1062,14 +1070,15 @@ def update_cart_quantity(request, product_code):
         if product.count <= 0:
             if quantity == 0:
                 cart_product.delete()
-                active_items = list(cart.cart_products.filter(product__isnull=False, product__count__gt=0))
-                has_out_of_stock = cart.cart_products.filter(product__count__lte=0).exists()
+                all_items = list(cart.cartproduct_set.select_related('product').filter(product__isnull=False))
+                active_items = [i for i in all_items if i.product.count > 0]
+                has_out_of_stock = any(i.product.count <= 0 for i in all_items)
                 if request.content_type == 'application/json':
                     return JsonResponse({
                         'status': 'deleted',
                         'cart_total': float(sum(item.total_price for item in active_items)),
                         'cart_count': sum(item.count for item in active_items),
-                        'cart_items_count': cart.cart_products.count(),
+                        'cart_items_count': len(all_items),
                         'has_out_of_stock': has_out_of_stock,
                     })
                 messages.success(request, f'"{product.name}" savatdan olib tashlandi')
@@ -1092,14 +1101,15 @@ def update_cart_quantity(request, product_code):
 
         if quantity <= 0:
             cart_product.delete()
-            active_items = list(cart.cart_products.filter(product__isnull=False, product__count__gt=0))
-            has_out_of_stock = cart.cart_products.filter(product__count__lte=0).exists()
+            all_items = list(cart.cartproduct_set.select_related('product').filter(product__isnull=False))
+            active_items = [i for i in all_items if i.product.count > 0]
+            has_out_of_stock = any(i.product.count <= 0 for i in all_items)
             if request.content_type == 'application/json':
                 return JsonResponse({
                     'status': 'deleted',
                     'cart_total': float(sum(item.total_price for item in active_items)),
                     'cart_count': sum(item.count for item in active_items),
-                    'cart_items_count': cart.cart_products.count(),
+                    'cart_items_count': len(all_items),
                     'has_out_of_stock': has_out_of_stock,
                 })
             messages.success(request, f'"{product.name}" savatdan olib tashlandi')
@@ -1108,8 +1118,9 @@ def update_cart_quantity(request, product_code):
         cart_product.count = quantity
         cart_product.save(update_fields=['count'])
 
-        active_items = list(cart.cart_products.filter(product__isnull=False, product__count__gt=0))
-        has_out_of_stock = cart.cart_products.filter(product__count__lte=0).exists()
+        all_items = list(cart.cartproduct_set.select_related('product').filter(product__isnull=False))
+        active_items = [i for i in all_items if i.product.count > 0]
+        has_out_of_stock = any(i.product.count <= 0 for i in all_items)
         if request.content_type == 'application/json':
             return JsonResponse({
                 'status': 'updated',
@@ -1120,7 +1131,7 @@ def update_cart_quantity(request, product_code):
                 'stock_warning': stock_warning,
                 'cart_total': float(sum(item.total_price for item in active_items)),
                 'cart_count': sum(item.count for item in active_items),
-                'cart_items_count': cart.cart_products.count(),
+                'cart_items_count': len(all_items),
                 'has_out_of_stock': has_out_of_stock,
             })
         if stock_warning:
@@ -1226,13 +1237,14 @@ def checkout(request):
     """
     user = request.user
     cart = models.Cart.objects.filter(user=user, status=1).first()
-    if not cart or not cart.cart_products.filter(product__isnull=False).exists():
+    all_cart_products = cart.cartproduct_set.select_related('product', 'product__category') if cart else None
+    if not all_cart_products or not all_cart_products.filter(product__isnull=False).exists():
         messages.error(request, "Savatingiz bo'sh. Iltimos, avval mahsulot tanlang.")
         return redirect('cart')
 
     # Clean up any null products
-    cart.cart_products.filter(product__isnull=True).delete()
-    cart_products = list(cart.cart_products.filter(product__isnull=False).select_related('product', 'product__category'))
+    all_cart_products.filter(product__isnull=True).delete()
+    cart_products = list(all_cart_products.filter(product__isnull=False))
 
     # Stale stock & Out-of-stock validation
     for item in cart_products:
@@ -1562,7 +1574,9 @@ def category_products_api(request, category_id):
         offset = 0
         limit = 10
 
-    products_qs = models.Product.objects.filter(category=category).order_by('-created_at')
+    products_qs = _annotate_product_metrics(
+        models.Product.objects.filter(category=category).select_related('category')
+    ).order_by('-created_at')
     total_count = products_qs.count()
     products = list(products_qs[offset:offset + limit])
     has_more = (offset + len(products)) < total_count

@@ -7,6 +7,9 @@ class CartProductInline(admin.TabularInline):
     model = models.CartProduct
     extra = 0
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('product')
+
 
 @admin.register(models.Category)
 class CategoryAdmin(admin.ModelAdmin):
@@ -44,12 +47,14 @@ class UserAdmin(admin.ModelAdmin):
 class CartAdmin(admin.ModelAdmin):
     list_display = ('code', 'user', 'status', 'financial_status', 'inventory_status', 'prepayment_percent', 'prepayment_amount', 'date')
     list_filter = ('status', 'financial_status', 'inventory_status', 'prepayment_percent')
+    list_select_related = ('user',)
     inlines = [CartProductInline]
 
 
 @admin.register(models.CartProduct)
 class CartProductAdmin(admin.ModelAdmin):
     list_display = ('code', 'product', 'cart', 'count', 'unit_price_snapshot')
+    list_select_related = ('product', 'cart')
 
 
 @admin.register(models.WishList)
@@ -80,5 +85,6 @@ class OTPCodeAdmin(admin.ModelAdmin):
 class PaymentAdmin(admin.ModelAdmin):
     list_display = ('code', 'order', 'provider', 'purpose', 'amount', 'currency', 'status', 'transaction_id', 'created_at')
     list_filter = ('status', 'provider', 'purpose', 'currency', 'created_at')
+    list_select_related = ('order', 'order__user')
     search_fields = ('code', 'transaction_id', 'order__code', 'order__user__username')
     readonly_fields = ('code', 'created_at', 'updated_at', 'paid_at', 'refunded_at')
