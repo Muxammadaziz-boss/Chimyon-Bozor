@@ -30,6 +30,33 @@ logger = logging.getLogger(__name__)
 send_otp_sms = send_sms_code
 
 
+def _annotate_product_metrics(queryset):
+    sales_subquery = models.CartProduct.objects.filter(
+        product=OuterRef('pk'),
+        cart__status__in=[2, 3, 4]
+    ).values('product').annotate(total=Sum('count')).values('total')
+
+    rating_subquery = models.Review.objects.filter(
+        product=OuterRef('pk')
+    ).values('product').annotate(avg_r=Avg('rating')).values('avg_r')
+
+    reviews_count_subquery = models.Review.objects.filter(
+        product=OuterRef('pk')
+    ).values('product').annotate(c=Count('id')).values('c')
+
+    return queryset.annotate(
+        total_sales=Coalesce(Subquery(sales_subquery, output_field=IntegerField()), Value(0)),
+        avg_rating=Coalesce(Subquery(rating_subquery, output_field=FloatField()), Value(0.0, output_field=FloatField())),
+        reviews_count=Coalesce(Subquery(reviews_count_subquery, output_field=IntegerField()), Value(0)),
+        in_stock_rank=Case(When(count__gt=0, then=Value(1)), default=Value(0), output_field=IntegerField()),
+        effective_price=Case(
+            When(discount_status=True, discount_price__isnull=False, then='discount_price'),
+            default='price',
+            output_field=DecimalField(max_digits=10, decimal_places=2)
+        )
+    )
+
+
 def redirect_back(request, fallback='index', **fallback_kwargs):
     referer = request.META.get('HTTP_REFERER')
     if referer and url_has_allowed_host_and_scheme(referer, allowed_hosts={request.get_host()}):
@@ -61,17 +88,21 @@ def index(request):
     search_query = request.GET.get('q', '').strip()
     categories = models.Category.objects.filter(is_active=True)[:10]
     top_categories = models.Category.objects.filter(is_active=True)[:7]
-    top_4_categories = list(models.Category.objects.filter(is_active=True).annotate(prod_count=Count('product')).order_by('-prod_count')[:4])
+    top_4_categories = list(
+        models.Category.objects.filter(is_active=True)
+        .annotate(prod_count=Count('product'))
+        .order_by('-prod_count', 'id')[:4]
+    )
     banners = list(models.Banner.objects.select_related('product_1').all()[:3])
     services = models.Service.objects.filter(is_active=True).all()[:4]
     featured_banner = banners[0] if banners else None
 
-    # Fetch active categories that have products for random home page sections
+    # Pick high-activity categories with products for the home page sections.
     active_categories = list(
         models.Category.objects.filter(is_active=True)
         .annotate(prod_count=Count('product'))
         .filter(prod_count__gt=0)
-        .order_by('?')
+        .order_by('-prod_count', 'id')
     )
 
     cat_section_1 = None
@@ -82,28 +113,37 @@ def index(request):
     if len(active_categories) > 0:
         cat_section_1 = active_categories[0]
         cat_section_1_products = list(
-            models.Product.objects.filter(category=cat_section_1).order_by('-created_at')[:5]
+            _annotate_product_metrics(
+                models.Product.objects.filter(category=cat_section_1)
+            ).select_related('category').order_by('-created_at', '-id')[:5]
         )
 
     if len(active_categories) > 1:
         cat_section_2 = active_categories[1]
         cat_section_2_products = list(
-            models.Product.objects.filter(category=cat_section_2).order_by('-created_at')[:5]
+            _annotate_product_metrics(
+                models.Product.objects.filter(category=cat_section_2)
+            ).select_related('category').order_by('-created_at', '-id')[:5]
         )
     elif cat_section_1:
         cat_section_2 = cat_section_1
         cat_section_2_products = list(
-            models.Product.objects.filter(category=cat_section_2).order_by('created_at')[:5]
+            _annotate_product_metrics(
+                models.Product.objects.filter(category=cat_section_2)
+            ).select_related('category').order_by('created_at', 'id')[:5]
         )
 
     # Chegirmalı mahsulotlar
     discounted_products = list(
-        models.Product.objects.filter(discount_status=True, discount_price__isnull=False)
-        .order_by('-created_at')[:10]
+        _annotate_product_metrics(
+            models.Product.objects.filter(discount_status=True, discount_price__isnull=False)
+        ).select_related('category').order_by('-created_at', '-id')[:10]
     )
     # Yangi mahsulotlar
     new_products = list(
-        models.Product.objects.order_by('-created_at')[:10]
+        _annotate_product_metrics(
+            models.Product.objects.all()
+        ).select_related('category').order_by('-created_at', '-id')[:10]
     )
 
     context = {
@@ -130,14 +170,31 @@ def index(request):
 
 
 def product_detail(request, code):
-    product = get_object_or_404(models.Product, code=code)
+    product = get_object_or_404(
+        _annotate_product_metrics(
+            models.Product.objects.select_related('category')
+        ),
+        code=code
+    )
     
     related_base_qs = models.Product.objects.filter(category=product.category).exclude(code=code)
     related_products_count = related_base_qs.count()
-    related_products = related_base_qs[:10]
+    related_products = list(
+        _annotate_product_metrics(related_base_qs).select_related('category').order_by('-created_at', '-id')[:10]
+    )
     
-    similar_category = models.Category.objects.filter(is_active=True).exclude(id=product.category.id).order_by('?').first()
-    similar_category_products = models.Product.objects.filter(category=similar_category)[:10] if similar_category else []
+    similar_category = (
+        models.Category.objects.filter(is_active=True)
+        .exclude(id=product.category.id)
+        .annotate(prod_count=Count('product'))
+        .order_by('-prod_count', 'id')
+        .first()
+    )
+    similar_category_products = list(
+        _annotate_product_metrics(
+            models.Product.objects.filter(category=similar_category)
+        ).select_related('category').order_by('-created_at', '-id')[:10]
+    ) if similar_category else []
 
     context = {
         "product": product,
@@ -194,7 +251,9 @@ def load_more_related_products(request, code):
     
     total_qs = models.Product.objects.filter(category=product.category).exclude(code=code)
     total_count = total_qs.count()
-    related_products = list(total_qs[offset:offset+limit])
+    related_products = list(
+        _annotate_product_metrics(total_qs).select_related('category').order_by('-created_at', '-id')[offset:offset+limit]
+    )
     next_offset = offset + len(related_products)
     has_more = next_offset < total_count
     
@@ -366,31 +425,8 @@ def _build_catalog_context(request, products_qs, active_category=None):
         products_qs = products_qs.filter(count__lte=0)
 
     # 6. Sales, Rating & Price Subqueries / Annotations
-    sales_subquery = models.CartProduct.objects.filter(
-        product=OuterRef('pk'),
-        cart__status__in=[2, 3, 4]
-    ).values('product').annotate(total=Sum('count')).values('total')
-
-    rating_subquery = models.Review.objects.filter(
-        product=OuterRef('pk')
-    ).values('product').annotate(avg_r=Avg('rating')).values('avg_r')
-
-    reviews_count_subquery = models.Review.objects.filter(
-        product=OuterRef('pk')
-    ).values('product').annotate(c=Count('id')).values('c')
-
     rating_filter = request.GET.get('rating', '').strip()
-    products_qs = products_qs.annotate(
-        total_sales=Coalesce(Subquery(sales_subquery, output_field=IntegerField()), Value(0)),
-        avg_rating=Coalesce(Subquery(rating_subquery, output_field=FloatField()), Value(0.0, output_field=FloatField())),
-        reviews_count=Coalesce(Subquery(reviews_count_subquery, output_field=IntegerField()), Value(0)),
-        in_stock_rank=Case(When(count__gt=0, then=Value(1)), default=Value(0), output_field=IntegerField()),
-        effective_price=Case(
-            When(discount_status=True, discount_price__isnull=False, then='discount_price'),
-            default='price',
-            output_field=DecimalField(max_digits=10, decimal_places=2)
-        )
-    )
+    products_qs = _annotate_product_metrics(products_qs)
 
     if rating_filter == '4':
         products_qs = products_qs.filter(avg_rating__gte=4.0)
