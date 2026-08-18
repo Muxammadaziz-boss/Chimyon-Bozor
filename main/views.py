@@ -1467,9 +1467,6 @@ def pay_balance(request, code):
     if order.remaining_amount <= Decimal('0.00'):
         messages.info(request, "Ushbu buyurtma allaqachon to'liq to'langan.")
         return redirect('order_detail', code=order.code)
-    if order.paid_amount <= Decimal('0.00'):
-        messages.error(request, "Qoldiq to'lovni boshlash uchun avval oldindan to'lov tasdiqlangan bo'lishi kerak.")
-        return redirect('order_detail', code=order.code)
 
     provider = (request.POST.get('provider') or models.Payment.Provider.CLICK).strip().lower()
     valid_online_providers = [

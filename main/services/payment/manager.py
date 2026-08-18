@@ -187,8 +187,6 @@ class PaymentManager:
                 amount = locked_order.remaining_amount
                 if amount <= 0:
                     raise ValueError("To'lash uchun qoldiq summa mavjud emas (Buyurtma to'liq to'langan).")
-                if locked_order.paid_amount <= Decimal('0.00'):
-                    raise ValueError("Qoldiq to'lovni boshlash uchun avval prepayment tasdiqlangan bo'lishi kerak.")
             else:
                 if prepayment_percent == 0:
                     payment_purpose = models.Payment.Purpose.FULL
@@ -214,6 +212,7 @@ class PaymentManager:
                 raise ValueError("To'lov summasi 0 dan katta bo'lishi kerak")
 
             cls.reserve_order_inventory(locked_order)
+            locked_order.refresh_from_db(fields=['inventory_status', 'inventory_updated_at'])
 
             # Idempotency: cancel any outdated pending payments for this order
             models.Payment.objects.filter(
@@ -260,7 +259,7 @@ class PaymentManager:
 
             if locked_order.status == 1:
                 locked_order.status = 2
-            locked_order.save(update_fields=['prepayment_percent', 'prepayment_amount', 'status', 'inventory_status', 'inventory_updated_at'])
+            locked_order.save(update_fields=['prepayment_percent', 'prepayment_amount', 'status'])
 
             if provider_key == models.Payment.Provider.CASH and payment_purpose == models.Payment.Purpose.FULL:
                 models.OrderStatusHistory.objects.create(
