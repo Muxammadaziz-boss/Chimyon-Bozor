@@ -53,15 +53,26 @@ def remove_images_from_categories_and_products(apps, schema_editor):
     Category = apps.get_model('main', 'Category')
     Product = apps.get_model('main', 'Product')
     
-    # Remove images from categories
-    for category in Category.objects.all():
-        if category.logo:
-            category.logo.delete()
+    categories_mapping = {
+        'Elektronika': 'smart2010.png',
+        'Kiyimlar': 'hobbi2110.png',
+        'Oziq-ovqat': 'image_2026-04-27_10-20-39.png',
+        'Maishiy texnika': 'download.png',
+        'Kitoblar': 'i.webp'
+    }
+    for cat_name in categories_mapping:
+        Category.objects.filter(name=cat_name).update(logo='')
     
-    # Remove images from products
-    for product in Product.objects.all():
-        if product.image:
-            product.image.delete()
+    products_mapping = {
+        'Smartphone Samsung Galaxy': 'smart2010.png',
+        'Laptop HP Pavilion': 'img_3.jpg',
+        'Erkaklar koylaki': 'photo_2026-04-21_16.44.00.jpeg',
+        'Muzlatgichi Samsung': 'img_4.jpg',
+        'Qozon to\'plami': 'photo_2026-04-21_16.52.59.jpeg',
+        'Dasturlash kitobi': 'download_1.jpeg'
+    }
+    for prod_name in products_mapping:
+        Product.objects.filter(name=prod_name).update(image='')
 
 
 class Migration(migrations.Migration):

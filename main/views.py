@@ -6,11 +6,11 @@ from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.db.models import F, Count, Q, Avg, Sum, Case, When, DecimalField, IntegerField, FloatField, Value, Min, Max, OuterRef, Subquery, Prefetch
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, render, redirect
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, Http404
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.csrf import csrf_exempt
@@ -68,7 +68,11 @@ def get_active_cart(user):
     cart = models.Cart.objects.filter(user=user, status=1).order_by('id').first()
     if cart:
         return cart
-    return models.Cart.objects.create(user=user, status=1)
+    try:
+        with transaction.atomic():
+            return models.Cart.objects.create(user=user, status=1)
+    except IntegrityError:
+        return models.Cart.objects.filter(user=user, status=1).order_by('id').first()
 
 
 def _attach_cart_wishlist_context(request, context):
@@ -733,7 +737,7 @@ def register(request):
         )
 
         # Dispatch OTP via SMS queue
-        send_otp_sms(phone, otp_code)
+        send_sms_code(phone, otp_code)
         # Store pending user ID in session
         request.session['otp_user_id'] = user.id
         request.session['otp_phone'] = phone
@@ -758,58 +762,65 @@ def verify_otp(request):
     if request.method == "POST":
         entered_code = request.POST.get('otp_code', '').strip().replace(' ', '')
         
-        # Fetch latest valid OTP for user
-        otp_obj = models.OTPCode.objects.filter(user=user, is_used=False).order_by('-created_at').first()
-        
-        if not otp_obj:
-            return render(request, 'front/verify_otp.html', {
-                'phone': phone,
-                'error': "SMS kodi topilmadi yoki foydalanib bo'lingan."
-            })
+        with transaction.atomic():
+            # Fetch latest valid OTP for user with row lock
+            otp_obj = models.OTPCode.objects.select_for_update().filter(user=user, is_used=False).order_by('-created_at').first()
+            
+            if not otp_obj:
+                return render(request, 'front/verify_otp.html', {
+                    'phone': phone,
+                    'error': "SMS kodi topilmadi yoki foydalanib bo'lingan."
+                })
 
-        if not otp_obj.is_valid():
-            return render(request, 'front/verify_otp.html', {
-                'phone': phone,
-                'error': "SMS kodining amal qilish muddati tugagan (5 minut). Kodni qayta yuboring."
-            })
+            if not otp_obj.is_valid() or otp_obj.attempts >= 5:
+                otp_obj.is_used = True
+                otp_obj.save(update_fields=['is_used'])
+                return render(request, 'front/verify_otp.html', {
+                    'phone': phone,
+                    'error': "5 marta noto'g'ri kod kiritildi yoki kodning amal qilish muddati tugagan (5 minut). Kodni qayta yuboring."
+                })
 
-        # Rate limit attempts (Max 5 attempts)
-        attempts = request.session.get('otp_attempts', 0) + 1
-        request.session['otp_attempts'] = attempts
+            is_correct = otp_obj.check_code(entered_code)
+            if is_correct:
+                # Mark OTP used
+                otp_obj.is_used = True
+                otp_obj.save(update_fields=['is_used'])
 
-        if attempts > 5:
-            models.OTPCode.objects.filter(user=user, is_used=False).update(is_used=True)
-            request.session.pop('otp_attempts', None)
-            return render(request, 'front/verify_otp.html', {
-                'phone': phone,
-                'error': "5 marta noto'g'ri kod kiritildi. Xavfsizlik yuzasidan kod bekor qilindi. Iltimos, 'Kodni qayta yuborish' tugmasini bosing."
-            })
+                # Invalidate other OTPs
+                models.OTPCode.objects.filter(user=user, is_used=False).update(is_used=True)
 
-        if otp_obj.code == entered_code:
-            # Mark OTP used
-            otp_obj.is_used = True
-            otp_obj.save()
+                # Activate user account and set phone_verified=True
+                user.phone_verified = True
+                user.is_active = True
+                user.save()
 
-            # Activate user account and set phone_verified=True
-            user.phone_verified = True
-            user.is_active = True
-            user.save()
+                # Clean session
+                request.session.pop('otp_user_id', None)
+                request.session.pop('otp_phone', None)
+                request.session.pop('otp_attempts', None)
 
-            # Clean session
-            request.session.pop('otp_user_id', None)
-            request.session.pop('otp_phone', None)
-            request.session.pop('otp_attempts', None)
+                # Log user in
+                login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+                messages.success(request, "Telefon raqamingiz muvaffaqiyatli tasdiqlandi va akkauntingiz faollashtirildi! 🎉")
+                return redirect('index')
+            else:
+                otp_obj.attempts = F('attempts') + 1
+                otp_obj.save(update_fields=['attempts'])
+                otp_obj.refresh_from_db(fields=['attempts'])
 
-            # Log user in
-            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-            messages.success(request, "Telefon raqamingiz muvaffaqiyatli tasdiqlandi va akkauntingiz faollashtirildi! 🎉")
-            return redirect('index')
-        else:
-            remaining = max(0, 5 - attempts)
-            return render(request, 'front/verify_otp.html', {
-                'phone': phone,
-                'error': f"Kiritilgan SMS kod noto'g'ri. Qolgan urinishlar: {remaining}"
-            })
+                if otp_obj.attempts >= 5:
+                    otp_obj.is_used = True
+                    otp_obj.save(update_fields=['is_used'])
+                    return render(request, 'front/verify_otp.html', {
+                        'phone': phone,
+                        'error': "5 marta noto'g'ri kod kiritildi. Xavfsizlik yuzasidan kod bekor qilindi. Iltimos, 'Kodni qayta yuborish' tugmasini bosing."
+                    })
+
+                remaining = max(0, 5 - otp_obj.attempts)
+                return render(request, 'front/verify_otp.html', {
+                    'phone': phone,
+                    'error': f"Kiritilgan SMS kod noto'g'ri. Qolgan urinishlar: {remaining}"
+                })
 
     return render(request, 'front/verify_otp.html', {
         'phone': phone,
@@ -825,31 +836,38 @@ def resend_otp(request):
         messages.error(request, "Seans eskirgan.")
         return redirect('login')
 
-    # Rate limiting: 60 seconds cooldown between OTP resends
-    last_resend = request.session.get('otp_last_resend')
-    now_ts = timezone.now().timestamp()
-    if last_resend and (now_ts - last_resend) < 60:
-        remaining_secs = int(60 - (now_ts - last_resend))
-        messages.warning(request, f"Iltimos, yangi SMS kod so'rash uchun {remaining_secs} soniya kuting.")
-        return redirect('verify_otp')
-
-    request.session['otp_last_resend'] = now_ts
-
     user = models.User.objects.filter(pk=user_id).first()
-    if user:
+    if not user:
+        messages.error(request, "Foydalanuvchi topilmadi.")
+        return redirect('login')
+
+    now_dt = timezone.now()
+    with transaction.atomic():
+        # Rate limiting: check database cooldown for recent OTP creation (within 60 seconds)
+        recent_otp = models.OTPCode.objects.filter(
+            user=user,
+            created_at__gte=now_dt - timezone.timedelta(seconds=60)
+        ).order_by('-created_at').first()
+
+        if recent_otp:
+            elapsed = (now_dt - recent_otp.created_at).total_seconds()
+            remaining_secs = max(1, int(60 - elapsed))
+            messages.warning(request, f"Iltimos, yangi SMS kod so'rash uchun {remaining_secs} soniya kuting.")
+            return redirect('verify_otp')
+
         # Invalidate old OTPs
         models.OTPCode.objects.filter(user=user, is_used=False).update(is_used=True)
 
         # Create new 6-digit OTP
-        new_code = str(random.randint(100000, 999999))
+        new_code = f"{random.randint(100000, 999999):06d}"
         models.OTPCode.objects.create(
             user=user,
-            phone=phone,
+            phone=phone or user.phone or '',
             code=new_code
         )
 
-        send_otp_sms(phone, new_code)
-        messages.success(request, f"Yangi SMS kod {phone} raqamiga yuborildi.")
+    send_sms_code(phone or user.phone or '', new_code)
+    messages.success(request, f"Yangi SMS kod {phone} raqamiga yuborildi.")
 
     return redirect('verify_otp')
 
@@ -875,11 +893,12 @@ def log_in(request):
                 request.session['otp_user_id'] = existing_user.id
                 request.session['otp_phone'] = existing_user.phone or ''
                 
-                # Generate fresh OTP
-                otp_code = str(random.randint(100000, 999999))
-                models.OTPCode.objects.filter(user=existing_user, is_used=False).update(is_used=True)
-                models.OTPCode.objects.create(user=existing_user, phone=existing_user.phone or '', code=otp_code)
-                send_otp_sms(existing_user.phone, otp_code)
+                with transaction.atomic():
+                    # Generate fresh OTP
+                    otp_code = f"{random.randint(100000, 999999):06d}"
+                    models.OTPCode.objects.filter(user=existing_user, is_used=False).update(is_used=True)
+                    models.OTPCode.objects.create(user=existing_user, phone=existing_user.phone or '', code=otp_code)
+                send_sms_code(existing_user.phone, otp_code)
 
                 messages.warning(request, "Telefon raqamingiz hali tasdiqlanmagan. SMS kodingiz yuborildi.")
                 return redirect('verify_otp')
@@ -974,35 +993,42 @@ def add_to_cart(request, product_code):
             return JsonResponse({'status': 'login_required', 'message': 'Iltimos, avval tizimga kiring', 'redirect': '/login/'}, status=401)
         return redirect('login')
 
-    product = get_object_or_404(models.Product, code=product_code)
-    cart = get_active_cart(request.user)
-    cart_product = models.CartProduct.objects.filter(cart=cart, product=product).first()
-
     try:
         quantity = int(request.POST.get('quantity', 1))
     except (ValueError, TypeError):
         quantity = 1
     quantity = max(1, quantity)
 
-    if product.count <= 0:
-        if is_ajax:
-            return JsonResponse({'status': 'error', 'message': 'Mahsulot omborda mavjud emas'}, status=400)
-        messages.error(request, 'Mahsulot omborda mavjud emas')
-        return redirect_back(request, 'product_detail', code=product.code)
+    with transaction.atomic():
+        product = models.Product.objects.select_for_update().filter(code=product_code).first()
+        if not product:
+            raise Http404("Mahsulot topilmadi")
 
-    if quantity > product.count:
-        quantity = product.count
+        if product.count <= 0:
+            if is_ajax:
+                return JsonResponse({'status': 'error', 'message': 'Mahsulot omborda mavjud emas'}, status=400)
+            messages.error(request, 'Mahsulot omborda mavjud emas')
+            return redirect_back(request, 'product_detail', code=product.code)
 
-    if cart_product:
-        cart_product.count = min(cart_product.count + quantity, product.count)
-        cart_product.save()
-    else:
-        models.CartProduct.objects.create(
-            cart=cart,
-            product=product,
-            count=quantity,
-            unit_price_snapshot=product.active_price,
-        )
+        cart = get_active_cart(request.user)
+        cart_product = models.CartProduct.objects.select_for_update().filter(cart=cart, product=product).first()
+
+        if cart_product:
+            cart_product.count = min(cart_product.count + quantity, product.count)
+            cart_product.save(update_fields=['count'])
+        else:
+            try:
+                models.CartProduct.objects.create(
+                    cart=cart,
+                    product=product,
+                    count=min(quantity, product.count),
+                    unit_price_snapshot=product.active_price,
+                )
+            except IntegrityError:
+                cart_product = models.CartProduct.objects.select_for_update().filter(cart=cart, product=product).first()
+                if cart_product:
+                    cart_product.count = min(cart_product.count + quantity, product.count)
+                    cart_product.save(update_fields=['count'])
 
     if is_ajax:
         return JsonResponse({

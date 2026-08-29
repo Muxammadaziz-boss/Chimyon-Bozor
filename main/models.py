@@ -9,7 +9,7 @@ from django.utils import timezone
 
 
 class User(AbstractUser):
-    phone = models.CharField(max_length=150, null= True, blank=True)
+    phone = models.CharField(max_length=150, null=True, blank=True)
     address = models.TextField(null=True, blank=True)
     photo = models.ImageField(upload_to='users', null=True, blank=True)
     phone_verified = models.BooleanField(default=False)
@@ -38,29 +38,56 @@ class User(AbstractUser):
 class OTPCode(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='otp_codes')
     phone = models.CharField(max_length=50)
-    code = models.CharField(max_length=6)
+    code = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
     is_used = models.BooleanField(default=False)
+    attempts = models.PositiveIntegerField(default=0)
+
+    def set_code(self, raw_code):
+        from django.contrib.auth.hashers import make_password
+        self.code = make_password(str(raw_code).strip())
+
+    def check_code(self, raw_code):
+        from django.contrib.auth.hashers import check_password
+        if not self.code or not raw_code:
+            return False
+        raw_str = str(raw_code).strip()
+        if (
+            self.code.startswith('pbkdf2_')
+            or self.code.startswith('argon2')
+            or self.code.startswith('bcrypt')
+            or self.code.startswith('md5$')
+        ):
+            return check_password(raw_str, self.code)
+        return self.code == raw_str
+
+    def save(self, *args, **kwargs):
+        if self.code and not (
+            self.code.startswith('pbkdf2_')
+            or self.code.startswith('argon2')
+            or self.code.startswith('bcrypt')
+            or self.code.startswith('md5$')
+        ):
+            from django.contrib.auth.hashers import make_password
+            self.code = make_password(str(self.code).strip())
+        super().save(*args, **kwargs)
 
     def is_valid(self):
-        if self.is_used:
+        if self.is_used or self.attempts >= 5:
             return False
         from django.utils import timezone
         return (timezone.now() - self.created_at).total_seconds() <= 300
 
     def __str__(self):
-        return f"{self.phone} -> {self.code}"
+        return f"OTP for {self.phone} (#{self.id})"
 
     class Meta:
         verbose_name = "OTP Kod"
         verbose_name_plural = "OTP Kodlar"
 
 
-
-
 class Code(models.Model):
     code = models.CharField(max_length=150, unique=True, default=uuid4, blank=True, null=True)
-
 
     def __str__(self):
         return self.code
@@ -68,10 +95,11 @@ class Code(models.Model):
     class Meta:
         abstract = True
 
+
 class Category(models.Model):
     logo = models.ImageField(upload_to='categories')
     name = models.CharField(max_length=150)
-    is_active = models.BooleanField(default=False,null=True,blank=True)
+    is_active = models.BooleanField(default=False, null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -79,7 +107,6 @@ class Category(models.Model):
     def get_absolute_url(self):
         from django.urls import reverse
         return reverse('category_filter', kwargs={'category_id': self.id})
-
 
 
 class Product(Code):
@@ -350,6 +377,46 @@ class Cart(Code):
             locked_order.save(update_fields=['inventory_status', 'inventory_updated_at'])
             return True
 
+    @classmethod
+    def cleanup_expired_reservations(cls, timeout_minutes: int = 15):
+        """
+        Tashlab ketilgan / to'lanmagan buyurtmalarning eskirgan rezervatsiyalarini release qiladi.
+        """
+        cutoff = timezone.now() - timezone.timedelta(minutes=timeout_minutes)
+        expired_carts = cls.objects.filter(
+            inventory_status=cls.InventoryStatus.RESERVED,
+            financial_status=cls.FinancialStatus.UNPAID,
+        ).filter(
+            Q(inventory_updated_at__lte=cutoff) |
+            Q(inventory_updated_at__isnull=True, date__lte=cutoff)
+        )
+        released_count = 0
+        for cart_obj in expired_carts:
+            with transaction.atomic():
+                locked_cart = cls.objects.select_for_update().filter(pk=cart_obj.pk).first()
+                if not locked_cart:
+                    continue
+                if (
+                    locked_cart.inventory_status == cls.InventoryStatus.RESERVED
+                    and locked_cart.financial_status == cls.FinancialStatus.UNPAID
+                ):
+                    if locked_cart.paid_amount <= Decimal('0.00'):
+                        locked_cart.release_inventory()
+                        locked_cart.payments.filter(
+                            status__in=[Payment.Status.PENDING, Payment.Status.INITIATED]
+                        ).update(status=Payment.Status.CANCELLED)
+                        released_count += 1
+        return released_count
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user'],
+                condition=Q(status=1),
+                name='unique_active_cart_per_user'
+            ),
+        ]
+
 
 class CartProduct(Code):
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
@@ -373,6 +440,18 @@ class CartProduct(Code):
     @property
     def total_price(self):
         return self.unit_price * self.count
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['cart', 'product'],
+                name='unique_cart_product'
+            ),
+            models.CheckConstraint(
+                condition=Q(count__gt=0),
+                name='cart_product_count_gt_zero'
+            ),
+        ]
 
 
 class WishList(models.Model):
@@ -558,6 +637,18 @@ class Payment(models.Model):
                 fields=['order', 'provider', 'purpose', 'amount'],
                 condition=models.Q(status__in=['pending', 'initiated']),
                 name='uniq_active_payment_per_order_provider_purpose_amount',
+            ),
+            models.CheckConstraint(
+                condition=models.Q(amount__gte=0),
+                name='payment_amount_gte_zero',
+            ),
+            models.CheckConstraint(
+                condition=models.Q(refund_amount__gte=0) | models.Q(refund_amount__isnull=True),
+                name='payment_refund_amount_gte_zero',
+            ),
+            models.CheckConstraint(
+                condition=models.Q(refund_amount__lte=F('amount')) | models.Q(refund_amount__isnull=True),
+                name='payment_refund_amount_lte_amount',
             ),
         ]
 

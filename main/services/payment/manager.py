@@ -392,26 +392,53 @@ class PaymentManager:
     @classmethod
     def refund_payment(cls, payment: models.Payment, amount: Optional[float] = None, reason: str = "") -> Dict[str, Any]:
         """
-        To'lovni qaytarish (Refund).
+        To'lovni qaytarish (Refund). Atomik, race-safe va cumulative over-refunddan himoyalangan.
         """
         provider = cls.get_provider(payment.provider)
         if not provider:
             return {'success': False, 'message': f"Noma'lum provayder: {payment.provider}"}
 
-        result = provider.refund(payment, amount, reason)
-        if result.get('success'):
-            if payment.order:
-                cls.sync_order_financial_status(payment.order)
-                payment.order.refresh_from_db(fields=['financial_status', 'inventory_status', 'status'])
-                if payment.order.paid_amount <= Decimal('0.00'):
-                    if payment.order.inventory_status == models.Cart.InventoryStatus.RESERVED:
-                        payment.order.release_inventory()
-                    if payment.order.status != 1:
-                        payment.order.status = 5
-                        payment.order.save(update_fields=['status'])
+        with transaction.atomic():
+            locked_payment = models.Payment.objects.select_for_update().get(pk=payment.pk)
+            if not locked_payment.is_paid:
+                return {'success': False, 'message': "Faqat to'langan to'lovlarni qaytarish mumkin."}
+
+            try:
+                refund_dec = Decimal(str(amount)) if amount is not None else locked_payment.amount
+            except (ValueError, TypeError):
+                return {'success': False, 'message': "Noto'g'ri qaytarish summasi."}
+
+            if refund_dec <= Decimal('0.00'):
+                return {'success': False, 'message': "Qaytarish summasi 0 dan katta bo'lishi kerak."}
+
+            current_refund = locked_payment.refund_amount or Decimal('0.00')
+            refundable = locked_payment.amount - current_refund
+
+            if refund_dec > refundable:
+                return {
+                    'success': False,
+                    'message': f"Qaytarish summasi ({refund_dec} UZS) mavjud qaytarilishi mumkin bo'lgan qoldiqdan ({refundable} UZS) ortiq bo'lishi mumkin emas."
+                }
+
+            result = provider.refund(locked_payment, float(refund_dec), reason)
+            if not result.get('success'):
+                return result
+
+            locked_payment.refresh_from_db()
+            if locked_payment.order:
+                cls.sync_order_financial_status(locked_payment.order)
+                locked_payment.order.refresh_from_db(fields=['financial_status', 'inventory_status', 'status'])
+                if locked_payment.order.paid_amount <= Decimal('0.00'):
+                    if locked_payment.order.inventory_status == models.Cart.InventoryStatus.RESERVED:
+                        locked_payment.order.release_inventory()
+                    if locked_payment.order.status != 1:
+                        locked_payment.order.status = 5
+                        locked_payment.order.save(update_fields=['status'])
+
             models.AuditLog.objects.create(
-                user=payment.order.user if payment.order else None,
+                user=locked_payment.order.user if locked_payment.order else None,
                 action="PAYMENT_REFUNDED",
-                details=f"To'lov #{str(payment.code)[:8]} qaytarildi. Provayder: {payment.provider}. Summa: {payment.refund_amount} UZS. Sabab: {reason}"
+                details=f"To'lov #{str(locked_payment.code)[:8]} qaytarildi. Provayder: {locked_payment.provider}. Summa: {locked_payment.refund_amount} UZS. Sabab: {reason}"
             )
+
         return result

@@ -34,14 +34,23 @@ class CashOnDeliveryProvider(BasePaymentProvider):
         }
 
     def refund(self, payment, amount: Optional[float] = None, reason: str = "") -> Dict[str, Any]:
-        payment.status = models.Payment.Status.REFUNDED
-        payment.refund_amount = Decimal(str(amount)) if amount else payment.amount
-        payment.refunded_at = timezone.now()
-        payment.save(update_fields=['status', 'refund_amount', 'refunded_at', 'updated_at'])
-        if payment.order and payment.order.paid_amount <= Decimal('0.00'):
-            from .manager import PaymentManager
-            PaymentManager.release_order_inventory(payment.order)
-            if payment.order.status != 1:
-                payment.order.status = 5
-                payment.order.save(update_fields=['status'])
-        return {'success': True, 'message': "Naqd to'lov bekor qilindi / qaytarildi."}
+        with transaction.atomic():
+            locked = models.Payment.objects.select_for_update().get(pk=payment.pk)
+            try:
+                refund_dec = Decimal(str(amount)) if amount is not None else locked.amount
+            except (ValueError, TypeError):
+                return {'success': False, 'message': "Noto'g'ri summa."}
+            if refund_dec <= Decimal('0.00'):
+                return {'success': False, 'message': "Qaytarish summasi 0 dan katta bo'lishi kerak."}
+
+            current_refund = locked.refund_amount or Decimal('0.00')
+            refundable = locked.amount - current_refund
+            if refund_dec > refundable:
+                return {'success': False, 'message': "Qaytarish summasi to'lov summasidan ortiq bo'lishi mumkin emas."}
+
+            locked.refund_amount = current_refund + refund_dec
+            if locked.refund_amount >= locked.amount:
+                locked.status = models.Payment.Status.REFUNDED
+            locked.refunded_at = timezone.now()
+            locked.save(update_fields=['status', 'refund_amount', 'refunded_at', 'updated_at'])
+            return {'success': True, 'message': "Naqd to'lov bekor qilindi / qaytarildi."}

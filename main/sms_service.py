@@ -17,8 +17,8 @@ def send_sms_code(phone: str, code: str) -> bool:
     """
     sms_text = f"[Chimyon-bozor] Ro'yxatdan o'tish uchun SMS kodingiz: {code}"
     
-    # Log SMS dispatch payload (Queue simulation)
-    logger.info(f"SMS Queued to {phone}: {sms_text}")
+    # Log SMS dispatch payload (Queue simulation) - never log plaintext OTP code
+    logger.info("SMS Queued to %s", phone)
 
     # If running unit tests, return True immediately
     if 'test' in sys.argv or getattr(settings, 'IS_TESTING', False):

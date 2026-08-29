@@ -6,7 +6,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import user_passes_test
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db import transaction
-from django.db.models import Count, Q, Sum, F, Avg, Value, DecimalField
+from django.db.models import Count, Q, Sum, F, Avg, Value, DecimalField, Case, When
 from django.db.models.functions import Coalesce, TruncDate, TruncMonth
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -73,28 +73,28 @@ def index(request):
     week_start = current_time - timedelta(days=7)
     month_start = current_time - timedelta(days=30)
 
-    # 1. Sales & Revenue KPIs (Delivered orders status=4)
-    delivered_products = models.CartProduct.objects.filter(
+    # 1. Sales & Revenue KPIs (Delivered orders status=4) via DB aggregation
+    price_expr = Case(
+        When(unit_price_snapshot__isnull=False, then=F('unit_price_snapshot')),
+        When(product__discount_status=True, product__discount_price__isnull=False, then=F('product__discount_price')),
+        default=F('product__price'),
+        output_field=DecimalField(max_digits=12, decimal_places=2)
+    )
+
+    revenue_stats = models.CartProduct.objects.filter(
         cart__status=4,
         product__isnull=False
-    ).select_related('product', 'cart')
-
-    total_income = sum(float(item.total_price) for item in delivered_products)
-
-    today_income = sum(
-        float(item.total_price) for item in delivered_products
-        if item.cart and item.cart.date and item.cart.date >= today_start
+    ).aggregate(
+        total_income=Coalesce(Sum(F('count') * price_expr, output_field=DecimalField(max_digits=14, decimal_places=2)), Value(Decimal('0.00'))),
+        today_income=Coalesce(Sum(F('count') * price_expr, filter=Q(cart__date__gte=today_start), output_field=DecimalField(max_digits=14, decimal_places=2)), Value(Decimal('0.00'))),
+        week_income=Coalesce(Sum(F('count') * price_expr, filter=Q(cart__date__gte=week_start), output_field=DecimalField(max_digits=14, decimal_places=2)), Value(Decimal('0.00'))),
+        month_income=Coalesce(Sum(F('count') * price_expr, filter=Q(cart__date__gte=month_start), output_field=DecimalField(max_digits=14, decimal_places=2)), Value(Decimal('0.00'))),
     )
 
-    week_income = sum(
-        float(item.total_price) for item in delivered_products
-        if item.cart and item.cart.date and item.cart.date >= week_start
-    )
-
-    month_income = sum(
-        float(item.total_price) for item in delivered_products
-        if item.cart and item.cart.date and item.cart.date >= month_start
-    )
+    total_income = float(revenue_stats['total_income'])
+    today_income = float(revenue_stats['today_income'])
+    week_income = float(revenue_stats['week_income'])
+    month_income = float(revenue_stats['month_income'])
 
     completed_orders_count = models.Cart.objects.filter(status=4).count()
     aov = (total_income / completed_orders_count) if completed_orders_count > 0 else 0.0
@@ -198,17 +198,28 @@ def sales_analytics(request):
         start_date = current_time - timedelta(days=30)
         period_label = "So'nggi 30 kun"
 
+    price_expr = Case(
+        When(unit_price_snapshot__isnull=False, then=F('unit_price_snapshot')),
+        When(product__discount_status=True, product__discount_price__isnull=False, then=F('product__discount_price')),
+        default=F('product__price'),
+        output_field=DecimalField(max_digits=12, decimal_places=2)
+    )
+
     delivered_items = models.CartProduct.objects.filter(
         cart__status=4,
         product__isnull=False
-    ).select_related('product', 'product__category', 'cart')
+    )
 
     if start_date:
         delivered_items = delivered_items.filter(cart__date__gte=start_date)
 
-    # Calculate Period Total Revenue and Items Sold
-    period_revenue = sum(float(item.total_price) for item in delivered_items)
-    period_items_sold = sum(item.count for item in delivered_items)
+    # Calculate Period Total Revenue and Items Sold via DB aggregation
+    analytics_stats = delivered_items.aggregate(
+        revenue=Coalesce(Sum(F('count') * price_expr, output_field=DecimalField(max_digits=14, decimal_places=2)), Value(Decimal('0.00'))),
+        items_sold=Coalesce(Sum('count'), Value(0))
+    )
+    period_revenue = float(analytics_stats['revenue'])
+    period_items_sold = analytics_stats['items_sold']
 
     period_orders_qs = models.Cart.objects.filter(status=4)
     if start_date:
@@ -216,30 +227,54 @@ def sales_analytics(request):
     period_orders_count = period_orders_qs.count()
     period_aov = (period_revenue / period_orders_count) if period_orders_count > 0 else 0.0
 
-    # Sales by Category
-    category_revenue_map = defaultdict(lambda: {'name': '', 'revenue': 0.0, 'count': 0})
-    for item in delivered_items:
-        cat_name = item.product.category.name if item.product and item.product.category else "Boshqa"
-        category_revenue_map[cat_name]['name'] = cat_name
-        category_revenue_map[cat_name]['revenue'] += float(item.total_price)
-        category_revenue_map[cat_name]['count'] += item.count
+    # Sales by Category via DB grouping
+    category_sales_qs = (
+        delivered_items.values('product__category__id', 'product__category__name')
+        .annotate(
+            revenue=Coalesce(Sum(F('count') * price_expr, output_field=DecimalField(max_digits=14, decimal_places=2)), Value(Decimal('0.00'))),
+            count=Coalesce(Sum('count'), Value(0))
+        )
+        .order_by('-revenue')
+    )
+    category_sales = []
+    for cat in category_sales_qs:
+        rev = float(cat['revenue'])
+        category_sales.append({
+            'name': cat['product__category__name'] or 'Boshqa',
+            'revenue': rev,
+            'count': cat['count'],
+            'percentage': round((rev / period_revenue * 100), 1) if period_revenue > 0 else 0.0
+        })
 
-    category_sales = sorted(category_revenue_map.values(), key=lambda x: x['revenue'], reverse=True)
-    for cat in category_sales:
-        cat['percentage'] = round((cat['revenue'] / period_revenue * 100), 1) if period_revenue > 0 else 0.0
-
-    # Top 10 Products by revenue in period
-    product_revenue_map = defaultdict(lambda: {'name': '', 'image': '', 'category': '', 'price': 0, 'units': 0, 'revenue': 0.0})
-    for item in delivered_items:
-        pid = item.product.id
-        product_revenue_map[pid]['name'] = item.product.name
-        product_revenue_map[pid]['image'] = item.product.image.url if item.product.image else ''
-        product_revenue_map[pid]['category'] = item.product.category.name if item.product.category else ''
-        product_revenue_map[pid]['price'] = float(item.product.active_price)
-        product_revenue_map[pid]['units'] += item.count
-        product_revenue_map[pid]['revenue'] += float(item.total_price)
-
-    top_products = sorted(product_revenue_map.values(), key=lambda x: x['revenue'], reverse=True)[:10]
+    # Top 10 Products by revenue in period via DB grouping
+    top_products_qs = (
+        delivered_items.values(
+            'product_id',
+            'product__name',
+            'product__image',
+            'product__category__name',
+            'product__price',
+            'product__discount_price',
+            'product__discount_status'
+        )
+        .annotate(
+            revenue=Coalesce(Sum(F('count') * price_expr, output_field=DecimalField(max_digits=14, decimal_places=2)), Value(Decimal('0.00'))),
+            units=Coalesce(Sum('count'), Value(0))
+        )
+        .order_by('-revenue')[:10]
+    )
+    top_products = []
+    for prod in top_products_qs:
+        img_url = f"/media/{prod['product__image']}" if prod['product__image'] else ''
+        act_price = prod['product__discount_price'] if (prod['product__discount_status'] and prod['product__discount_price']) else prod['product__price']
+        top_products.append({
+            'name': prod['product__name'],
+            'image': img_url,
+            'category': prod['product__category__name'] or '',
+            'price': float(act_price) if act_price else 0.0,
+            'units': prod['units'],
+            'revenue': float(prod['revenue'])
+        })
 
     context = {
         'period': period,
@@ -928,14 +963,22 @@ def payments_list(request):
     if purpose_filter:
         payments_qs = payments_qs.filter(purpose=purpose_filter)
 
-    # KPI Statistics
+    # KPI Statistics via DB aggregation
     total_payments_count = models.Payment.objects.count()
     paid_payments = models.Payment.objects.filter(status=models.Payment.Status.PAID)
-    total_paid_amount = sum(float(p.amount) for p in paid_payments)
-    prepayment_collected = sum(float(p.amount) for p in paid_payments.filter(purpose=models.Payment.Purpose.PREPAYMENT))
-    balance_collected = sum(float(p.amount) for p in paid_payments.filter(purpose=models.Payment.Purpose.BALANCE))
-    cash_balance_collected = sum(float(p.amount) for p in paid_payments.filter(purpose=models.Payment.Purpose.BALANCE, provider=models.Payment.Provider.CASH))
-    online_balance_collected = sum(float(p.amount) for p in paid_payments.filter(purpose=models.Payment.Purpose.BALANCE).exclude(provider=models.Payment.Provider.CASH))
+    
+    payment_stats = paid_payments.aggregate(
+        total_paid=Coalesce(Sum('amount'), Value(Decimal('0.00'))),
+        prepayment=Coalesce(Sum('amount', filter=Q(purpose=models.Payment.Purpose.PREPAYMENT)), Value(Decimal('0.00'))),
+        balance=Coalesce(Sum('amount', filter=Q(purpose=models.Payment.Purpose.BALANCE)), Value(Decimal('0.00'))),
+        cash_balance=Coalesce(Sum('amount', filter=Q(purpose=models.Payment.Purpose.BALANCE, provider=models.Payment.Provider.CASH)), Value(Decimal('0.00'))),
+        online_balance=Coalesce(Sum('amount', filter=Q(purpose=models.Payment.Purpose.BALANCE) & ~Q(provider=models.Payment.Provider.CASH)), Value(Decimal('0.00'))),
+    )
+    total_paid_amount = float(payment_stats['total_paid'])
+    prepayment_collected = float(payment_stats['prepayment'])
+    balance_collected = float(payment_stats['balance'])
+    cash_balance_collected = float(payment_stats['cash_balance'])
+    online_balance_collected = float(payment_stats['online_balance'])
 
     outstanding_orders = models.Cart.objects.filter(status__in=[2, 3, 4])
     outstanding_balances = sum(float(o.remaining_amount) for o in outstanding_orders if o.remaining_amount > 0)
@@ -1136,44 +1179,52 @@ def reports_overview(request):
     # 2. Financial Metrics (Prepayments, Balance Collected, Outstanding)
     paid_payments = models.Payment.objects.filter(status=models.Payment.Status.PAID)
 
-    prepayment_collected = paid_payments.filter(
-        purpose=models.Payment.Purpose.PREPAYMENT
-    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-
-    balance_collected = paid_payments.filter(
-        purpose=models.Payment.Purpose.BALANCE
-    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-
-    cash_balance_collected = paid_payments.filter(
-        purpose=models.Payment.Purpose.BALANCE,
-        provider=models.Payment.Provider.CASH
-    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-
-    online_balance_collected = paid_payments.filter(
-        purpose=models.Payment.Purpose.BALANCE
-    ).exclude(provider=models.Payment.Provider.CASH).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-
-    full_payments_collected = paid_payments.filter(
-        purpose=models.Payment.Purpose.FULL
-    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-
-    total_revenue_collected = paid_payments.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    payment_stats = paid_payments.aggregate(
+        prepayment=Coalesce(Sum('amount', filter=Q(purpose=models.Payment.Purpose.PREPAYMENT)), Value(Decimal('0.00'))),
+        balance=Coalesce(Sum('amount', filter=Q(purpose=models.Payment.Purpose.BALANCE)), Value(Decimal('0.00'))),
+        cash_balance=Coalesce(Sum('amount', filter=Q(purpose=models.Payment.Purpose.BALANCE, provider=models.Payment.Provider.CASH)), Value(Decimal('0.00'))),
+        online_balance=Coalesce(Sum('amount', filter=Q(purpose=models.Payment.Purpose.BALANCE) & ~Q(provider=models.Payment.Provider.CASH)), Value(Decimal('0.00'))),
+        full_payments=Coalesce(Sum('amount', filter=Q(purpose=models.Payment.Purpose.FULL)), Value(Decimal('0.00'))),
+        total_revenue=Coalesce(Sum('amount'), Value(Decimal('0.00'))),
+    )
+    prepayment_collected = payment_stats['prepayment']
+    balance_collected = payment_stats['balance']
+    cash_balance_collected = payment_stats['cash_balance']
+    online_balance_collected = payment_stats['online_balance']
+    full_payments_collected = payment_stats['full_payments']
+    total_revenue_collected = payment_stats['total_revenue']
 
     # Outstanding balances across uncancelled orders
     active_orders = models.Cart.objects.filter(status__in=[2, 3, 4])
     outstanding_balances = sum(o.remaining_amount for o in active_orders if o.remaining_amount > 0)
 
-    # 3. Category Performance
+    # 3. Category Performance via DB aggregation
+    price_expr = Case(
+        When(unit_price_snapshot__isnull=False, then=F('unit_price_snapshot')),
+        When(product__discount_status=True, product__discount_price__isnull=False, then=F('product__discount_price')),
+        default=F('product__price'),
+        output_field=DecimalField(max_digits=12, decimal_places=2)
+    )
+
+    cat_sales_map = {
+        item['product__category_id']: {
+            'sold': item['units_sold'],
+            'rev': float(item['cat_revenue'])
+        }
+        for item in delivered_products.values('product__category_id').annotate(
+            units_sold=Coalesce(Sum('count'), Value(0)),
+            cat_revenue=Coalesce(Sum(F('count') * price_expr, output_field=DecimalField(max_digits=14, decimal_places=2)), Value(Decimal('0.00')))
+        )
+    }
+
     categories_perf = []
-    for cat in models.Category.objects.all():
-        cat_items = delivered_products.filter(product__category=cat)
-        cat_rev = sum(float(cp.total_price) for cp in cat_items)
-        cat_sold = sum(cp.count for cp in cat_items)
+    for cat in models.Category.objects.annotate(prod_count=Count('product')):
+        perf = cat_sales_map.get(cat.id, {'sold': 0, 'rev': 0.0})
         categories_perf.append({
             'name': cat.name,
-            'products_count': cat.product_set.count(),
-            'units_sold': cat_sold,
-            'revenue': cat_rev,
+            'products_count': cat.prod_count,
+            'units_sold': perf['sold'],
+            'revenue': perf['rev'],
         })
     categories_perf.sort(key=lambda x: x['revenue'], reverse=True)
 

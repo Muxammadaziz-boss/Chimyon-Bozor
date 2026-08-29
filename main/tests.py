@@ -191,7 +191,7 @@ class AuthAndCartFlowTestCase(TestCase):
 
         self.assertEqual(response.status_code, 404)
 
-    @patch('main.sms_service.send_sms_code', return_value=True)
+    @patch('main.views.send_sms_code', return_value=True)
     def test_register_otp_flow_and_activation(self, mock_send_sms):
         # 1. Register new user
         response = self.client.post(reverse('register'), {
@@ -212,7 +212,9 @@ class AuthAndCartFlowTestCase(TestCase):
         # Verify OTP code created in database
         otp_obj = new_user.otp_codes.latest('created_at')
         self.assertIsNotNone(otp_obj)
-        self.assertEqual(len(otp_obj.code), 6)
+        sent_code = mock_send_sms.call_args[0][1]
+        self.assertEqual(len(sent_code), 6)
+        self.assertTrue(otp_obj.check_code(sent_code))
 
         # 2. Verify invalid OTP code fails
         fail_resp = self.client.post(reverse('verify_otp'), {
@@ -223,7 +225,7 @@ class AuthAndCartFlowTestCase(TestCase):
 
         # 3. Verify valid OTP code activates user and logs in
         success_resp = self.client.post(reverse('verify_otp'), {
-            'otp_code': otp_obj.code,
+            'otp_code': sent_code,
         })
         self.assertEqual(success_resp.status_code, 302)
         self.assertRedirects(success_resp, reverse('index'))

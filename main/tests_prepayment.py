@@ -268,7 +268,8 @@ class PartialPrepaymentAndBalanceTests(TestCase):
             discount_status=True,
             count=5
         )
-        cart2 = models.Cart.objects.create(user=self.customer, status=1)
+        customer2 = models.User.objects.create_user(username='cust2_delivery', password='pw123')
+        cart2 = models.Cart.objects.create(user=customer2, status=1)
         models.CartProduct.objects.create(cart=cart2, product=disc_product, count=1)
 
         financials = PaymentManager.calculate_order_financials(cart2, chosen_percent=30)

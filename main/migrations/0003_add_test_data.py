@@ -88,11 +88,24 @@ def remove_test_data(apps, schema_editor):
     Category = apps.get_model('main', 'Category')
     Product = apps.get_model('main', 'Product')
     
-    # Delete all test products
-    Product.objects.all().delete()
+    test_product_names = [
+        'Smartphone Samsung Galaxy',
+        'Laptop HP Pavilion',
+        'Erkaklar koylaki',
+        'Muzlatgichi Samsung',
+        'Qozon to\'plami',
+        'Dasturlash kitobi',
+    ]
+    test_category_names = [
+        'Elektronika',
+        'Kiyimlar',
+        'Oziq-ovqat',
+        'Maishiy texnika',
+        'Kitoblar',
+    ]
     
-    # Delete all test categories
-    Category.objects.all().delete()
+    Product.objects.filter(name__in=test_product_names).delete()
+    Category.objects.filter(name__in=test_category_names).delete()
 
 
 class Migration(migrations.Migration):

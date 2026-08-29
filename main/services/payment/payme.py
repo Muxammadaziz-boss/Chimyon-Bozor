@@ -142,28 +142,50 @@ class PaymePaymentProvider(BasePaymentProvider):
         amount_tiyin = params.get('amount')
         create_time = params.get('time', int(timezone.now().timestamp() * 1000))
 
-        payment = models.Payment.objects.filter(code=order_code).select_related('order').first()
-        if not payment:
-            return self._error_response(self.ERROR_ORDER_NOT_FOUND, "Order/Payment not found", req_id)
+        with transaction.atomic():
+            locked = models.Payment.objects.select_for_update().filter(code=order_code).select_related('order').first()
+            if not locked:
+                return self._error_response(self.ERROR_ORDER_NOT_FOUND, "Order/Payment not found", req_id)
 
-        expected_tiyin = int(payment.amount * 100)
-        if amount_tiyin != expected_tiyin:
-            return self._error_response(self.ERROR_AMOUNT_MISMATCH, "Incorrect amount", req_id)
+            expected_tiyin = int(locked.amount * 100)
+            if amount_tiyin != expected_tiyin:
+                return self._error_response(self.ERROR_AMOUNT_MISMATCH, "Incorrect amount", req_id)
 
-        payment.transaction_id = payme_trans_id
-        payment.status = models.Payment.Status.INITIATED
-        payment.provider = models.Payment.Provider.PAYME
-        payment.provider_response = params
-        payment.save(update_fields=['transaction_id', 'status', 'provider', 'provider_response', 'updated_at'])
+            if locked.transaction_id and str(locked.transaction_id) != str(payme_trans_id):
+                return self._error_response(self.ERROR_CANNOT_PERFORM, "Cannot perform operation: payment already processed with another transaction", req_id)
 
-        return JsonResponse({
-            'result': {
-                'create_time': create_time,
-                'transaction': str(payment.id),
-                'state': 1
-            },
-            'id': req_id
-        })
+            if str(locked.transaction_id) == str(payme_trans_id):
+                state = 1
+                if locked.status == models.Payment.Status.PAID:
+                    state = 2
+                elif locked.status in [models.Payment.Status.CANCELLED, models.Payment.Status.REFUNDED]:
+                    state = -1
+                return JsonResponse({
+                    'result': {
+                        'create_time': int(locked.created_at.timestamp() * 1000),
+                        'transaction': str(locked.id),
+                        'state': state
+                    },
+                    'id': req_id
+                })
+
+            if locked.status != models.Payment.Status.PENDING and locked.status != models.Payment.Status.INITIATED:
+                return self._error_response(self.ERROR_CANNOT_PERFORM, "Cannot perform operation", req_id)
+
+            locked.transaction_id = payme_trans_id
+            locked.status = models.Payment.Status.INITIATED
+            locked.provider = models.Payment.Provider.PAYME
+            locked.provider_response = params
+            locked.save(update_fields=['transaction_id', 'status', 'provider', 'provider_response', 'updated_at'])
+
+            return JsonResponse({
+                'result': {
+                    'create_time': create_time,
+                    'transaction': str(locked.id),
+                    'state': 1
+                },
+                'id': req_id
+            })
 
     def _perform_transaction(self, params: Dict[str, Any], req_id: Any) -> JsonResponse:
         payme_trans_id = params.get('id')
@@ -314,23 +336,25 @@ class PaymePaymentProvider(BasePaymentProvider):
         }
 
     def refund(self, payment, amount: Optional[float] = None, reason: str = "") -> Dict[str, Any]:
-        if not payment.is_paid:
-            return {'success': False, 'message': "Faqat to'langan to'lovlarni qaytarish mumkin."}
-        refund_dec = Decimal(str(amount)) if amount else payment.amount
-        if refund_dec > payment.amount:
-            return {'success': False, 'message': "Qaytarish summasi to'lov summasidan ortiq bo'lishi mumkin emas."}
-        if refund_dec <= 0:
-            return {'success': False, 'message': "Qaytarish summasi 0 dan katta bo'lishi kerak."}
+        with transaction.atomic():
+            locked = models.Payment.objects.select_for_update().get(pk=payment.pk)
+            if not locked.is_paid:
+                return {'success': False, 'message': "Faqat to'langan to'lovlarni qaytarish mumkin."}
+            try:
+                refund_dec = Decimal(str(amount)) if amount is not None else locked.amount
+            except (ValueError, TypeError):
+                return {'success': False, 'message': "Noto'g'ri summa."}
+            if refund_dec <= Decimal('0.00'):
+                return {'success': False, 'message': "Qaytarish summasi 0 dan katta bo'lishi kerak."}
 
-        payment.refund_amount = (payment.refund_amount or Decimal('0.00')) + refund_dec
-        if payment.refund_amount >= payment.amount:
-            payment.status = models.Payment.Status.REFUNDED
-        payment.refunded_at = timezone.now()
-        payment.save(update_fields=['status', 'refund_amount', 'refunded_at', 'updated_at'])
-        if payment.order and payment.order.paid_amount <= Decimal('0.00'):
-            from .manager import PaymentManager
-            PaymentManager.release_order_inventory(payment.order)
-            if payment.order.status != 1:
-                payment.order.status = 5
-                payment.order.save(update_fields=['status'])
-        return {'success': True, 'message': "Payme to'lovi muvaffaqiyatli qaytarildi."}
+            current_refund = locked.refund_amount or Decimal('0.00')
+            refundable = locked.amount - current_refund
+            if refund_dec > refundable:
+                return {'success': False, 'message': "Qaytarish summasi to'lov summasidan ortiq bo'lishi mumkin emas."}
+
+            locked.refund_amount = current_refund + refund_dec
+            if locked.refund_amount >= locked.amount:
+                locked.status = models.Payment.Status.REFUNDED
+            locked.refunded_at = timezone.now()
+            locked.save(update_fields=['status', 'refund_amount', 'refunded_at', 'updated_at'])
+            return {'success': True, 'message': "Payme to'lovi muvaffaqiyatli qaytarildi."}
