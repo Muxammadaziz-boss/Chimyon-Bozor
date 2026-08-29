@@ -417,3 +417,72 @@ class DashboardAggregationTests(TestCase):
         res_reports = client.get(reverse('d_reports'))
         self.assertEqual(res_reports.status_code, 200)
 
+
+class PriceSnapshotAndOrderImmutabilityTests(TestCase):
+    def test_product_price_change_does_not_alter_historical_order_snapshot(self):
+        user = models.User.objects.create_user(
+            username='snapshot_user',
+            password='TestPassword123!',
+            phone='+998901239988',
+            phone_verified=True,
+        )
+        category = models.Category.objects.create(name='Snapshot Category')
+        product = models.Product.objects.create(
+            name='Historical Item',
+            category=category,
+            price=Decimal('50000.00'),
+            count=10,
+        )
+        order = models.Cart.objects.create(user=user, status=2)
+        cart_item = models.CartProduct.objects.create(
+            cart=order,
+            product=product,
+            count=2,
+            unit_price_snapshot=Decimal('50000.00')
+        )
+        self.assertEqual(cart_item.total_price, Decimal('100000.00'))
+
+        # Later, merchant changes the product price to 80,000
+        product.price = Decimal('80000.00')
+        product.save(update_fields=['price'])
+
+        # Historical order snapshot unit_price and total_price must remain 50,000 and 100,000
+        cart_item.refresh_from_db()
+        self.assertEqual(cart_item.unit_price, Decimal('50000.00'))
+        self.assertEqual(cart_item.total_price, Decimal('100000.00'))
+
+
+class FileUploadAndSecurityValidatorTests(TestCase):
+    def test_image_validator_rejects_disallowed_extensions(self):
+        from django.core.exceptions import ValidationError
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from main.validators import validate_image_file
+
+        # SVG or executable files must be rejected
+        svg_file = SimpleUploadedFile("malicious.svg", b"<svg onload=alert(1)></svg>", content_type="image/svg+xml")
+        with self.assertRaises(ValidationError):
+            validate_image_file(svg_file)
+
+        exe_file = SimpleUploadedFile("script.exe", b"MZ\x90\x00\x03\x00\x00\x00", content_type="application/octet-stream")
+        with self.assertRaises(ValidationError):
+            validate_image_file(exe_file)
+
+    def test_image_validator_rejects_path_traversal_filename(self):
+        from django.core.exceptions import ValidationError
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from main.validators import validate_image_file
+
+        traversal_file = SimpleUploadedFile("../../etc/passwd.png", b"\x89PNG\r\n\x1a\n\x00\x00", content_type="image/png")
+        with self.assertRaises(ValidationError):
+            validate_image_file(traversal_file)
+
+
+class SecurityHeadersAndCSRFTests(TestCase):
+    def test_security_headers_middleware_present_in_responses(self):
+        client = Client()
+        response = client.get(reverse('index'))
+        self.assertIn('Permissions-Policy', response)
+        self.assertIn('Cross-Origin-Opener-Policy', response)
+        self.assertEqual(response.get('X-Content-Type-Options'), 'nosniff')
+
+
